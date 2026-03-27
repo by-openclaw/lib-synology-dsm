@@ -157,3 +157,46 @@ class ShareManager:
         """
         data = self._c.request("SYNO.Core.Share.NFS", "get", version=1, name=share)
         return data.get("nfs_rules", data.get("rules", []))
+
+    def ensure(
+        self,
+        name: str,
+        state: str = "present",
+        volume_path: str = "/volume1",
+        description: str = "",
+    ) -> dict:
+        """Ensure a shared folder exists or is absent — idempotent.
+
+        Mirrors Ansible state semantics:
+            state="present" → create if not exists, update description if exists
+            state="absent"  → delete if exists, no-op if already gone
+
+        Requires the API user to be in the 'administrators' group for create/delete/update.
+
+        Args:
+            name: Share name.
+            state: "present" or "absent".
+            volume_path: Volume mount point (used only on create).
+            description: Human-readable description.
+
+        Returns:
+            Dict with keys: changed (bool), action (str: created/updated/deleted/noop)
+        """
+        existing = {s["name"] for s in self.list()}
+
+        if state == "present":
+            if name not in existing:
+                self.create(name, volume_path=volume_path, description=description)
+                return {"changed": True, "action": "created"}
+            else:
+                self.update(name, desc=description)
+                return {"changed": True, "action": "updated"}
+
+        elif state == "absent":
+            if name in existing:
+                self.delete(name)
+                return {"changed": True, "action": "deleted"}
+            return {"changed": False, "action": "noop"}
+
+        else:
+            raise ValueError(f"Invalid state '{state}'. Use 'present' or 'absent'.")

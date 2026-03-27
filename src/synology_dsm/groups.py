@@ -148,3 +148,42 @@ class GroupManager:
             # Fallback: get returns members under 'members' or 'users' key
             data = self._c.request("SYNO.Core.Group", "get", version=1, name=group)
             return data.get("members", data.get("users", []))
+
+    def ensure(
+        self,
+        name: str,
+        state: str = "present",
+        description: str = "",
+    ) -> dict:
+        """Ensure a group exists or is absent — idempotent.
+
+        Mirrors Ansible state semantics:
+            state="present" → create if not exists, update description if exists
+            state="absent"  → delete if exists, no-op if already gone
+
+        Args:
+            name: Group name.
+            state: "present" or "absent".
+            description: Human-readable description.
+
+        Returns:
+            Dict with keys: changed (bool), action (str: created/updated/deleted/noop)
+        """
+        existing = {g["name"] for g in self.list()}
+
+        if state == "present":
+            if name not in existing:
+                self.create(name, description=description)
+                return {"changed": True, "action": "created"}
+            else:
+                self.update(name, description=description)
+                return {"changed": True, "action": "updated"}
+
+        elif state == "absent":
+            if name in existing:
+                self.delete(name)
+                return {"changed": True, "action": "deleted"}
+            return {"changed": False, "action": "noop"}
+
+        else:
+            raise ValueError(f"Invalid state '{state}'. Use 'present' or 'absent'.")

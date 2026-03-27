@@ -74,6 +74,25 @@ class ShareManager:
             encryption=0,
         )
 
+    def update(self, name: str, **kwargs: object) -> None:
+        """Update shared folder attributes.
+
+        Requires the API user to be in the 'administrators' group.
+
+        Updatable fields (verified against DSM 7.1.1):
+            desc (str) — description
+            hidden (bool as string "true"/"false")
+            enable_recycle_bin (bool as string)
+
+        Args:
+            name: Share name to update.
+            **kwargs: Fields to update (use 'desc' not 'description' for shares).
+
+        Example:
+            mgr.update("by-gitlab", desc="GitLab storage — production data")
+        """
+        self._c.request("SYNO.Core.Share", "set", version=1, name=name, **kwargs)
+
     def delete(self, name: str) -> None:
         """Delete a shared folder.
 

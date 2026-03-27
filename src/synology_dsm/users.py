@@ -66,6 +66,22 @@ class UserManager:
         """
         self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))
 
+    def update(self, name: str, **kwargs: object) -> None:
+        """Update user attributes.
+
+        Updatable fields (verified against DSM 7.1.1):
+            description (str), email (str), expired (bool as "true"/"false"),
+            password (str — triggers password change)
+
+        Args:
+            name: Username to update.
+            **kwargs: Fields to update.
+
+        Example:
+            mgr.update("rune-api", description="Updated description", email="new@example.com")
+        """
+        self._c.request("SYNO.Core.User", "set", version=1, name=name, **kwargs)
+
     def disable(self, name: str) -> None:
         """Disable a user (preferred over delete — audit trail preserved).
 

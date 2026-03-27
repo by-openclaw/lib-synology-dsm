@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-27
+
+### Added
+- `update()` method on UserManager, GroupManager, ShareManager — wraps DSM `set` API
+- `ensure(state="present"/"absent")` on all three managers — idempotent, Ansible-style
+- `docs/feature-coverage.md` — full API coverage table (implemented vs planned)
+- `docs/references.md` — official + community API documentation links
+- `CLAUDE.md` — agent/developer notes for this repo
+- API references added to README.md
+
 ## [0.3.0] - 2026-03-27
 
 ### Added

@@ -11,6 +11,7 @@ Notes:
   or equivalent — on some DSM versions member_set (API code 103) is unavailable for non-admin;
   use the admin session (session=DSM) for all write operations.
 """
+
 from __future__ import annotations
 
 import json
@@ -44,7 +45,9 @@ class GroupManager:
             Dict with group info from the API.
         """
         return self._c.request(
-            "SYNO.Core.Group", "create", version=1,
+            "SYNO.Core.Group",
+            "create",
+            version=1,
             name=name,
             description=description,
         )
@@ -58,8 +61,7 @@ class GroupManager:
         Args:
             name: Group name to delete.
         """
-        self._c.request("SYNO.Core.Group", "delete", version=1,
-                         name=json.dumps([name]))
+        self._c.request("SYNO.Core.Group", "delete", version=1, name=json.dumps([name]))
 
     def get(self, name: str) -> dict:
         """Get group details by name.
@@ -85,7 +87,9 @@ class GroupManager:
         if username not in current_names:
             current_names.append(username)
         self._c.request(
-            "SYNO.Core.Group", "member_set", version=1,
+            "SYNO.Core.Group",
+            "member_set",
+            version=1,
             name=group,
             members=json.dumps(current_names),
         )
@@ -104,7 +108,9 @@ class GroupManager:
         current_names = [m.get("name", m) if isinstance(m, dict) else m for m in current]
         updated = [n for n in current_names if n != username]
         self._c.request(
-            "SYNO.Core.Group", "member_set", version=1,
+            "SYNO.Core.Group",
+            "member_set",
+            version=1,
             name=group,
             members=json.dumps(updated),
         )

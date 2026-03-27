@@ -1,4 +1,5 @@
 """Tests for DSM client session management."""
+
 import pytest
 from unittest.mock import patch, MagicMock
 from synology_dsm import DSMClient

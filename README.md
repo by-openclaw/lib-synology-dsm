@@ -29,6 +29,44 @@ pip install synology-dsm  # from GitLab Package Registry (when published)
 pip install git+https://github.com/by-openclaw/lib-synology-dsm.git
 ```
 
+## Credentials
+
+Never hardcode credentials. Three patterns supported:
+
+### .env file (development)
+
+```bash
+cp .env.example .env
+# edit .env with your values
+```
+
+```python
+from synology_dsm.credentials import EnvCredentialProvider
+creds = EnvCredentialProvider().get()
+```
+
+### HashiCorp Vault (production)
+
+```bash
+pip install 'lib-synology-dsm[vault]'
+export VAULT_ADDR=https://vault.by-systems.arpa
+export VAULT_TOKEN=...
+```
+
+```python
+from synology_dsm.credentials import get_credentials
+creds = get_credentials()  # auto-detects Vault
+```
+
+### Explicit (testing only)
+
+```python
+with DSMClient("10.6.x.x") as client:
+    client.login("svc-rune-dsm", "password")
+```
+
+See [docs/credentials.md](docs/credentials.md) for full details.
+
 ## Design
 
 - Session lifecycle managed by `DSMClient` context manager (auto-logout)

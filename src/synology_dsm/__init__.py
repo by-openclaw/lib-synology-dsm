@@ -1,8 +1,24 @@
 """Synology DSM API library."""
+
 from .client import DSMClient
+from .credentials import (
+    DSMCredentials,
+    EnvCredentialProvider,
+    VaultCredentialProvider,
+    get_credentials,
+)
 from .groups import GroupManager
 from .shares import ShareManager
 from .users import UserManager
 
-__all__ = ["DSMClient", "GroupManager", "ShareManager", "UserManager"]
-__version__ = "0.2.0"
+__all__ = [
+    "DSMClient",
+    "DSMCredentials",
+    "EnvCredentialProvider",
+    "GroupManager",
+    "ShareManager",
+    "UserManager",
+    "VaultCredentialProvider",
+    "get_credentials",
+]
+__version__ = "0.3.0"

@@ -1,4 +1,5 @@
 """DSM API client — session management."""
+
 from __future__ import annotations
 import httpx
 from typing import Any
@@ -49,7 +50,13 @@ class DSMClient:
         """Make an authenticated API request."""
         if not self._sid:
             raise RuntimeError("Not logged in. Call login() first.")
-        payload = {"api": api, "version": str(version), "method": method, "_sid": self._sid, **params}
+        payload = {
+            "api": api,
+            "version": str(version),
+            "method": method,
+            "_sid": self._sid,
+            **params,
+        }
         resp = self._client.post(f"{self.base_url}/entry.cgi", data=payload)
         resp.raise_for_status()
         data = resp.json()

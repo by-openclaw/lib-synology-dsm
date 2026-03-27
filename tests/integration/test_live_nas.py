@@ -8,6 +8,7 @@ Credentials: rune-api (admin) / rune-audit (read-only)
 
 Uses urllib only — no httpx dependency.
 """
+
 from __future__ import annotations
 
 import json
@@ -54,27 +55,31 @@ def post(payload: dict[str, Any]) -> dict:
 
 def login(account: str, password: str, session: str = "DSM") -> str | None:
     """Login and return SID, or None on failure."""
-    resp = post({
-        "api": "SYNO.API.Auth",
-        "version": "7",
-        "method": "login",
-        "account": account,
-        "passwd": password,
-        "session": session,
-        "format": "sid",
-    })
+    resp = post(
+        {
+            "api": "SYNO.API.Auth",
+            "version": "7",
+            "method": "login",
+            "account": account,
+            "passwd": password,
+            "session": session,
+            "format": "sid",
+        }
+    )
     if resp.get("success"):
         return resp["data"]["sid"]
     return None
 
 
 def logout(sid: str) -> bool:
-    resp = post({
-        "api": "SYNO.API.Auth",
-        "version": "1",
-        "method": "logout",
-        "_sid": sid,
-    })
+    resp = post(
+        {
+            "api": "SYNO.API.Auth",
+            "version": "1",
+            "method": "logout",
+            "_sid": sid,
+        }
+    )
     return resp.get("success", False)
 
 
@@ -101,10 +106,11 @@ def record(status: str, name: str, detail: str = "") -> None:
 def section(title: str) -> None:
     print(f"\n{'─' * 60}")
     print(f"  {title}")
-    print('─' * 60)
+    print("─" * 60)
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────
+
 
 def test_auth_admin() -> str | None:
     section("1. Auth v7 — rune-api (admin)")
@@ -140,9 +146,12 @@ def test_auth_audit() -> str | None:
     else:
         # Error 402 = account disabled in DSM. Check DSM Control Panel > User if rune-audit is disabled.
         # Error 400 = wrong password, 403 = 2FA required.
-        record(WARN, "rune-audit login",
-               "Failed — likely error 402 (account disabled). "
-               "Enable rune-audit in DSM Control Panel → User & Group, or reset password.")
+        record(
+            WARN,
+            "rune-audit login",
+            "Failed — likely error 402 (account disabled). "
+            "Enable rune-audit in DSM Control Panel → User & Group, or reset password.",
+        )
         return None
 
 
@@ -167,9 +176,16 @@ def test_users(sid: str) -> None:
             return
 
     # Create test user
-    resp = api(sid, "SYNO.Core.User", "create", version=1,
-               name=TEST_USER, password=TEST_USER_PASS,
-               email="", description="Rune integration test — auto-deleted")
+    resp = api(
+        sid,
+        "SYNO.Core.User",
+        "create",
+        version=1,
+        name=TEST_USER,
+        password=TEST_USER_PASS,
+        email="",
+        description="Rune integration test — auto-deleted",
+    )
     raw = resp if not isinstance(resp, dict) else resp
     if raw.get("success", True) is not False:
         record(PASS, f"SYNO.Core.User create ({TEST_USER})")
@@ -179,8 +195,7 @@ def test_users(sid: str) -> None:
         return
 
     # Delete test user — DSM requires JSON array
-    resp = api(sid, "SYNO.Core.User", "delete", version=1,
-               name=json.dumps([TEST_USER]))
+    resp = api(sid, "SYNO.Core.User", "delete", version=1, name=json.dumps([TEST_USER]))
     if resp.get("success", True) is not False:
         record(PASS, f"SYNO.Core.User delete ({TEST_USER})")
     else:
@@ -215,60 +230,91 @@ def test_groups(sid: str) -> None:
         return
 
     # Create group
-    resp = _api_raw(sid, "SYNO.Core.Group", "create", version=1,
-                    name=TEST_GROUP, description="Rune integration test — auto-deleted")
+    resp = _api_raw(
+        sid,
+        "SYNO.Core.Group",
+        "create",
+        version=1,
+        name=TEST_GROUP,
+        description="Rune integration test — auto-deleted",
+    )
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Group create ({TEST_GROUP})")
     else:
         err = resp.get("error", {})
         record(FAIL, f"SYNO.Core.Group create ({TEST_GROUP})", f"error={err}")
         # Group might already exist — try to clean up anyway
-        _api_raw(sid, "SYNO.Core.Group", "delete", version=1,
-                 name=json.dumps([TEST_GROUP]))
+        _api_raw(sid, "SYNO.Core.Group", "delete", version=1, name=json.dumps([TEST_GROUP]))
         record(WARN, "SYNO.Core.Group delete (cleanup attempt after create fail)")
         return
 
     # Add member
-    resp = _api_raw(sid, "SYNO.Core.Group", "member_set", version=1,
-                    name=TEST_GROUP, members=json.dumps([AUDIT_USER]))
+    resp = _api_raw(
+        sid,
+        "SYNO.Core.Group",
+        "member_set",
+        version=1,
+        name=TEST_GROUP,
+        members=json.dumps([AUDIT_USER]),
+    )
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Group add_member ({AUDIT_USER} → {TEST_GROUP})")
     else:
         # Try alternative method name
-        resp2 = _api_raw(sid, "SYNO.Core.Group.Member", "set", version=1,
-                         name=TEST_GROUP, members=json.dumps([AUDIT_USER]))
+        resp2 = _api_raw(
+            sid,
+            "SYNO.Core.Group.Member",
+            "set",
+            version=1,
+            name=TEST_GROUP,
+            members=json.dumps([AUDIT_USER]),
+        )
         if resp2.get("success"):
-            record(PASS, f"SYNO.Core.Group.Member set ({AUDIT_USER} → {TEST_GROUP})", "via SYNO.Core.Group.Member.set")
+            record(
+                PASS,
+                f"SYNO.Core.Group.Member set ({AUDIT_USER} → {TEST_GROUP})",
+                "via SYNO.Core.Group.Member.set",
+            )
         else:
-            record(WARN, f"SYNO.Core.Group add_member", f"member_set failed: {resp.get('error')}, Member.set: {resp2.get('error')}")
+            record(
+                WARN,
+                "SYNO.Core.Group add_member",
+                f"member_set failed: {resp.get('error')}, Member.set: {resp2.get('error')}",
+            )
 
     # List members
-    resp = _api_raw(sid, "SYNO.Core.Group", "member_list", version=1,
-                    name=TEST_GROUP)
+    resp = _api_raw(sid, "SYNO.Core.Group", "member_list", version=1, name=TEST_GROUP)
     if resp.get("success"):
         members = resp.get("data", {}).get("users", [])
         record(PASS, f"SYNO.Core.Group list_members ({TEST_GROUP})", f"{len(members)} members")
     else:
         # Try get method
-        resp2 = _api_raw(sid, "SYNO.Core.Group", "get", version=1,
-                         name=TEST_GROUP)
+        resp2 = _api_raw(sid, "SYNO.Core.Group", "get", version=1, name=TEST_GROUP)
         if resp2.get("success"):
             members = resp2.get("data", {}).get("members", resp2.get("data", {}).get("users", []))
-            record(PASS, f"SYNO.Core.Group get/members ({TEST_GROUP})", f"via get: {len(members)} members")
+            record(
+                PASS,
+                f"SYNO.Core.Group get/members ({TEST_GROUP})",
+                f"via get: {len(members)} members",
+            )
         else:
-            record(WARN, f"SYNO.Core.Group list_members", f"member_list: {resp.get('error')}, get: {resp2.get('error')}")
+            record(
+                WARN,
+                "SYNO.Core.Group list_members",
+                f"member_list: {resp.get('error')}, get: {resp2.get('error')}",
+            )
 
     # Remove member
-    resp = _api_raw(sid, "SYNO.Core.Group", "member_set", version=1,
-                    name=TEST_GROUP, members=json.dumps([]))
+    resp = _api_raw(
+        sid, "SYNO.Core.Group", "member_set", version=1, name=TEST_GROUP, members=json.dumps([])
+    )
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Group remove_member (clear {TEST_GROUP})")
     else:
-        record(WARN, f"SYNO.Core.Group remove_member", str(resp.get("error", ""))[:80])
+        record(WARN, "SYNO.Core.Group remove_member", str(resp.get("error", ""))[:80])
 
     # Delete group — JSON array like users
-    resp = _api_raw(sid, "SYNO.Core.Group", "delete", version=1,
-                    name=json.dumps([TEST_GROUP]))
+    resp = _api_raw(sid, "SYNO.Core.Group", "delete", version=1, name=json.dumps([TEST_GROUP]))
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Group delete ({TEST_GROUP})")
     else:
@@ -282,8 +328,13 @@ def test_shares(sid: str) -> None:
         return
 
     # List shares
-    resp = _api_raw(sid, "SYNO.Core.Share", "list", version=1,
-                    additional=json.dumps(["share_quota", "valid_users"]))
+    resp = _api_raw(
+        sid,
+        "SYNO.Core.Share",
+        "list",
+        version=1,
+        additional=json.dumps(["share_quota", "valid_users"]),
+    )
     if resp.get("success"):
         shares = resp.get("data", {}).get("shares", [])
         record(PASS, "SYNO.Core.Share list", f"{len(shares)} shares")
@@ -291,47 +342,61 @@ def test_shares(sid: str) -> None:
         record(FAIL, "SYNO.Core.Share list", str(resp.get("error", ""))[:120])
 
     # Create share
-    resp = _api_raw(sid, "SYNO.Core.Share", "create", version=1,
-                    name=TEST_SHARE,
-                    vol_path="/volume1",
-                    desc="Rune integration test — auto-deleted",
-                    enable_recycle_bin="false",
-                    encryption=0)
+    resp = _api_raw(
+        sid,
+        "SYNO.Core.Share",
+        "create",
+        version=1,
+        name=TEST_SHARE,
+        vol_path="/volume1",
+        desc="Rune integration test — auto-deleted",
+        enable_recycle_bin="false",
+        encryption=0,
+    )
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Share create ({TEST_SHARE})")
 
         # Set NFS permission
-        nfs_rule = json.dumps([{
-            "hostname": "10.6.0.0/20",
-            "privilege": "rw",
-            "squash": "no_squash",
-            "async": True,
-            "anonuid": -2,
-            "anongid": -2,
-        }])
-        resp_nfs = _api_raw(sid, "SYNO.Core.Share.NFS", "set", version=1,
-                            name=TEST_SHARE, nfs_rules=nfs_rule)
+        nfs_rule = json.dumps(
+            [
+                {
+                    "hostname": "10.6.0.0/20",
+                    "privilege": "rw",
+                    "squash": "no_squash",
+                    "async": True,
+                    "anonuid": -2,
+                    "anongid": -2,
+                }
+            ]
+        )
+        resp_nfs = _api_raw(
+            sid, "SYNO.Core.Share.NFS", "set", version=1, name=TEST_SHARE, nfs_rules=nfs_rule
+        )
         if resp_nfs.get("success"):
             record(PASS, f"SYNO.Core.Share.NFS set ({TEST_SHARE} → 10.6.0.0/20 rw)")
         else:
-            record(WARN, f"SYNO.Core.Share.NFS set", str(resp_nfs.get("error", ""))[:80])
+            record(WARN, "SYNO.Core.Share.NFS set", str(resp_nfs.get("error", ""))[:80])
 
         # Delete share
-        resp_del = _api_raw(sid, "SYNO.Core.Share", "delete", version=1,
-                            name=TEST_SHARE)
+        resp_del = _api_raw(sid, "SYNO.Core.Share", "delete", version=1, name=TEST_SHARE)
         if resp_del.get("success"):
             record(PASS, f"SYNO.Core.Share delete ({TEST_SHARE})")
         else:
-            record(FAIL, f"SYNO.Core.Share delete ({TEST_SHARE})",
-                   str(resp_del.get("error", ""))[:80])
+            record(
+                FAIL, f"SYNO.Core.Share delete ({TEST_SHARE})", str(resp_del.get("error", ""))[:80]
+            )
     else:
         err_code = resp.get("error", {}).get("code", "?")
         if err_code == 403 or str(err_code) == "403":
-            record(WARN, f"SYNO.Core.Share create ({TEST_SHARE})",
-                   "HTTP 403 — rune-api lacks administrator privilege for share creation")
+            record(
+                WARN,
+                f"SYNO.Core.Share create ({TEST_SHARE})",
+                "HTTP 403 — rune-api lacks administrator privilege for share creation",
+            )
         else:
-            record(WARN, f"SYNO.Core.Share create ({TEST_SHARE})",
-                   f"error={resp.get('error', resp)}")
+            record(
+                WARN, f"SYNO.Core.Share create ({TEST_SHARE})", f"error={resp.get('error', resp)}"
+            )
         record(WARN, "SYNO.Core.Share.NFS set — skipped (create failed)")
         record(WARN, f"SYNO.Core.Share delete ({TEST_SHARE}) — skipped (create failed)")
 
@@ -349,9 +414,8 @@ def test_filestation(sid: str) -> None:
     else:
         record(FAIL, "SYNO.FileStation.List list_share", str(resp.get("error", ""))[:120])
 
-    # Also test list (files in /) 
-    resp2 = _api_raw(sid, "SYNO.FileStation.List", "list", version=2,
-                     folder_path="/")
+    # Also test list (files in /)
+    resp2 = _api_raw(sid, "SYNO.FileStation.List", "list", version=2, folder_path="/")
     if resp2.get("success"):
         files = resp2.get("data", {}).get("files", [])
         record(PASS, "SYNO.FileStation.List list /", f"{len(files)} entries")
@@ -366,20 +430,17 @@ def cleanup(sid: str) -> None:
         return
 
     # Clean test user
-    r = _api_raw(sid, "SYNO.Core.User", "delete", version=1,
-                 name=json.dumps([TEST_USER]))
+    r = _api_raw(sid, "SYNO.Core.User", "delete", version=1, name=json.dumps([TEST_USER]))
     if r.get("success"):
         record(WARN, f"cleanup: deleted leftover user {TEST_USER}")
 
     # Clean test group
-    r = _api_raw(sid, "SYNO.Core.Group", "delete", version=1,
-                 name=json.dumps([TEST_GROUP]))
+    r = _api_raw(sid, "SYNO.Core.Group", "delete", version=1, name=json.dumps([TEST_GROUP]))
     if r.get("success"):
         record(WARN, f"cleanup: deleted leftover group {TEST_GROUP}")
 
     # Clean test share
-    r = _api_raw(sid, "SYNO.Core.Share", "delete", version=1,
-                 name=TEST_SHARE)
+    r = _api_raw(sid, "SYNO.Core.Share", "delete", version=1, name=TEST_SHARE)
     if r.get("success"):
         record(WARN, f"cleanup: deleted leftover share {TEST_SHARE}")
 

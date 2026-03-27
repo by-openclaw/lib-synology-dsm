@@ -9,6 +9,7 @@ Notes:
 - disable() uses expired="true" to soft-disable without deleting (preferred — preserves audit trail)
 - add_to_group / remove_from_group delegate to GroupManager for consistency
 """
+
 from __future__ import annotations
 
 import json
@@ -45,8 +46,13 @@ class UserManager:
             Dict with user info from the API.
         """
         return self._c.request(
-            "SYNO.Core.User", "create", version=1,
-            name=name, password=password, email=email, description=description,
+            "SYNO.Core.User",
+            "create",
+            version=1,
+            name=name,
+            password=password,
+            email=email,
+            description=description,
         )
 
     def delete(self, name: str) -> None:
@@ -58,8 +64,7 @@ class UserManager:
         Args:
             name: Username to delete.
         """
-        self._c.request("SYNO.Core.User", "delete", version=1,
-                         name=json.dumps([name]))
+        self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))
 
     def disable(self, name: str) -> None:
         """Disable a user (preferred over delete — audit trail preserved).
@@ -67,8 +72,7 @@ class UserManager:
         Args:
             name: Username to disable.
         """
-        self._c.request("SYNO.Core.User", "set", version=1,
-                         name=name, expired="true")
+        self._c.request("SYNO.Core.User", "set", version=1, name=name, expired="true")
 
     def list_groups(self) -> list[dict]:
         """List all groups.
@@ -90,6 +94,7 @@ class UserManager:
             group: Target group name.
         """
         from .groups import GroupManager
+
         GroupManager(self._c).add_member(group, username)
 
     def remove_from_group(self, username: str, group: str) -> None:
@@ -103,4 +108,5 @@ class UserManager:
             group: Group name to remove from.
         """
         from .groups import GroupManager
+
         GroupManager(self._c).remove_member(group, username)

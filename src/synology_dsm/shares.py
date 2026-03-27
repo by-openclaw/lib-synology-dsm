@@ -18,6 +18,7 @@ NFS Permission Notes:
     SYNO.Core.FileServ.NFS returns the global NFS service config (not per-share rules).
     To get per-share NFS rules: use SYNO.Core.Share.NFS.get (requires admin).
 """
+
 from __future__ import annotations
 
 import json
@@ -44,12 +45,10 @@ class ShareManager:
             List of share dicts with at minimum: name, vol_path, desc, encryption, hidden.
         """
         extra = json.dumps(additional or [])
-        data = self._c.request("SYNO.Core.Share", "list", version=1,
-                                additional=extra)
+        data = self._c.request("SYNO.Core.Share", "list", version=1, additional=extra)
         return data.get("shares", [])
 
-    def create(self, name: str, volume_path: str = "/volume1",
-               description: str = "") -> dict:
+    def create(self, name: str, volume_path: str = "/volume1", description: str = "") -> dict:
         """Create a shared folder.
 
         Requires the API user to be in the 'administrators' group.
@@ -65,7 +64,9 @@ class ShareManager:
             Dict with share info from the API.
         """
         return self._c.request(
-            "SYNO.Core.Share", "create", version=1,
+            "SYNO.Core.Share",
+            "create",
+            version=1,
             name=name,
             vol_path=volume_path,
             desc=description,
@@ -83,9 +84,14 @@ class ShareManager:
         """
         self._c.request("SYNO.Core.Share", "delete", version=1, name=name)
 
-    def set_nfs_permission(self, share: str, hostname: str, rw: bool = True,
-                           squash: str = "no_squash",
-                           async_io: bool = True) -> dict:
+    def set_nfs_permission(
+        self,
+        share: str,
+        hostname: str,
+        rw: bool = True,
+        squash: str = "no_squash",
+        async_io: bool = True,
+    ) -> dict:
         """Set NFS permission for a host on a share.
 
         WARNING: This REPLACES the entire NFS rule list for the share.
@@ -114,7 +120,9 @@ class ShareManager:
             "anongid": -2,
         }
         return self._c.request(
-            "SYNO.Core.Share.NFS", "set", version=1,
+            "SYNO.Core.Share.NFS",
+            "set",
+            version=1,
             name=share,
             nfs_rules=json.dumps([nfs_rule]),
         )
@@ -128,6 +136,5 @@ class ShareManager:
         Returns:
             List of NFS rule dicts.
         """
-        data = self._c.request("SYNO.Core.Share.NFS", "get", version=1,
-                                name=share)
+        data = self._c.request("SYNO.Core.Share.NFS", "get", version=1, name=share)
         return data.get("nfs_rules", data.get("rules", []))

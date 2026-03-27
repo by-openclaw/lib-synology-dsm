@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-27
+
+### Added
+- `credentials.py` — `EnvCredentialProvider`, `VaultCredentialProvider`, `get_credentials()`
+- `.env.example` — template for local development
+- `docs/credentials.md` — credential provider documentation
+- `docs/api-versions.md` — API version reference table
+
+### Changed
+- PEP8 / ruff formatting applied across all source files
+- `pyproject.toml` — added `[vault]` optional dependency group with `hvac`
+- `.gitignore` — added `.env`, `.venv/`, cache dirs
+
+### Security
+- `.env` excluded from git via `.gitignore`
+- Vault provider as first-class credential source for production use
+
 ## [0.2.0] - 2026-03-27
 
 ### Added

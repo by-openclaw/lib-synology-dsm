@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synology-dsm"
-version = "0.1.0"
+version = "0.3.0"
 description = "Python library for Synology DSM API — shares, users, NFS, system management"
 readme = "README.md"
 license = { text = "MIT" }
@@ -15,13 +15,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-asyncio",
-    "respx",  # httpx mocking
-    "ruff",
-    "mypy",
-]
+dev = ["pytest", "ruff", "mypy", "python-dotenv"]
+vault = ["hvac", "python-dotenv"]
 
 [tool.ruff]
 line-length = 100

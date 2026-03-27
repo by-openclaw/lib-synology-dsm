@@ -1,0 +1,46 @@
+# lib-synology-dsm
+
+Python library for Synology DSM API — idempotent operations for shared folders, NFS permissions, users, and groups.
+
+## Usage
+
+```python
+from synology_dsm import DSMClient
+from synology_dsm.shares import ShareManager
+
+with DSMClient("10.6.224.6") as client:
+    client.login("rune-api", "password")
+    shares = ShareManager(client)
+    
+    # Create NFS share
+    shares.create("srv-proxmox-poc-01-iso", description="PoC ISO storage")
+    shares.set_nfs_permission("srv-proxmox-poc-01-iso", "10.6.224.105", rw=True)
+    
+    # List shares
+    for s in shares.list():
+        print(s["name"])
+```
+
+## Install
+
+```bash
+pip install synology-dsm  # from GitLab Package Registry (when published)
+# or
+pip install git+https://github.com/by-openclaw/lib-synology-dsm.git
+```
+
+## Design
+
+- Session lifecycle managed by `DSMClient` context manager (auto-logout)
+- All operations idempotent
+- Future: NetBox webhook integration for automated provisioning
+- Future: Authentik group sync for NFS user permissions
+
+## Modules
+
+| Module | Purpose |
+|---|---|
+| `client.py` | Session management, auth, base request |
+| `shares.py` | Shared folder CRUD |
+| `nfs.py` | NFS export rules |
+| `users.py` | User/group management |

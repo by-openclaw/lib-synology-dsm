@@ -52,6 +52,21 @@ class GroupManager:
             description=description,
         )
 
+    def update(self, name: str, **kwargs: object) -> None:
+        """Update group attributes.
+
+        Updatable fields (verified against DSM 7.1.1):
+            description (str)
+
+        Args:
+            name: Group name to update.
+            **kwargs: Fields to update.
+
+        Example:
+            mgr.update("svc-automation", description="BY-SYSTEMS automation service accounts")
+        """
+        self._c.request("SYNO.Core.Group", "set", version=1, name=name, **kwargs)
+
     def delete(self, name: str) -> None:
         """Delete a group by name.
 

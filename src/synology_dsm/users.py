@@ -21,8 +21,17 @@ class UserManager:
             name=name, password=password, email=email, description=description,
         )
 
+    def delete(self, name: str) -> None:
+        """Delete a user by name.
+
+        Note: DSM API requires name as a JSON array string e.g. '["username"]'.
+        Prefer disable() to preserve audit trail unless hard cleanup is needed.
+        """
+        import json
+        self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))
+
     def disable(self, name: str) -> None:
-        """Disable a user (not delete — audit trail preserved)."""
+        """Disable a user (preferred over delete — audit trail preserved)."""
         self._c.request("SYNO.Core.User", "set", version=1, name=name, expired="true")
 
     def list_groups(self) -> list[dict]:

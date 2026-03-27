@@ -17,14 +17,14 @@ class DSMClient:
     def login(self, account: str, password: str, session: str = "DSM") -> str:
         """Login and return session ID."""
         resp = self._client.post(
-            f"{self.base_url}/auth.cgi",
+            f"{self.base_url}/entry.cgi",
             data={
                 "api": "SYNO.API.Auth",
-                "version": "3",
+                "version": "7",  # v7: returns synotoken + device_id; falls back gracefully on older DSM
                 "method": "login",
                 "account": account,
                 "passwd": password,
-                "session": session,
+                "session": session,  # use "DSM" for admin ops, "FileStation" for file ops
                 "format": "sid",
             },
         )

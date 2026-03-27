@@ -126,3 +126,46 @@ class UserManager:
         from .groups import GroupManager
 
         GroupManager(self._c).remove_member(group, username)
+
+    def ensure(
+        self,
+        name: str,
+        state: str = "present",
+        password: str = "",
+        email: str = "",
+        description: str = "",
+    ) -> dict:
+        """Ensure a user exists or is absent — idempotent.
+
+        Mirrors Ansible state semantics:
+            state="present" → create if not exists, update description/email if exists
+            state="absent"  → delete if exists, no-op if already gone
+
+        Args:
+            name: Username.
+            state: "present" or "absent".
+            password: Required when creating (ignored on update).
+            email: Email address.
+            description: Human-readable description.
+
+        Returns:
+            Dict with keys: changed (bool), action (str: created/updated/deleted/noop)
+        """
+        existing = {u["name"] for u in self.list()}
+
+        if state == "present":
+            if name not in existing:
+                self.create(name, password=password, email=email, description=description)
+                return {"changed": True, "action": "created"}
+            else:
+                self.update(name, description=description, email=email)
+                return {"changed": True, "action": "updated"}
+
+        elif state == "absent":
+            if name in existing:
+                self.delete(name)
+                return {"changed": True, "action": "deleted"}
+            return {"changed": False, "action": "noop"}
+
+        else:
+            raise ValueError(f"Invalid state '{state}'. Use 'present' or 'absent'.")

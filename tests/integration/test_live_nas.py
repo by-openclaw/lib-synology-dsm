@@ -333,41 +333,48 @@ def test_shares(sid: str) -> None:
     else:
         record(FAIL, "SYNO.Core.Share list", str(resp.get("error", ""))[:120])
 
-    # Create share
+    # Create share — must use shareinfo JSON object (not flat params).
+    # Flat params (vol_path, desc) return 403 regardless of permissions.
+    # Confirmed via browser DevTools on DSM WebUI.
+    shareinfo = json.dumps({
+        "name": TEST_SHARE,
+        "vol_path": "/volume1",
+        "desc": "Rune integration test — auto-deleted",
+        "name_org": "",
+    })
     resp = _api_raw(
         sid,
         "SYNO.Core.Share",
         "create",
         version=1,
         name=TEST_SHARE,
-        vol_path="/volume1",
-        desc="Rune integration test — auto-deleted",
-        enable_recycle_bin="false",
-        encryption=0,
+        shareinfo=shareinfo,
     )
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Share create ({TEST_SHARE})")
 
-        # Set NFS permission
-        nfs_rule = json.dumps(
-            [
-                {
-                    "hostname": "10.6.0.0/20",
-                    "privilege": "rw",
-                    "squash": "no_squash",
-                    "async": True,
-                    "anonuid": -2,
-                    "anongid": -2,
-                }
-            ]
-        )
+        # Set NFS permission — correct API on DS1513+ DSM 7.x:
+        # SYNO.Core.FileServ.NFS.SharePrivilege.save (not SYNO.Core.Share.NFS which returns 102)
+        nfs_rule = json.dumps([{
+            "client": "10.6.224.0/20",
+            "privilege": "rw",
+            "root_squash": "root",
+            "async": True,
+            "insecure": False,
+            "crossmnt": False,
+            "security_flavor": {
+                "sys": True, "kerberos": False,
+                "kerberos_integrity": False, "kerberos_privacy": False,
+            },
+        }])
         resp_nfs = _api_raw(
-            sid, "SYNO.Core.Share.NFS", "set", version=1, name=TEST_SHARE, nfs_rules=nfs_rule
+            sid, "SYNO.Core.FileServ.NFS.SharePrivilege", "save",
+            version=1, share_name=TEST_SHARE, rule=nfs_rule,
         )
         if resp_nfs.get("success"):
-            record(PASS, f"SYNO.Core.Share.NFS set ({TEST_SHARE} → 10.6.0.0/20 rw)")
+            record(PASS, f"NFS SharePrivilege save ({TEST_SHARE} → 10.6.224.0/20 rw)")
         else:
-            record(WARN, "SYNO.Core.Share.NFS set", str(resp_nfs.get("error", ""))[:80])
+            record(WARN, "NFS SharePrivilege save", str(resp_nfs.get("error", ""))[:80])
 
         # Delete share
         resp_del = _api_raw(sid, "SYNO.Core.Share", "delete", version=1, name=TEST_SHARE)

@@ -53,7 +53,9 @@ class DSMClient:
         """Make an authenticated API request.
 
         Automatically includes _sid and X-SYNO-TOKEN header (required for
-        write operations on DSM 7.x).
+        ALL write operations on DSM 7.x — share create/delete, group set, etc.).
+        Without X-SYNO-TOKEN, write ops return 403 even with valid SID.
+        Token is obtained during login() via enable_syno_token=yes.
         """
         if not self._sid:
             raise RuntimeError("Not logged in. Call login() first.")
@@ -64,9 +66,9 @@ class DSMClient:
             "_sid": self._sid,
             **params,
         }
-        headers = {}
-        if self._synotoken:
-            headers["X-SYNO-TOKEN"] = self._synotoken
+        # X-SYNO-TOKEN is mandatory for all write operations on DSM 7.x
+        # It is returned by login() when enable_syno_token=yes is set
+        headers = {"X-SYNO-TOKEN": self._synotoken} if self._synotoken else {}
         resp = self._client.post(f"{self.base_url}/entry.cgi", data=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()

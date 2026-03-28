@@ -2,14 +2,22 @@
 
 API: SYNO.Core.Group (version 1, entry.cgi)
 
-Verified against DSM 7.1.1-42962 Update 9 (nas01).
+Verified against DSM 7.1.1-42962 Update 9 (DS1513+).
+
+MEMBER MANAGEMENT — CORRECT METHOD (discovered via live API probing 2026-03-28):
+    DSM error 103 (invalid parameter) on member_set/member_add/add_member is because
+    the correct method for member management is SYNO.Core.Group.set with 'members' param.
+    NOT member_set. This replaces the full member list atomically.
+
+    Correct shape:
+        api=SYNO.Core.Group method=set name=<group> members=["user1","user2"] description="..."
+
+    Requires: X-SYNO-TOKEN header (write op) + session=DSM + admin user.
 
 Notes:
-- delete() and similar bulk ops require the name as a JSON array string, e.g. '["grpname"]'
-- member_set replaces the full member list; to add/remove, fetch current members first
-- Group member listing via 'get' returns the group's metadata; member list comes from 'member_list'
-  or equivalent — on some DSM versions member_set (API code 103) is unavailable for non-admin;
-  use the admin session (session=DSM) for all write operations.
+- delete() requires name as JSON array string: '["grpname"]'
+- set() with members= replaces the full list — fetch current members first to add/remove
+- X-SYNO-TOKEN is required for all write ops (set, create, delete)
 """
 
 from __future__ import annotations
@@ -91,7 +99,8 @@ class GroupManager:
         """Add a user to a group.
 
         Fetches current members first to avoid overwriting the existing list.
-        Requires admin session (session=DSM).
+        Uses SYNO.Core.Group.set with members= (NOT member_set — error 103 on DS1513+).
+        Requires X-SYNO-TOKEN header (handled by client.request) + admin session.
 
         Args:
             group: Group name.
@@ -103,17 +112,19 @@ class GroupManager:
             current_names.append(username)
         self._c.request(
             "SYNO.Core.Group",
-            "member_set",
+            "set",
             version=1,
             name=group,
             members=json.dumps(current_names),
+            description="",
         )
 
     def remove_member(self, group: str, username: str) -> None:
         """Remove a user from a group.
 
         Fetches current members first and removes the specified user.
-        Requires admin session (session=DSM).
+        Uses SYNO.Core.Group.set with members= (NOT member_set — error 103 on DS1513+).
+        Requires X-SYNO-TOKEN header (handled by client.request) + admin session.
 
         Args:
             group: Group name.
@@ -124,10 +135,11 @@ class GroupManager:
         updated = [n for n in current_names if n != username]
         self._c.request(
             "SYNO.Core.Group",
-            "member_set",
+            "set",
             version=1,
             name=group,
             members=json.dumps(updated),
+            description="",
         )
 
     def list_members(self, group: str) -> list[dict]:

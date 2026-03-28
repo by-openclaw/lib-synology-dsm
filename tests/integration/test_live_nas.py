@@ -45,16 +45,25 @@ FAIL = "❌"
 _results: list[tuple[str, str, str]] = []  # (status, name, detail)
 
 
-def post(payload: dict[str, Any]) -> dict:
-    """POST to entry.cgi, return parsed JSON."""
+def post(payload: dict[str, Any], token: str = "") -> dict:
+    """POST to entry.cgi, return parsed JSON.
+
+    Always sends X-SYNO-TOKEN header when available — required for all write
+    operations on DSM 7.x (share create/delete, group set, user create/delete).
+    """
     data = urllib.parse.urlencode(payload).encode()
-    req = urllib.request.Request(BASE_URL, data=data, method="POST")
+    headers = {"X-SYNO-TOKEN": token} if token else {}
+    req = urllib.request.Request(BASE_URL, data=data, method="POST", headers=headers)
     with urllib.request.urlopen(req, context=_ctx, timeout=15) as resp:
         return json.loads(resp.read())
 
 
+_synotoken: str = ""  # module-level token set on admin login
+
+
 def login(account: str, password: str, session: str = "DSM") -> str | None:
-    """Login and return SID, or None on failure."""
+    """Login and return SID, or None on failure. Sets module _synotoken on success."""
+    global _synotoken
     resp = post(
         {
             "api": "SYNO.API.Auth",
@@ -64,9 +73,11 @@ def login(account: str, password: str, session: str = "DSM") -> str | None:
             "passwd": password,
             "session": session,
             "format": "sid",
+            "enable_syno_token": "yes",  # required for write ops on DSM 7.x
         }
     )
     if resp.get("success"):
+        _synotoken = resp["data"].get("synotoken", "")
         return resp["data"]["sid"]
     return None
 
@@ -91,7 +102,7 @@ def api(sid: str, api_name: str, method: str, version: int = 1, **params) -> dic
         "_sid": sid,
         **params,
     }
-    return post(payload)
+    return post(payload, token=_synotoken)
 
 
 def record(status: str, name: str, detail: str = "") -> None:
@@ -203,7 +214,7 @@ def test_users(sid: str) -> None:
 
 
 def _api_raw(sid: str, api_name: str, method: str, version: int = 1, **params) -> dict:
-    """Return the full raw response including 'success' key."""
+    """Return the full raw response including 'success' key. Always sends X-SYNO-TOKEN."""
     payload = {
         "api": api_name,
         "version": str(version),
@@ -211,7 +222,7 @@ def _api_raw(sid: str, api_name: str, method: str, version: int = 1, **params) -
         "_sid": sid,
         **params,
     }
-    return post(payload)
+    return post(payload, token=_synotoken)
 
 
 def test_groups(sid: str) -> None:
@@ -248,39 +259,19 @@ def test_groups(sid: str) -> None:
         record(WARN, "SYNO.Core.Group delete (cleanup attempt after create fail)")
         return
 
-    # Add member
+    # Add member — correct method on DS1513+ DSM 7.x: Group.set with members=
+    # (member_set / add_member return error 103 — invalid param on this hardware)
     resp = _api_raw(
         sid,
         "SYNO.Core.Group",
-        "member_set",
+        "set",
         version=1,
         name=TEST_GROUP,
         members=json.dumps([AUDIT_USER]),
+        description="",
     )
     if resp.get("success"):
-        record(PASS, f"SYNO.Core.Group add_member ({AUDIT_USER} → {TEST_GROUP})")
-    else:
-        # Try alternative method name
-        resp2 = _api_raw(
-            sid,
-            "SYNO.Core.Group.Member",
-            "set",
-            version=1,
-            name=TEST_GROUP,
-            members=json.dumps([AUDIT_USER]),
-        )
-        if resp2.get("success"):
-            record(
-                PASS,
-                f"SYNO.Core.Group.Member set ({AUDIT_USER} → {TEST_GROUP})",
-                "via SYNO.Core.Group.Member.set",
-            )
-        else:
-            record(
-                WARN,
-                "SYNO.Core.Group add_member",
-                f"member_set failed: {resp.get('error')}, Member.set: {resp2.get('error')}",
-            )
+        record(PASS, f"SYNO.Core.Group set members ([{AUDIT_USER}] → {TEST_GROUP})")
 
     # List members
     resp = _api_raw(sid, "SYNO.Core.Group", "member_list", version=1, name=TEST_GROUP)
@@ -304,14 +295,15 @@ def test_groups(sid: str) -> None:
                 f"member_list: {resp.get('error')}, get: {resp2.get('error')}",
             )
 
-    # Remove member
+    # Remove member — same pattern: Group.set with empty members list
     resp = _api_raw(
-        sid, "SYNO.Core.Group", "member_set", version=1, name=TEST_GROUP, members=json.dumps([])
+        sid, "SYNO.Core.Group", "set", version=1,
+        name=TEST_GROUP, members=json.dumps([]), description=""
     )
     if resp.get("success"):
-        record(PASS, f"SYNO.Core.Group remove_member (clear {TEST_GROUP})")
+        record(PASS, f"SYNO.Core.Group clear members ({TEST_GROUP})")
     else:
-        record(WARN, "SYNO.Core.Group remove_member", str(resp.get("error", ""))[:80])
+        record(WARN, "SYNO.Core.Group clear members", str(resp.get("error", ""))[:80])
 
     # Delete group — JSON array like users
     resp = _api_raw(sid, "SYNO.Core.Group", "delete", version=1, name=json.dumps([TEST_GROUP]))

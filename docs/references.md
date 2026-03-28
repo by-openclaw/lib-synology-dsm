@@ -19,20 +19,11 @@
 ## How to discover API versions on your NAS
 
 ```bash
-# List all available APIs and their version ranges
-curl -sk "https://NAS_IP:5001/webapi/entry.cgi?api=SYNO.API.Info&version=1&method=query&query=all" | python3 -m json.tool
+# List all available APIs and their version ranges (757 APIs on DS1513+ DSM 7.1.1)
+curl -sk "https://NAS_IP:5001/webapi/query.cgi?api=SYNO.API.Info&method=query&version=1&query=all" | python3 -m json.tool
 
-# Query specific API
-curl -sk "https://NAS_IP:5001/webapi/entry.cgi?api=SYNO.API.Info&version=1&method=query&query=SYNO.Core.User"
+# Query specific API version range
+curl -sk "https://NAS_IP:5001/webapi/query.cgi?api=SYNO.API.Info&method=query&version=1&query=SYNO.Core.User"
 ```
 
-## Useful API endpoints tested in this lib
-
-| API | Endpoint | Version | Methods |
-|---|---|---|---|
-| SYNO.API.Auth | entry.cgi | 7 | login, logout |
-| SYNO.Core.User | entry.cgi | 1 | list, create, set, delete |
-| SYNO.Core.Group | entry.cgi | 1 | list, create, set, delete, get, member_set |
-| SYNO.Core.Share | entry.cgi | 1 | list, create, set, delete |
-| SYNO.Core.Share.NFS | entry.cgi | 1 | set, get |
-| SYNO.FileStation.List | entry.cgi | 1-2 | list_share, list |
+For the full list of implemented vs planned API coverage, see [feature-coverage.md](./feature-coverage.md).

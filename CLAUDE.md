@@ -65,3 +65,23 @@ curl -sk "https://10.6.224.6:5001/webapi/query.cgi?api=SYNO.API.Info&method=quer
 ## References
 - Community API reference: https://github.com/pmilano1/synology-dsm-api
 - Feature coverage table: docs/feature-coverage.md
+
+---
+
+## Debugging DSM API Issues — F12 Pattern
+
+When an API operation fails (403, unexpected params) but works in the WebUI:
+
+1. Open DevTools (F12) on DSM WebUI
+2. Network tab → **Preserve log**
+3. Perform the operation in the UI
+4. Find POST to `entry.cgi` → **Payload tab**
+5. Copy exact params → replicate with curl
+
+This is always faster than guessing params. Rune has no browser access — My Lord provides the F12 payload when needed.
+
+### Key DSM quirks discovered this way
+- `SYNO.Core.Share.create` needs `shareinfo` JSON object + `name_org: ""`
+- All post-create ops use `SYNO.Entry.Request` compound batching
+- NFS uses `SYNO.Core.FileServ.NFS.SharePrivilege`, method=`save`/`load`, param=`share_name`
+- Auth needs `enable_syno_token=yes` → use returned `synotoken` as `X-SYNO-TOKEN` header

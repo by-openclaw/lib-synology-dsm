@@ -32,15 +32,28 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 
 | Component | Status |
 |---|---|
-| DSM user CRUD | ✅ implemented |
-| Shared folder management | ✅ implemented |
-| CI tests | ⏸ blocked |
+| DSM auth (v7 + SynoToken) | ✅ working |
+| User CRUD | ✅ working |
+| Group CRUD + membership | ✅ working |
+| Share CRUD | ✅ working |
+| NFS permissions | ✅ working |
+| Bash CRUD smoke test | ✅ `tests/integration/dsm-crud-test.sh` |
+| Python integration test | ✅ 17/19 (2 non-blocking warnings) |
+| CI tests | ⏸ blocked pending GitLab CE |
 | Published to registry | ⏸ blocked pending GitLab CE |
 
-## Blocker
+## Remaining warnings (non-blocking)
 
-`rune-api` DSM user needs **Application → DSM = Allow** set in Synology UI before integration tests can run.
-See RAID D-002.
+- `rune-audit` account: error 402 (disabled in DSM) — re-enable in Control Panel → User & Group
+- `FileStation.List /`: error 401 — rune-api lacks FileStation browse permission on root
+
+## API gotchas (read before touching share/group code)
+
+- ALL write ops require `X-SYNO-TOKEN` header — missing it returns 403
+- Share create: must use `shareinfo` JSON object, not flat params
+- Group members: use `SYNO.Core.Group.set` with `members=[]`, NOT `member_set` (error 103)
+- NFS rules: use `SYNO.Core.FileServ.NFS.SharePrivilege.save`, NOT `SYNO.Core.Share.NFS` (error 102)
+- User/Group delete: name must be a JSON array string: `'["name"]'`
 
 ---
 

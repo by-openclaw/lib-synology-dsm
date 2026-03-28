@@ -133,3 +133,16 @@ See [docs/lib-summary.md](docs/lib-summary.md) for the full CRUD capability tabl
 - Hardware: Synology DS1513+
 - DSM: 7.1.1-42962 Update 9
 - API auth: SYNO.API.Auth v7 (entry.cgi)
+
+---
+
+## AI Agent Context
+
+This repo includes onboarding files for AI agents (Claude Code, Codex, etc.):
+
+- [`AGENTS.md`](AGENTS.md) — generic agent onboarding: what this repo is, commit standards, API gotchas, what NOT to do
+- [`CLAUDE.md`](CLAUDE.md) — Claude Code specific: current state, known blockers, API quirks, credentials
+
+**Known blocker:** `rune-api` DSM user requires `Application → DSM = Allow` in Synology UI before live tests pass.
+
+**Agent:** Rune | **Owner:** @yboujraf | **Org:** [by-openclaw](https://github.com/by-openclaw)

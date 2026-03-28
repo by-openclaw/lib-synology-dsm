@@ -83,3 +83,14 @@ curl -sk "https://10.6.224.6:5001/webapi/query.cgi?api=SYNO.API.Info&method=quer
 ## References
 - Community API reference: https://github.com/pmilano1/synology-dsm-api
 - Feature coverage table: docs/feature-coverage.md
+
+---
+
+## Agent Onboarding (Rune / BY-SYSTEMS)
+
+- **AGENTS.md:** [`AGENTS.md`](AGENTS.md) — generic agent onboarding file (read by Codex, Claude Code, and all agents)
+- **Owner:** @yboujraf
+- **Org:** [by-openclaw](https://github.com/by-openclaw)
+- **Platform agent:** Rune (DevOps familiar)
+
+AGENTS.md contains: commit standards, what NOT to do, API gotchas summary, and GitHub link.

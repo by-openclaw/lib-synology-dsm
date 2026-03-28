@@ -297,8 +297,13 @@ def test_groups(sid: str) -> None:
 
     # Remove member — same pattern: Group.set with empty members list
     resp = _api_raw(
-        sid, "SYNO.Core.Group", "set", version=1,
-        name=TEST_GROUP, members=json.dumps([]), description=""
+        sid,
+        "SYNO.Core.Group",
+        "set",
+        version=1,
+        name=TEST_GROUP,
+        members=json.dumps([]),
+        description="",
     )
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Group clear members ({TEST_GROUP})")
@@ -336,12 +341,14 @@ def test_shares(sid: str) -> None:
     # Create share — must use shareinfo JSON object (not flat params).
     # Flat params (vol_path, desc) return 403 regardless of permissions.
     # Confirmed via browser DevTools on DSM WebUI.
-    shareinfo = json.dumps({
-        "name": TEST_SHARE,
-        "vol_path": "/volume1",
-        "desc": "Rune integration test — auto-deleted",
-        "name_org": "",
-    })
+    shareinfo = json.dumps(
+        {
+            "name": TEST_SHARE,
+            "vol_path": "/volume1",
+            "desc": "Rune integration test — auto-deleted",
+            "name_org": "",
+        }
+    )
     resp = _api_raw(
         sid,
         "SYNO.Core.Share",
@@ -355,21 +362,31 @@ def test_shares(sid: str) -> None:
 
         # Set NFS permission — correct API on DS1513+ DSM 7.x:
         # SYNO.Core.FileServ.NFS.SharePrivilege.save (not SYNO.Core.Share.NFS which returns 102)
-        nfs_rule = json.dumps([{
-            "client": "10.6.224.0/20",
-            "privilege": "rw",
-            "root_squash": "root",
-            "async": True,
-            "insecure": False,
-            "crossmnt": False,
-            "security_flavor": {
-                "sys": True, "kerberos": False,
-                "kerberos_integrity": False, "kerberos_privacy": False,
-            },
-        }])
+        nfs_rule = json.dumps(
+            [
+                {
+                    "client": "10.6.224.0/20",
+                    "privilege": "rw",
+                    "root_squash": "root",
+                    "async": True,
+                    "insecure": False,
+                    "crossmnt": False,
+                    "security_flavor": {
+                        "sys": True,
+                        "kerberos": False,
+                        "kerberos_integrity": False,
+                        "kerberos_privacy": False,
+                    },
+                }
+            ]
+        )
         resp_nfs = _api_raw(
-            sid, "SYNO.Core.FileServ.NFS.SharePrivilege", "save",
-            version=1, share_name=TEST_SHARE, rule=nfs_rule,
+            sid,
+            "SYNO.Core.FileServ.NFS.SharePrivilege",
+            "save",
+            version=1,
+            share_name=TEST_SHARE,
+            rule=nfs_rule,
         )
         if resp_nfs.get("success"):
             record(PASS, f"NFS SharePrivilege save ({TEST_SHARE} → 10.6.224.0/20 rw)")

@@ -119,7 +119,6 @@ class ShareManager:
             "encryption": False,
             "enc_passwd": "",
         }
-        shareinfo_create = json.dumps({**shareinfo_obj, "name_org": ""})
 
         # Step 1: Create
         create_result = self.create(name, volume_path=volume_path, description=description)

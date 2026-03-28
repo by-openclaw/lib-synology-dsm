@@ -87,66 +87,114 @@ class ShareManager:
         name: str,
         volume_path: str = "/volume1",
         description: str = "",
-        owner: str = "rune-api",
+        owner_user: str | None = None,
+        owner_group: str | None = None,
+        nfs_client: str | None = None,
+        nfs_rw: bool = True,
     ) -> dict:
-        """Create a shared folder and set owner permissions in one compound call.
+        """Create a shared folder with user/group permissions and optional NFS rule.
 
-        Uses SYNO.Entry.Request to batch Permission.set + Share.set after create.
-        This mirrors the exact sequence the DSM WebUI performs.
+        Mirrors the exact sequence the DSM WebUI performs (confirmed via F12 DevTools):
+        1. Create share (shareinfo JSON with name_org)
+        2. Set user permissions via compound request
+        3. Set group permissions via compound request (if owner_group provided)
+        4. Set NFS rule via compound request (if nfs_client provided)
 
         Args:
             name: Share name.
-            volume_path: Volume mount point.
+            volume_path: Volume mount point (e.g. '/volume1').
             description: Human-readable description.
-            owner: Username to grant RW access.
+            owner_user: Local DSM username to grant RW access.
+            owner_group: Local DSM group to grant RW access.
+            nfs_client: NFS client hostname or IP to grant RW access.
+            nfs_rw: True for read-write NFS, False for read-only.
 
         Returns:
-            Dict with keys: create (share create result), permissions (compound result).
+            Dict with keys: create, user_permissions, group_permissions, nfs.
         """
+        shareinfo_obj = {
+            "name": name,
+            "vol_path": volume_path,
+            "desc": description,
+            "encryption": False,
+            "enc_passwd": "",
+        }
+        shareinfo_create = json.dumps({**shareinfo_obj, "name_org": ""})
+
         # Step 1: Create
         create_result = self.create(name, volume_path=volume_path, description=description)
 
-        # Step 2: Set permissions via compound request
-        compound = json.dumps([
-            {
-                "api": "SYNO.Core.Share.Permission",
-                "method": "set",
-                "version": 1,
-                "name": name,
-                "user_group_type": "local_user",
-                "permissions": [
-                    {
-                        "name": owner,
-                        "is_readonly": False,
-                        "is_writable": True,
-                        "is_deny": False,
-                        "is_custom": False,
-                    }
-                ],
-            },
-            {
-                "api": "SYNO.Core.Share",
-                "method": "set",
-                "version": 1,
-                "name": name,
-                "shareinfo": json.dumps({
-                    "name": name,
-                    "vol_path": volume_path,
-                    "desc": description,
-                    "encryption": False,
-                    "enc_passwd": "",
-                }),
-            },
-        ])
-        perm_result = self._c.request(
-            "SYNO.Entry.Request",
-            "request",
-            version=1,
-            stop_when_error="true",
-            mode="sequential",
-            compound=compound,
-        )
-        return {"create": create_result, "permissions": perm_result}
+        result = {"create": create_result, "user_permissions": None,
+                  "group_permissions": None, "nfs": None}
+
+        # Step 2: User permissions
+        if owner_user:
+            compound = json.dumps([
+                {
+                    "api": "SYNO.Core.Share.Permission", "method": "set", "version": 1,
+                    "name": name, "user_group_type": "local_user",
+                    "permissions": [{"name": owner_user, "is_readonly": False,
+                                     "is_writable": True, "is_deny": False, "is_custom": False}],
+                },
+                {
+                    "api": "SYNO.Core.Share", "method": "set", "version": 1,
+                    "name": name, "shareinfo": shareinfo_obj,
+                },
+            ])
+            result["user_permissions"] = self._c.request(
+                "SYNO.Entry.Request", "request", version=1,
+                stop_when_error="true", mode="sequential", compound=compound,
+            )
+
+        # Step 3: Group permissions
+        if owner_group:
+            compound = json.dumps([
+                {
+                    "api": "SYNO.Core.Share.Permission", "method": "set", "version": 1,
+                    "name": name, "user_group_type": "local_group",
+                    "permissions": [{"name": owner_group, "is_readonly": False,
+                                     "is_writable": True, "is_deny": False, "is_custom": False}],
+                },
+                {
+                    "api": "SYNO.Core.Share", "method": "set", "version": 1,
+                    "name": name, "shareinfo": shareinfo_obj,
+                },
+            ])
+            result["group_permissions"] = self._c.request(
+                "SYNO.Entry.Request", "request", version=1,
+                stop_when_error="true", mode="sequential", compound=compound,
+            )
+
+        # Step 4: NFS rule
+        if nfs_client:
+            nfs_rule = [{
+                "client": nfs_client,
+                "privilege": "rw" if nfs_rw else "ro",
+                "root_squash": "root",
+                "async": True,
+                "insecure": False,
+                "crossmnt": False,
+                "security_flavor": {
+                    "kerberos": False, "kerberos_integrity": False,
+                    "kerberos_privacy": False, "sys": True,
+                },
+            }]
+            compound = json.dumps([
+                {
+                    "api": "SYNO.Core.FileServ.NFS.SharePrivilege", "method": "save",
+                    "version": 1, "share_name": name, "rule": nfs_rule,
+                },
+                {
+                    "api": "SYNO.Core.Share", "method": "set", "version": 1,
+                    "name": name, "shareinfo": shareinfo_obj,
+                },
+            ])
+            result["nfs"] = self._c.request(
+                "SYNO.Entry.Request", "request", version=1,
+                stop_when_error="true", mode="sequential", compound=compound,
+            )
+
+        return result
 
     def update(self, name: str, **kwargs: object) -> None:
         """Update shared folder attributes.
@@ -228,7 +276,7 @@ class ShareManager:
             "SYNO.Core.FileServ.NFS.SharePrivilege",
             "load",
             version=1,
-            sharename=share,
+            share_name=share,
         )
         return data.get("rule", [])
 
@@ -274,7 +322,7 @@ class ShareManager:
             "SYNO.Core.FileServ.NFS.SharePrivilege",
             "save",
             version=1,
-            sharename=share,
+            share_name=share,
             rule=json.dumps(rule),
         )
 

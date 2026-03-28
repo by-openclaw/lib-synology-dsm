@@ -24,13 +24,63 @@ class UserManager:
         self._c = client
 
     def list(self) -> list[dict]:
-        """List all users.
+        """List all users (names only).
 
         Returns a list of dicts with at minimum: name.
-        Pass additional=['description','email','expired','2fa_status'] for richer output.
+        Use list_detailed() for full user records.
         """
         data = self._c.request("SYNO.Core.User", "list", version=1)
         return data.get("users", [])
+
+    def list_detailed(self) -> list[dict]:
+        """List all users with full details.
+
+        Returns fields: name, description, email, expired, 2fa_status.
+
+        Normalized output — compatible with NetBox/Authentik user schema:
+            - name: str
+            - email: str
+            - description: str
+            - expired: str — "normal" | "expired" | "never" 
+            - 2fa_status: bool — True if 2FA is enabled
+            - enabled: bool — derived from expired field (True = not expired)
+
+        Returns:
+            List of normalized user dicts.
+        """
+        data = self._c.request(
+            "SYNO.Core.User", "list", version=1,
+            additional=json.dumps(["description", "email", "expired", "2fa_status"]),
+        )
+        users = data.get("users", [])
+        # Normalize for NetBox/Authentik compatibility
+        result = []
+        for u in users:
+            result.append({
+                "name": u.get("name", ""),
+                "email": u.get("email", ""),
+                "description": u.get("description", ""),
+                "expired": u.get("expired", "normal"),
+                "2fa_enabled": u.get("2fa_status", False),
+                # expired values: "normal"=active, "now"=expires today, "expired"=disabled
+                "enabled": u.get("expired", "normal") not in ("expired", "true"),
+            })
+        return result
+
+    def get(self, name: str) -> dict | None:
+        """Get a single user with full details.
+
+        Args:
+            name: Username to retrieve.
+
+        Returns:
+            Normalized user dict, or None if not found.
+        """
+        users = self.list_detailed()
+        for u in users:
+            if u["name"] == name:
+                return u
+        return None
 
     def create(self, name: str, password: str, email: str = "", description: str = "") -> dict:
         """Create a user.

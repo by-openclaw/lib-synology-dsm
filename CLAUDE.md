@@ -8,14 +8,14 @@ Used by: platform-setup runbooks, future ansible-collection-synology, NetBox web
 ```
 src/synology_dsm/
   __init__.py          ← exports all public classes + version
-  client.py            ← DSMClient (session management, auth v7)
+  client.py            ← DSMClient (session management, auth v6 + synotoken)
   credentials.py       ← EnvCredentialProvider, VaultCredentialProvider, get_credentials()
   users.py             ← UserManager (CRUD + ensure)
   groups.py            ← GroupManager (CRUD + membership + ensure)
-  shares.py            ← ShareManager (CRUD + NFS + ensure)
+  shares.py            ← ShareManager (CRUD + NFS + permissions + ensure)
 docs/
-  api-versions.md      ← tested API version table
-  api-reference.md     ← method reference
+  api-versions.md      ← tested API version table (ground truth)
+  api-reference.md     ← method reference with confirmed working signatures
   credentials.md       ← credential provider guide
   feature-coverage.md  ← implemented vs planned features table (primary reference)
   references.md        ← API docs + community links
@@ -23,21 +23,42 @@ tests/
   test_client.py       ← unit tests
   integration/
     test_live_nas.py   ← live NAS tests (urllib only, no httpx)
+    test_full_crud.sh  ← comprehensive bash CRUD test (auth/user/group/share/NFS)
 ```
 
 ## Key decisions
-- Auth: SYNO.API.Auth v7 via entry.cgi (NOT auth.cgi)
+- Auth: SYNO.API.Auth v6 via entry.cgi (NOT auth.cgi), with `enable_syno_token=yes`
+- SynoToken: all write requests require `X-SYNO-TOKEN: <synotoken>` header
 - Session: always "DSM" for admin ops
 - Delete ops: DSM requires JSON array format: `name='["value"]'`
 - ensure(state=present/absent): idempotent Ansible-style pattern on all managers
 - Vault-first credentials: production uses VaultCredentialProvider
 - httpx NOT available on Rune's host — integration tests use urllib only
+- Compound requests (SYNO.Entry.Request): required for share permissions + NFS (see below)
+
+## Compound request pattern (confirmed working)
+Permission and NFS writes use batched compound calls:
+1. The permission/NFS operation
+2. `SYNO.Core.Share.set` with full `shareinfo` to finalize
+
+Always check `data.has_fail == false` (not top-level `success`) for compound call results.
+
+## Share create — required format (DSM 7.x)
+`shareinfo` must be a JSON object with `name_org` field:
+```json
+{"name": "SHARENAME", "vol_path": "/volume1", "desc": "", "name_org": ""}
+```
+Omitting `name_org` returns HTTP 403.
+
+## NFS API details
+- API: `SYNO.Core.FileServ.NFS.SharePrivilege`
+- Set: `method=save`, param: `share_name` (NOT `sharename` — causes error 2301)
+- Get: `method=load`, param: `share_name`
 
 ## Test NAS
 - Host: 10.6.224.6:5001 (HTTPS)
-- User: rune-api / YOUR_PASSWORD (session=DSM)
+- User: rune-api / YOUR_PASSWORD (session=DSM, in `administrators` group)
 - Credentials file: /home/by-systems/.openclaw/workspace/infra/secrets/.synology.env
-- rune-audit: DELETED (redundant — 2026-03-27)
 
 ## rune-api group membership — decision (2026-03-27)
 - **rune-api is in `administrators` group** — required for share CRUD + NFS management
@@ -45,16 +66,13 @@ tests/
 - NAS is internal-only (no QuickConnect, firewall being hardened per SYN-001)
 - Accepted risk for PoC phase; revisit when Vault + least-privilege audit is done
 - **Future rename:** rune-api → svc-rune-dsm (tracked in platform-setup#56)
-  - Keep in administrators group after rename — same rationale applies
-  - DSM does not support renaming users; requires delete + recreate
 
 ## Pending items
-- Share CRUD live test: pending confirmation rune-api is added to administrators in DSM UI
-  - Control Panel → User & Group → Group → administrators → Edit → Members → Add rune-api
 - Rename rune-api → svc-rune-dsm: platform-setup#56 (low priority, before prod use)
 - SSH pubkey sync via User.Home: explore SYNO.Core.User.Home API for authorized_keys upload
+- Group membership: `SYNO.Core.Group.member_set` returns error 103 on DSM 7.1.1 (method not implemented) — investigate alternative or version upgrade path
 
-## Current version: 0.4.0
+## Current version: 0.5.0
 
 ## API discovery
 ```bash
@@ -65,23 +83,3 @@ curl -sk "https://10.6.224.6:5001/webapi/query.cgi?api=SYNO.API.Info&method=quer
 ## References
 - Community API reference: https://github.com/pmilano1/synology-dsm-api
 - Feature coverage table: docs/feature-coverage.md
-
----
-
-## Debugging DSM API Issues — F12 Pattern
-
-When an API operation fails (403, unexpected params) but works in the WebUI:
-
-1. Open DevTools (F12) on DSM WebUI
-2. Network tab → **Preserve log**
-3. Perform the operation in the UI
-4. Find POST to `entry.cgi` → **Payload tab**
-5. Copy exact params → replicate with curl
-
-This is always faster than guessing params. Rune has no browser access — My Lord provides the F12 payload when needed.
-
-### Key DSM quirks discovered this way
-- `SYNO.Core.Share.create` needs `shareinfo` JSON object + `name_org: ""`
-- All post-create ops use `SYNO.Entry.Request` compound batching
-- NFS uses `SYNO.Core.FileServ.NFS.SharePrivilege`, method=`save`/`load`, param=`share_name`
-- Auth needs `enable_syno_token=yes` → use returned `synotoken` as `X-SYNO-TOKEN` header

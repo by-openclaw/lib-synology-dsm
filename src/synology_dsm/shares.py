@@ -2,23 +2,20 @@
 
 API: SYNO.Core.Share (version 1, entry.cgi)
 NFS: SYNO.Core.Share.NFS (version 1, entry.cgi)
+Permissions: SYNO.Core.Share.Permission (version 1, entry.cgi)
+Compound: SYNO.Entry.Request (version 1, entry.cgi)
 
 Verified against DSM 7.1.1-42962 Update 9 (nas01).
 
-KNOWN LIMITATION — Share create/delete:
-    SYNO.Core.Share create and delete return HTTP 403 for ALL non-built-in-admin
-    accounts, even when the user is in the 'administrators' group with DSM + FileStation
-    apps enabled and a valid SynoToken.
+SHARE CREATE — REQUIRED FORMAT:
+    DSM 7.x requires create params wrapped in a 'shareinfo' JSON object,
+    NOT as flat POST params. Flat params return 403 regardless of permissions.
 
-    Confirmed via exhaustive testing on DSM 7.1.1-42962 Update 9 (DS1513+):
-    - Same 403 from curl on the local machine (not a network/code issue)
-    - Built-in 'admin' account works but is disabled for security hardening
-    - DSM WebUI uses an internal privileged backend not exposed via the web API
+    Correct shape (discovered via F12 DevTools on DSM WebUI):
+        shareinfo={"name":"SHARENAME","vol_path":"/volume1","desc":"","name_org":""}
 
-    Workaround: Create/delete shared folders manually in DSM Control Panel.
-    All other operations (list, update, NFS rules get) work correctly.
-
-    list() and update() work with any authenticated admin-group user.
+    After create, permissions must be set separately via SYNO.Entry.Request
+    compound call (batching Share.Permission.set + Share.set).
 
 NFS Permission Notes:
     SYNO.Core.Share.NFS.set replaces the entire NFS rule list for a share.
@@ -46,10 +43,9 @@ class ShareManager:
             additional: Optional list of extra fields to include.
                 Common values: 'share_quota', 'valid_users', 'hidden',
                 'is_aclmode', 'encryption'.
-                Defaults to empty (basic info only).
 
         Returns:
-            List of share dicts with at minimum: name, vol_path, desc, encryption, hidden.
+            List of share dicts with at minimum: name, vol_path, desc.
         """
         extra = json.dumps(additional or [])
         data = self._c.request("SYNO.Core.Share", "list", version=1, additional=extra)
@@ -58,42 +54,113 @@ class ShareManager:
     def create(self, name: str, volume_path: str = "/volume1", description: str = "") -> dict:
         """Create a shared folder.
 
-        Requires the API user to be in the 'administrators' group.
-        Returns HTTP 403 / DSM error if the account lacks that privilege.
+        Uses the 'shareinfo' JSON object format required by DSM 7.x.
+        Flat POST params return 403 — this is the correct shape discovered via
+        browser DevTools (F12) on the DSM WebUI.
+
+        Requires: administrators group membership + DSM + FileStation app enabled.
 
         Args:
             name: Share name (alphanumeric, hyphens, underscores).
             volume_path: Volume mount point (e.g. '/volume1').
-            description: Human-readable description. Always set — missing descriptions
-                are flagged as a security gap during audits.
+            description: Human-readable description. Always set.
 
         Returns:
             Dict with share info from the API.
         """
+        shareinfo = json.dumps({
+            "name": name,
+            "vol_path": volume_path,
+            "desc": description,
+            "name_org": "",
+        })
         return self._c.request(
             "SYNO.Core.Share",
             "create",
             version=1,
             name=name,
-            vol_path=volume_path,
-            desc=description,
-            enable_recycle_bin="false",
-            encryption=0,
+            shareinfo=shareinfo,
         )
+
+    def create_with_permissions(
+        self,
+        name: str,
+        volume_path: str = "/volume1",
+        description: str = "",
+        owner: str = "rune-api",
+    ) -> dict:
+        """Create a shared folder and set owner permissions in one compound call.
+
+        Uses SYNO.Entry.Request to batch Permission.set + Share.set after create.
+        This mirrors the exact sequence the DSM WebUI performs.
+
+        Args:
+            name: Share name.
+            volume_path: Volume mount point.
+            description: Human-readable description.
+            owner: Username to grant RW access.
+
+        Returns:
+            Dict with keys: create (share create result), permissions (compound result).
+        """
+        # Step 1: Create
+        create_result = self.create(name, volume_path=volume_path, description=description)
+
+        # Step 2: Set permissions via compound request
+        compound = json.dumps([
+            {
+                "api": "SYNO.Core.Share.Permission",
+                "method": "set",
+                "version": 1,
+                "name": name,
+                "user_group_type": "local_user",
+                "permissions": [
+                    {
+                        "name": owner,
+                        "is_readonly": False,
+                        "is_writable": True,
+                        "is_deny": False,
+                        "is_custom": False,
+                    }
+                ],
+            },
+            {
+                "api": "SYNO.Core.Share",
+                "method": "set",
+                "version": 1,
+                "name": name,
+                "shareinfo": json.dumps({
+                    "name": name,
+                    "vol_path": volume_path,
+                    "desc": description,
+                    "encryption": False,
+                    "enc_passwd": "",
+                }),
+            },
+        ])
+        perm_result = self._c.request(
+            "SYNO.Entry.Request",
+            "request",
+            version=1,
+            stop_when_error="true",
+            mode="sequential",
+            compound=compound,
+        )
+        return {"create": create_result, "permissions": perm_result}
 
     def update(self, name: str, **kwargs: object) -> None:
         """Update shared folder attributes.
 
-        Requires the API user to be in the 'administrators' group.
+        Requires administrators group membership.
 
         Updatable fields (verified against DSM 7.1.1):
             desc (str) — description
-            hidden (bool as string "true"/"false")
+            hidden (bool as string)
             enable_recycle_bin (bool as string)
 
         Args:
             name: Share name to update.
-            **kwargs: Fields to update (use 'desc' not 'description' for shares).
+            **kwargs: Fields to update.
 
         Example:
             mgr.update("by-gitlab", desc="GitLab storage — production data")
@@ -103,12 +170,47 @@ class ShareManager:
     def delete(self, name: str) -> None:
         """Delete a shared folder.
 
-        Requires the API user to be in the 'administrators' group.
+        Requires administrators group membership.
 
         Args:
             name: Share name to delete.
         """
         self._c.request("SYNO.Core.Share", "delete", version=1, name=name)
+
+    def set_permission(
+        self,
+        share: str,
+        username: str,
+        writable: bool = True,
+        readonly: bool = False,
+        deny: bool = False,
+    ) -> dict:
+        """Set user permission on a shared folder.
+
+        Args:
+            share: Share name.
+            username: Local DSM username.
+            writable: Grant read-write access.
+            readonly: Grant read-only access.
+            deny: Explicitly deny access.
+
+        Returns:
+            API response dict.
+        """
+        return self._c.request(
+            "SYNO.Core.Share.Permission",
+            "set",
+            version=1,
+            name=share,
+            user_group_type="local_user",
+            permissions=json.dumps([{
+                "name": username,
+                "is_readonly": readonly,
+                "is_writable": writable,
+                "is_deny": deny,
+                "is_custom": False,
+            }]),
+        )
 
     def set_nfs_permission(
         self,
@@ -123,23 +225,19 @@ class ShareManager:
         WARNING: This REPLACES the entire NFS rule list for the share.
         Use get_nfs_rules() first if you need to preserve existing rules.
 
-        Requires admin privileges.
-
         Args:
             share: Share name.
-            hostname: Hostname or CIDR (e.g. '10.6.0.0/20' or 'trustedhost').
+            hostname: Hostname or CIDR (e.g. '10.6.0.0/20').
             rw: True for read-write, False for read-only.
-            squash: NFS squash mode. Options: 'no_squash', 'root_squash',
-                'all_squash'. Default: 'no_squash'.
-            async_io: Enable async I/O (better performance, slight durability trade-off).
+            squash: NFS squash mode: 'no_squash', 'root_squash', 'all_squash'.
+            async_io: Enable async I/O.
 
         Returns:
             API response dict.
         """
-        privilege = "rw" if rw else "ro"
         nfs_rule = {
             "hostname": hostname,
-            "privilege": privilege,
+            "privilege": "rw" if rw else "ro",
             "squash": squash,
             "async": async_io,
             "anonuid": -2,
@@ -174,11 +272,8 @@ class ShareManager:
     ) -> dict:
         """Ensure a shared folder exists or is absent — idempotent.
 
-        Mirrors Ansible state semantics:
-            state="present" → create if not exists, update description if exists
-            state="absent"  → delete if exists, no-op if already gone
-
-        Requires the API user to be in the 'administrators' group for create/delete/update.
+        state="present" → create if not exists, update description if exists
+        state="absent"  → delete if exists, no-op if already gone
 
         Args:
             name: Share name.
@@ -187,7 +282,7 @@ class ShareManager:
             description: Human-readable description.
 
         Returns:
-            Dict with keys: changed (bool), action (str: created/updated/deleted/noop)
+            Dict with keys: changed (bool), action (str).
         """
         existing = {s["name"] for s in self.list()}
 

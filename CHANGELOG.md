@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-28
+
+### Fixed
+- `shares.py`: Share create now uses `shareinfo` JSON object with `name_org` field (DSM 7.x requirement)
+- `shares.py`: NFS API corrected to `SYNO.Core.FileServ.NFS.SharePrivilege` with `share_name` param
+- `client.py`: Auth now uses `enable_syno_token=yes` and sends `X-SYNO-TOKEN` header on all write requests
+
+### Added
+- `shares.py`: `create_with_permissions()` — full share lifecycle in one call (create + user perms + group perms + NFS)
+- `shares.py`: `set_permission()` — user/group ACL on shares
+- `tests/integration/test_full_crud.sh` — comprehensive bash test script for all CRUD operations
+
 ## [0.4.0] - 2026-03-27
 
 ### Added

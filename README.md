@@ -34,6 +34,8 @@ curl -sk "https://NAS_IP:5001/webapi/entry.cgi" \
 
 > **Confirmed:** Tested on DS1513+ DSM 7.1.1. Without `administrators` group, share create/delete/NFS all fail with error 119 even when DSM + FileStation apps are explicitly allowed.
 
+> See [docs/hardening.md](docs/hardening.md) for the full hardening guide including IP restrictions, password policy, and Log Center audit setup.
+
 ## Usage
 
 ```python
@@ -98,6 +100,10 @@ with DSMClient("10.6.x.x") as client:
 ```
 
 See [docs/credentials.md](docs/credentials.md) for full details.
+
+## Capability Summary
+
+See [docs/lib-summary.md](docs/lib-summary.md) for the full CRUD capability table, Ansible compatibility guide, and credential provider usage.
 
 ## Design
 

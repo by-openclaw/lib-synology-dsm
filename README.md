@@ -2,6 +2,38 @@
 
 Python library for Synology DSM API — idempotent operations for shared folders, NFS permissions, users, and groups.
 
+## DSM Account Requirements
+
+Before using this library, the API account must be correctly configured in DSM.
+
+### Required groups
+| Group | Why |
+|---|---|
+| `administrators` | **Required** — without this, all write operations return error 119 (permission denied). Apps alone are not sufficient. |
+| `users` | Required — default group, allows basic authentication |
+
+### Required application permissions (Control Panel → User → Edit → Applications)
+| Application | Permission |
+|---|---|
+| DSM | **Allow** — required for authentication and admin API access |
+| File Station | **Allow** — required for file operations |
+| All others | Use group default (deny by default) |
+
+### Setup in DSM UI
+1. Control Panel → User & Group → Create user (e.g. `svc-rune-dsm`)
+2. **User Groups tab** → check `administrators` and `users`
+3. **Applications tab** → set DSM = Allow, File Station = Allow
+4. Save
+
+### Verification
+```bash
+# Login and verify — should return success=true with a real synotoken (not "--------")
+curl -sk "https://NAS_IP:5001/webapi/entry.cgi" \
+  --data "api=SYNO.API.Auth&version=6&method=login&account=YOUR_USER&passwd=YOUR_PASS&session=DSM&format=sid&enable_syno_token=yes"
+```
+
+> **Confirmed:** Tested on DS1513+ DSM 7.1.1. Without `administrators` group, share create/delete/NFS all fail with error 119 even when DSM + FileStation apps are explicitly allowed.
+
 ## Usage
 
 ```python

@@ -5,6 +5,22 @@ Updated as features are added.
 
 **Legend:** ✅ Implemented | 🚧 Planned | ❌ Not supported | ➖ N/A
 
+## ⚠️ Account Permission Requirements
+
+> **Confirmed on DS1513+ DSM 7.1.1** (tested with and without admin group — 2026-03-28)
+
+The API account **must** be in the `administrators` group. Apps alone are not sufficient:
+
+| Config | Auth | Read | Write (shares/NFS/users) |
+|---|---|---|---|
+| Apps only (no group) | ❌ error 402 | ❌ | ❌ |
+| `users` group only | ✅ | ✅ partial | ❌ error 119 |
+| `administrators` + `users` | ✅ | ✅ | ✅ |
+
+**Required DSM user setup:**
+- Groups: `administrators` + `users`
+- Applications: DSM = Allow, File Station = Allow
+
 ## User Management (`SYNO.Core.User`)
 
 | Feature | Method | Status | Notes |

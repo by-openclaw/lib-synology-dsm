@@ -41,7 +41,7 @@ class UserManager:
             - name: str
             - email: str
             - description: str
-            - expired: str — "normal" | "expired" | "never" 
+            - expired: str — "normal" | "expired" | "never"
             - 2fa_status: bool — True if 2FA is enabled
             - enabled: bool — derived from expired field (True = not expired)
 
@@ -49,22 +49,26 @@ class UserManager:
             List of normalized user dicts.
         """
         data = self._c.request(
-            "SYNO.Core.User", "list", version=1,
+            "SYNO.Core.User",
+            "list",
+            version=1,
             additional=json.dumps(["description", "email", "expired", "2fa_status"]),
         )
         users = data.get("users", [])
         # Normalize for NetBox/Authentik compatibility
         result = []
         for u in users:
-            result.append({
-                "name": u.get("name", ""),
-                "email": u.get("email", ""),
-                "description": u.get("description", ""),
-                "expired": u.get("expired", "normal"),
-                "2fa_enabled": u.get("2fa_status", False),
-                # expired values: "normal"=active, "now"=expires today, "expired"=disabled
-                "enabled": u.get("expired", "normal") not in ("expired", "true"),
-            })
+            result.append(
+                {
+                    "name": u.get("name", ""),
+                    "email": u.get("email", ""),
+                    "description": u.get("description", ""),
+                    "expired": u.get("expired", "normal"),
+                    "2fa_enabled": u.get("2fa_status", False),
+                    # expired values: "normal"=active, "now"=expires today, "expired"=disabled
+                    "enabled": u.get("expired", "normal") not in ("expired", "true"),
+                }
+            )
         return result
 
     def get(self, name: str) -> dict | None:

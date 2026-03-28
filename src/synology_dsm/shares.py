@@ -68,12 +68,14 @@ class ShareManager:
         Returns:
             Dict with share info from the API.
         """
-        shareinfo = json.dumps({
-            "name": name,
-            "vol_path": volume_path,
-            "desc": description,
-            "name_org": "",
-        })
+        shareinfo = json.dumps(
+            {
+                "name": name,
+                "vol_path": volume_path,
+                "desc": description,
+                "name_org": "",
+            }
+        )
         return self._c.request(
             "SYNO.Core.Share",
             "create",
@@ -123,74 +125,132 @@ class ShareManager:
         # Step 1: Create
         create_result = self.create(name, volume_path=volume_path, description=description)
 
-        result = {"create": create_result, "user_permissions": None,
-                  "group_permissions": None, "nfs": None}
+        result = {
+            "create": create_result,
+            "user_permissions": None,
+            "group_permissions": None,
+            "nfs": None,
+        }
 
         # Step 2: User permissions
         if owner_user:
-            compound = json.dumps([
-                {
-                    "api": "SYNO.Core.Share.Permission", "method": "set", "version": 1,
-                    "name": name, "user_group_type": "local_user",
-                    "permissions": [{"name": owner_user, "is_readonly": False,
-                                     "is_writable": True, "is_deny": False, "is_custom": False}],
-                },
-                {
-                    "api": "SYNO.Core.Share", "method": "set", "version": 1,
-                    "name": name, "shareinfo": shareinfo_obj,
-                },
-            ])
+            compound = json.dumps(
+                [
+                    {
+                        "api": "SYNO.Core.Share.Permission",
+                        "method": "set",
+                        "version": 1,
+                        "name": name,
+                        "user_group_type": "local_user",
+                        "permissions": [
+                            {
+                                "name": owner_user,
+                                "is_readonly": False,
+                                "is_writable": True,
+                                "is_deny": False,
+                                "is_custom": False,
+                            }
+                        ],
+                    },
+                    {
+                        "api": "SYNO.Core.Share",
+                        "method": "set",
+                        "version": 1,
+                        "name": name,
+                        "shareinfo": shareinfo_obj,
+                    },
+                ]
+            )
             result["user_permissions"] = self._c.request(
-                "SYNO.Entry.Request", "request", version=1,
-                stop_when_error="true", mode="sequential", compound=compound,
+                "SYNO.Entry.Request",
+                "request",
+                version=1,
+                stop_when_error="true",
+                mode="sequential",
+                compound=compound,
             )
 
         # Step 3: Group permissions
         if owner_group:
-            compound = json.dumps([
-                {
-                    "api": "SYNO.Core.Share.Permission", "method": "set", "version": 1,
-                    "name": name, "user_group_type": "local_group",
-                    "permissions": [{"name": owner_group, "is_readonly": False,
-                                     "is_writable": True, "is_deny": False, "is_custom": False}],
-                },
-                {
-                    "api": "SYNO.Core.Share", "method": "set", "version": 1,
-                    "name": name, "shareinfo": shareinfo_obj,
-                },
-            ])
+            compound = json.dumps(
+                [
+                    {
+                        "api": "SYNO.Core.Share.Permission",
+                        "method": "set",
+                        "version": 1,
+                        "name": name,
+                        "user_group_type": "local_group",
+                        "permissions": [
+                            {
+                                "name": owner_group,
+                                "is_readonly": False,
+                                "is_writable": True,
+                                "is_deny": False,
+                                "is_custom": False,
+                            }
+                        ],
+                    },
+                    {
+                        "api": "SYNO.Core.Share",
+                        "method": "set",
+                        "version": 1,
+                        "name": name,
+                        "shareinfo": shareinfo_obj,
+                    },
+                ]
+            )
             result["group_permissions"] = self._c.request(
-                "SYNO.Entry.Request", "request", version=1,
-                stop_when_error="true", mode="sequential", compound=compound,
+                "SYNO.Entry.Request",
+                "request",
+                version=1,
+                stop_when_error="true",
+                mode="sequential",
+                compound=compound,
             )
 
         # Step 4: NFS rule
         if nfs_client:
-            nfs_rule = [{
-                "client": nfs_client,
-                "privilege": "rw" if nfs_rw else "ro",
-                "root_squash": "root",
-                "async": True,
-                "insecure": False,
-                "crossmnt": False,
-                "security_flavor": {
-                    "kerberos": False, "kerberos_integrity": False,
-                    "kerberos_privacy": False, "sys": True,
-                },
-            }]
-            compound = json.dumps([
+            nfs_rule = [
                 {
-                    "api": "SYNO.Core.FileServ.NFS.SharePrivilege", "method": "save",
-                    "version": 1, "share_name": name, "rule": nfs_rule,
-                },
-                {
-                    "api": "SYNO.Core.Share", "method": "set", "version": 1,
-                    "name": name, "shareinfo": shareinfo_obj,
-                },
-            ])
+                    "client": nfs_client,
+                    "privilege": "rw" if nfs_rw else "ro",
+                    "root_squash": "root",
+                    "async": True,
+                    "insecure": False,
+                    "crossmnt": False,
+                    "security_flavor": {
+                        "kerberos": False,
+                        "kerberos_integrity": False,
+                        "kerberos_privacy": False,
+                        "sys": True,
+                    },
+                }
+            ]
+            compound = json.dumps(
+                [
+                    {
+                        "api": "SYNO.Core.FileServ.NFS.SharePrivilege",
+                        "method": "save",
+                        "version": 1,
+                        "share_name": name,
+                        "rule": nfs_rule,
+                    },
+                    {
+                        "api": "SYNO.Core.Share",
+                        "method": "set",
+                        "version": 1,
+                        "name": name,
+                        "shareinfo": shareinfo_obj,
+                    },
+                ]
+            )
             result["nfs"] = self._c.request(
-                "SYNO.Entry.Request", "request", version=1,
-                stop_when_error="true", mode="sequential", compound=compound,
+                "SYNO.Entry.Request",
+                "request",
+                version=1,
+                stop_when_error="true",
+                mode="sequential",
+                compound=compound,
             )
 
         return result
@@ -250,13 +310,17 @@ class ShareManager:
             version=1,
             name=share,
             user_group_type="local_user",
-            permissions=json.dumps([{
-                "name": username,
-                "is_readonly": readonly,
-                "is_writable": writable,
-                "is_deny": deny,
-                "is_custom": False,
-            }]),
+            permissions=json.dumps(
+                [
+                    {
+                        "name": username,
+                        "is_readonly": readonly,
+                        "is_writable": writable,
+                        "is_deny": deny,
+                        "is_custom": False,
+                    }
+                ]
+            ),
         )
 
     def get_nfs_rules(self, share: str) -> list[dict]:
@@ -303,20 +367,22 @@ class ShareManager:
         Returns:
             API response dict.
         """
-        rule = [{
-            "async": async_io,
-            "client": hostname,
-            "crossmnt": False,
-            "insecure": False,
-            "privilege": "rw" if rw else "ro",
-            "root_squash": root_squash,
-            "security_flavor": {
-                "kerberos": False,
-                "kerberos_integrity": False,
-                "kerberos_privacy": False,
-                "sys": True,
-            },
-        }]
+        rule = [
+            {
+                "async": async_io,
+                "client": hostname,
+                "crossmnt": False,
+                "insecure": False,
+                "privilege": "rw" if rw else "ro",
+                "root_squash": root_squash,
+                "security_flavor": {
+                    "kerberos": False,
+                    "kerberos_integrity": False,
+                    "kerberos_privacy": False,
+                    "sys": True,
+                },
+            }
+        ]
         return self._c.request(
             "SYNO.Core.FileServ.NFS.SharePrivilege",
             "save",

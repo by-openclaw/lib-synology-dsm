@@ -1,96 +1,66 @@
-# CLAUDE.md — lib-synology-dsm Agent Notes
+# CLAUDE.md — lib-synology-dsm
 
-## What this repo is
-Python library for Synology DSM API automation. Part of the BY-SYSTEMS platform stack.
-Used by: platform-setup runbooks, future ansible-collection-synology, NetBox webhooks.
+> **Scope:** `lib` | **Component:** `synology-dsm`
+> **GitHub:** `by-openclaw/lib-synology-dsm`
+> **Layer:** Layer 4 — Storage (ADR-0006)
 
-## Repo structure
-```
-src/synology_dsm/
-  __init__.py          ← exports all public classes + version
-  client.py            ← DSMClient (session management, auth v6 + synotoken)
-  credentials.py       ← EnvCredentialProvider, VaultCredentialProvider, get_credentials()
-  users.py             ← UserManager (CRUD + ensure)
-  groups.py            ← GroupManager (CRUD + membership + ensure)
-  shares.py            ← ShareManager (CRUD + NFS + permissions + ensure)
-docs/
-  api-versions.md      ← tested API version table (ground truth)
-  api-reference.md     ← method reference with confirmed working signatures
-  credentials.md       ← credential provider guide
-  feature-coverage.md  ← implemented vs planned features table (primary reference)
-  references.md        ← API docs + community links
-tests/
-  test_client.py       ← unit tests
-  integration/
-    test_live_nas.py   ← live NAS tests (urllib only, no httpx)
-    test_full_crud.sh  ← comprehensive bash CRUD test (auth/user/group/share/NFS)
-```
-
-## Key decisions
-- Auth: SYNO.API.Auth v6 via entry.cgi (NOT auth.cgi), with `enable_syno_token=yes`
-- SynoToken: all write requests require `X-SYNO-TOKEN: <synotoken>` header
-- Session: always "DSM" for admin ops
-- Delete ops: DSM requires JSON array format: `name='["value"]'`
-- ensure(state=present/absent): idempotent Ansible-style pattern on all managers
-- Vault-first credentials: production uses VaultCredentialProvider
-- httpx NOT available on Rune's host — integration tests use urllib only
-- Compound requests (SYNO.Entry.Request): required for share permissions + NFS (see below)
-
-## Compound request pattern (confirmed working)
-Permission and NFS writes use batched compound calls:
-1. The permission/NFS operation
-2. `SYNO.Core.Share.set` with full `shareinfo` to finalize
-
-Always check `data.has_fail == false` (not top-level `success`) for compound call results.
-
-## Share create — required format (DSM 7.x)
-`shareinfo` must be a JSON object with `name_org` field:
-```json
-{"name": "SHARENAME", "vol_path": "/volume1", "desc": "", "name_org": ""}
-```
-Omitting `name_org` returns HTTP 403.
-
-## NFS API details
-- API: `SYNO.Core.FileServ.NFS.SharePrivilege`
-- Set: `method=save`, param: `share_name` (NOT `sharename` — causes error 2301)
-- Get: `method=load`, param: `share_name`
-
-## Test NAS
-- Host: 10.6.224.6:5001 (HTTPS)
-- User: rune-api / YOUR_PASSWORD (session=DSM, in `administrators` group)
-- Credentials file: /home/by-systems/.openclaw/workspace/infra/secrets/.synology.env
-
-## rune-api group membership — decision (2026-03-27)
-- **rune-api is in `administrators` group** — required for share CRUD + NFS management
-- DSM has no finer-grained permission model for share creation without admin
-- NAS is internal-only (no QuickConnect, firewall being hardened per SYN-001)
-- Accepted risk for PoC phase; revisit when Vault + least-privilege audit is done
-- **Future rename:** rune-api → svc-rune-dsm (tracked in platform-setup#56)
-
-## Pending items
-- Rename rune-api → svc-rune-dsm: platform-setup#56 (low priority, before prod use)
-- SSH pubkey sync via User.Home: explore SYNO.Core.User.Home API for authorized_keys upload
-- Group membership: `SYNO.Core.Group.member_set` returns error 103 on DSM 7.1.1 (method not implemented) — investigate alternative or version upgrade path
-
-## Current version: 0.5.0
-
-## API discovery
-```bash
-# List all 757 APIs on DS1513+ DSM 7.1.1 with version ranges
-curl -sk "https://10.6.224.6:5001/webapi/query.cgi?api=SYNO.API.Info&method=query&version=1&query=all"
-```
-
-## References
-- Community API reference: https://github.com/pmilano1/synology-dsm-api
-- Feature coverage table: docs/feature-coverage.md
+AI agent context. Read before touching any file.
 
 ---
 
-## Agent Onboarding (Rune / BY-SYSTEMS)
+## What This Repo Does
 
-- **AGENTS.md:** [`AGENTS.md`](AGENTS.md) — generic agent onboarding file (read by Codex, Claude Code, and all agents)
-- **Owner:** @yboujraf
-- **Org:** [by-openclaw](https://github.com/by-openclaw)
-- **Platform agent:** Rune (DevOps familiar)
+Python library for Synology DSM API — CRUD for users, groups, permissions, and shared folders.
+Published as a versioned package; consumed as a dependency by platform-setup and other tools.
 
-AGENTS.md contains: commit standards, what NOT to do, API gotchas summary, and GitHub link.
+**NOT for:** direct deployment, VM provisioning, or any infra changes.
+
+---
+
+## Key Files
+
+| File | Why |
+|---|---|
+| `README.md` | Install, quickstart, API reference |
+| `synology_dsm/` | Library source |
+| `tests/` | Unit + integration tests |
+| `CHANGELOG.md` | Semantic versioning history |
+
+---
+
+## Current State
+
+| Component | Status |
+|---|---|
+| DSM user CRUD | ✅ implemented |
+| Shared folder management | ✅ implemented |
+| CI tests | ⏸ blocked |
+| Published to registry | ⏸ blocked pending GitLab CE |
+
+## Blocker
+
+`rune-api` DSM user needs **Application → DSM = Allow** set in Synology UI before integration tests can run.
+See RAID D-002.
+
+---
+
+## Constraints
+
+- Never commit DSM credentials or API tokens
+- `tests/` must pass before any merge to `main`
+- Breaking changes = MAJOR version bump + migration note in CHANGELOG
+- `ruff` linting must be clean before commit
+
+---
+
+## Diagram Standard
+
+See ADR-0006 §9. Source → `assets/diagrams/`, render → `assets/exports/`, commit + post to Discord.
+
+---
+
+## Related
+
+- Platform charter: `doc-platform-core/docs/adr/0006-platform-charter.md`
+- RAID: `doc-platform-core/docs/raid.md`
+- GitHub Issues: <https://github.com/by-openclaw/platform-setup/issues>

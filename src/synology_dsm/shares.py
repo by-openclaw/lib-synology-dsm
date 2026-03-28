@@ -212,47 +212,11 @@ class ShareManager:
             }]),
         )
 
-    def set_nfs_permission(
-        self,
-        share: str,
-        hostname: str,
-        rw: bool = True,
-        squash: str = "no_squash",
-        async_io: bool = True,
-    ) -> dict:
-        """Set NFS permission for a host on a share.
-
-        WARNING: This REPLACES the entire NFS rule list for the share.
-        Use get_nfs_rules() first if you need to preserve existing rules.
-
-        Args:
-            share: Share name.
-            hostname: Hostname or CIDR (e.g. '10.6.0.0/20').
-            rw: True for read-write, False for read-only.
-            squash: NFS squash mode: 'no_squash', 'root_squash', 'all_squash'.
-            async_io: Enable async I/O.
-
-        Returns:
-            API response dict.
-        """
-        nfs_rule = {
-            "hostname": hostname,
-            "privilege": "rw" if rw else "ro",
-            "squash": squash,
-            "async": async_io,
-            "anonuid": -2,
-            "anongid": -2,
-        }
-        return self._c.request(
-            "SYNO.Core.Share.NFS",
-            "set",
-            version=1,
-            name=share,
-            nfs_rules=json.dumps([nfs_rule]),
-        )
-
     def get_nfs_rules(self, share: str) -> list[dict]:
         """Get NFS rules for a share.
+
+        Uses SYNO.Core.FileServ.NFS.SharePrivilege.load (correct API on DS1513+ DSM 7.x).
+        SYNO.Core.Share.NFS does not exist on this hardware.
 
         Args:
             share: Share name.
@@ -260,8 +224,59 @@ class ShareManager:
         Returns:
             List of NFS rule dicts.
         """
-        data = self._c.request("SYNO.Core.Share.NFS", "get", version=1, name=share)
-        return data.get("nfs_rules", data.get("rules", []))
+        data = self._c.request(
+            "SYNO.Core.FileServ.NFS.SharePrivilege",
+            "load",
+            version=1,
+            sharename=share,
+        )
+        return data.get("rule", [])
+
+    def set_nfs_permission(
+        self,
+        share: str,
+        hostname: str,
+        rw: bool = True,
+        async_io: bool = True,
+        root_squash: str = "root",
+    ) -> dict:
+        """Set NFS permission for a host on a share.
+
+        Uses SYNO.Core.FileServ.NFS.SharePrivilege.save (correct API on DS1513+ DSM 7.x).
+        WARNING: This REPLACES the entire NFS rule list for the share.
+        Use get_nfs_rules() first if you need to preserve existing rules.
+
+        Args:
+            share: Share name.
+            hostname: Client hostname or CIDR (e.g. '10.6.224.105' or '10.6.0.0/20').
+            rw: True for read-write, False for read-only.
+            async_io: Enable async I/O (better performance).
+            root_squash: Squash mode — 'root' (root_squash), 'all', 'no_root_squash'.
+
+        Returns:
+            API response dict.
+        """
+        rule = [{
+            "async": async_io,
+            "client": hostname,
+            "crossmnt": False,
+            "insecure": False,
+            "privilege": "rw" if rw else "ro",
+            "root_squash": root_squash,
+            "security_flavor": {
+                "kerberos": False,
+                "kerberos_integrity": False,
+                "kerberos_privacy": False,
+                "sys": True,
+            },
+        }]
+        return self._c.request(
+            "SYNO.Core.FileServ.NFS.SharePrivilege",
+            "save",
+            version=1,
+            sharename=share,
+            rule=json.dumps(rule),
+        )
 
     def ensure(
         self,

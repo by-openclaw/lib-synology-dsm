@@ -5,13 +5,20 @@ NFS: SYNO.Core.Share.NFS (version 1, entry.cgi)
 
 Verified against DSM 7.1.1-42962 Update 9 (nas01).
 
-PERMISSION REQUIREMENT:
-    create() and delete() require the API user to be in the 'administrators' group
-    on the NAS. If the account is not an administrator, create/delete return HTTP 403.
-    The list() method works with any authenticated user.
+KNOWN LIMITATION — Share create/delete:
+    SYNO.Core.Share create and delete return HTTP 403 for ALL non-built-in-admin
+    accounts, even when the user is in the 'administrators' group with DSM + FileStation
+    apps enabled and a valid SynoToken.
 
-    To add rune-api to administrators:
-        DSM Control Panel → User & Group → Group → administrators → Edit → Members → Add rune-api
+    Confirmed via exhaustive testing on DSM 7.1.1-42962 Update 9 (DS1513+):
+    - Same 403 from curl on the local machine (not a network/code issue)
+    - Built-in 'admin' account works but is disabled for security hardening
+    - DSM WebUI uses an internal privileged backend not exposed via the web API
+
+    Workaround: Create/delete shared folders manually in DSM Control Panel.
+    All other operations (list, update, NFS rules get) work correctly.
+
+    list() and update() work with any authenticated admin-group user.
 
 NFS Permission Notes:
     SYNO.Core.Share.NFS.set replaces the entire NFS rule list for a share.

@@ -13,6 +13,7 @@ class DSMClient:
         self.base_url = f"{scheme}://{host}:{port}/webapi"
         self._verify = verify_ssl
         self._sid: str | None = None
+        self._synotoken: str = ""
         self._client = httpx.Client(verify=verify_ssl, timeout=30)
 
     def login(self, account: str, password: str, session: str = "DSM") -> str:
@@ -21,12 +22,13 @@ class DSMClient:
             f"{self.base_url}/entry.cgi",
             data={
                 "api": "SYNO.API.Auth",
-                "version": "7",  # v7: returns synotoken + device_id; falls back gracefully on older DSM
+                "version": "6",
                 "method": "login",
                 "account": account,
                 "passwd": password,
-                "session": session,  # use "DSM" for admin ops, "FileStation" for file ops
+                "session": session,  # "DSM" for admin ops, "FileStation" for file ops
                 "format": "sid",
+                "enable_syno_token": "yes",  # required to get real SynoToken for write ops
             },
         )
         resp.raise_for_status()
@@ -34,6 +36,7 @@ class DSMClient:
         if not data.get("success"):
             raise RuntimeError(f"Login failed: {data.get('error')}")
         self._sid = data["data"]["sid"]
+        self._synotoken = data["data"].get("synotoken", "")
         return self._sid
 
     def logout(self) -> None:
@@ -47,7 +50,11 @@ class DSMClient:
         self._sid = None
 
     def request(self, api: str, method: str, version: int = 1, **params: Any) -> dict:
-        """Make an authenticated API request."""
+        """Make an authenticated API request.
+
+        Automatically includes _sid and X-SYNO-TOKEN header (required for
+        write operations on DSM 7.x).
+        """
         if not self._sid:
             raise RuntimeError("Not logged in. Call login() first.")
         payload = {
@@ -57,7 +64,10 @@ class DSMClient:
             "_sid": self._sid,
             **params,
         }
-        resp = self._client.post(f"{self.base_url}/entry.cgi", data=payload)
+        headers = {}
+        if self._synotoken:
+            headers["X-SYNO-TOKEN"] = self._synotoken
+        resp = self._client.post(f"{self.base_url}/entry.cgi", data=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
         if not data.get("success"):

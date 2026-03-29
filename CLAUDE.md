@@ -28,7 +28,7 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 
 ---
 
-## Current State (v0.6.1 — 2026-03-29)
+## Current State (v0.7.0 — 2026-03-29)
 
 | Component | Status |
 |---|---|
@@ -36,8 +36,13 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 | User CRUD | ✅ working |
 | Group CRUD + membership | ✅ working |
 | Share CRUD | ✅ working |
-| NFS permissions | ✅ working |
-| FileStation: list/upload/download/mkdir/delete | ✅ working (v0.6.0+) |
+| NFS permissions | ✅ working (DSM 7.x API fixed) |
+| FileStation: list/upload/download/mkdir/delete | ✅ working |
+| Exception hierarchy (DSMError → typed) | ✅ v0.7.0 |
+| ensure() idempotency + noop detection | ✅ v0.7.0 |
+| dry_run support (all managers + FileStation) | ✅ v0.7.0 |
+| Unit tests (45 tests, 100%) | ✅ v0.7.0 |
+| Commitizen + Conventional Commits | ✅ v0.7.0 |
 | Bash CRUD smoke test | ✅ `tests/integration/dsm-crud-test.sh` |
 | Python integration test | ✅ 17/19 (2 non-blocking warnings) |
 | CI tests | ⏸ blocked pending GitLab CE |

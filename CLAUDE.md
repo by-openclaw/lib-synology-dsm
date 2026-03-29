@@ -58,6 +58,16 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 
 None. Zero open issues as of v0.8.0.
 
+## Known DSM version bugs
+
+### DSM 7.1.1-42962 Update 9 (DS1513+) — SYNO.Core.Group member_list broken
+- `SYNO.Core.Group member_list` returns error 103 (invalid parameter) for ALL inputs
+- This is a DSM 7.1.x regression — **fixed in DSM 7.2.x**
+- Tracked in: GitHub issue #54 ("Upgrade DSM from 7.1.1 to 7.2.x")
+- Impact: `add_member` / `remove_member` cannot verify idempotency — they apply unconditionally and return `warning` key
+- Write operations (set with members=[]) work correctly — only read is broken
+- Workaround: upgrade DSM to 7.2.x. Until then, operations are correct but not fully idempotent.
+
 ## API gotchas (read before touching any FileStation or Core code)
 
 - ALL write ops require `X-SYNO-TOKEN` header — missing it returns 403

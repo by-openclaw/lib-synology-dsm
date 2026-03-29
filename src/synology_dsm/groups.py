@@ -197,17 +197,31 @@ class GroupManager:
         Returns:
             List of user dicts (at minimum: name).
         """
+        # Primary: SYNO.Core.Group member_list (works on DSM 7.2.x+)
         try:
             data = self._c.request("SYNO.Core.Group", "member_list", version=1, name=group)
-            return data.get("users", data.get("members", []))
+            users = data.get("users", data.get("members", []))
+            if users:
+                return users
         except Exception:
-            # member_list returns error 103 on some DSM versions (e.g. DS1513+)
-            # Fallback: SYNO.Core.Group.get returns group detail including members list
-            try:
-                data = self._c.request("SYNO.Core.Group", "get", version=1, name=group)
-                return data.get("members", data.get("users", []))
-            except Exception:
-                return []
+            pass
+
+        # Fallback: SYNO.Core.Group get — some versions include members here
+        try:
+            data = self._c.request("SYNO.Core.Group", "get", version=1, name=group)
+            groups = data.get("groups", [])
+            current = groups[0] if groups else data
+            users = current.get("members", current.get("users", []))
+            if users:
+                return users
+        except Exception:
+            pass
+
+        # Both APIs returned nothing or errored — known regression in DSM 7.1.x.
+        # member_list is broken (error 103) in DSM 7.1.1-42962 (all params).
+        # Fixed in DSM 7.2.x — see GitHub issue #54.
+        # When this returns [], callers apply operations unconditionally and flag a warning.
+        return []
 
     def ensure(
         self,

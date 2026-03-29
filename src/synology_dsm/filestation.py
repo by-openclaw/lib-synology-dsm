@@ -78,15 +78,18 @@ class FileStationManager:
         with open(local_path, "rb") as fh:
             content = fh.read()
 
+        # Auth pattern discovered via DevTools:
+        # - SynoToken must be in URL query string
+        # - Session passed as cookie id= (not _sid form field)
+        # - X-Syno-Token header also required
+        # - field name is "path" not "dest_folder_path"
         resp = self._c._client.post(
-            f"{self._c.base_url}/entry.cgi",
-            headers={"X-SYNO-TOKEN": self._c._synotoken},
+            f"{self._c.base_url}/entry.cgi"
+            f"?api=SYNO.FileStation.Upload&method=upload&version=2&SynoToken={self._c._synotoken}",
+            headers={"X-Syno-Token": self._c._synotoken},
+            cookies={"id": self._c._sid},
             data={
-                "_sid": self._c._sid,
-                "api": "SYNO.FileStation.Upload",
-                "version": "2",
-                "method": "upload",
-                "dest_folder_path": dest_folder,
+                "path": dest_folder,
                 "create_parents": "true",
                 "overwrite": "true" if overwrite else "false",
             },

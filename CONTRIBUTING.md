@@ -28,12 +28,43 @@ pre-commit install
 
 ### VS Code Dev Container (recommended for consistency)
 
-1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) + VS Code + [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-2. `File → Open Folder` → select `lib-synology-dsm`
-3. Click **"Reopen in Container"** when prompted
-4. Python 3.12, ruff, mypy, pytest explorer all pre-configured — no manual steps
+#### Prerequisites
 
-See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json).
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+2. Install [VS Code](https://code.visualstudio.com/) + [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+#### Docker Desktop install settings (Windows)
+
+During Docker Desktop installation you will see a configuration screen.
+Use these settings — anything else will cause issues:
+
+| Option | Setting | Why |
+|---|---|---|
+| ✅ Use WSL 2 instead of Hyper-V | **Enable** | Required for Linux containers — better performance, less RAM overhead |
+| ☐ Add shortcut to desktop | Optional | No impact |
+| ☐ Allow Windows Containers | **Leave disabled** | We use Linux containers only (Python 3.13 image) — enabling this switches Docker to a different engine |
+
+![Docker Desktop install settings](.devcontainer/assets/docker-desktop-install-settings.png)
+
+After install, Docker Desktop will prompt for a logout/restart — do it before continuing.
+
+#### Open in container
+
+1. `File → Open Folder` → select the `lib-synology-dsm` folder
+2. VS Code shows a popup: **"Reopen in Container"** → click it
+   (or: `Ctrl+Shift+P` → `Dev Containers: Reopen in Container`)
+3. First time: ~2 min to pull Python 3.13 image and install deps
+4. Done — Python 3.13, ruff, mypy, pytest explorer all pre-configured
+
+#### Verify it works
+
+```bash
+# Inside the container terminal:
+pytest tests/unit/ -v
+# Expected: 223 passed, 0 failed, 100% coverage
+```
+
+See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) for full config.
 
 ---
 

@@ -71,15 +71,20 @@ The API account **must** be in the `administrators` group. Apps alone are not su
 
 ## File Operations (`SYNO.FileStation`)
 
+> **Auth quirk (DS1513+ DSM 7.x):** `SynoToken` must be in URL query string; session as cookie `id=`; field `path` not `dest_folder_path`. Login must use `session=DSM`. All handled transparently by `FileStationManager`.
+
 | Feature | Method | Status | Notes |
 |---|---|---|---|
-| List shares | via FileStation session | ✅ | Tested in integration test |
-| List directory | | 🚧 | SYNO.FileStation.List |
-| Upload file | | 🚧 | SYNO.FileStation.Upload |
-| Download file | | 🚧 | SYNO.FileStation.Download |
-| Create folder | | 🚧 | SYNO.FileStation.CreateFolder |
-| Delete file/folder | | 🚧 | SYNO.FileStation.Delete |
+| List shares | `FileStationManager.list_shares()` | ✅ | |
+| List directory | `FileStationManager.list()` | ✅ | Supports `additional`: size, time, owner, perm, real_path, type |
+| Upload file | `FileStationManager.upload()` | ✅ | `overwrite=True/False`; returns `skipped` flag when file exists and overwrite=False |
+| Download file | `FileStationManager.download()` | ✅ | Binary-safe streaming |
+| Create folder | `FileStationManager.mkdir()` | ✅ | `force_parent=True` creates intermediate dirs |
+| Delete file/folder | `FileStationManager.delete()` | ✅ | Returns DSM task id |
 | Move/copy | | 🚧 | SYNO.FileStation.CopyMove |
+| Rename | | 🚧 | SYNO.FileStation.Rename |
+| Get file info | | 🚧 | SYNO.FileStation.List — single path |
+| Search | | 🚧 | SYNO.FileStation.Search |
 
 ## System & Security (`SYNO.Core.*`)
 
@@ -108,9 +113,8 @@ The API account **must** be in the `administrators` group. Apps alone are not su
 
 High value, low effort (implement next):
 1. `SYNO.Core.System` — get model/DSM version/serial (useful for audit automation)
-2. `SYNO.FileStation.List` — list directory (needed for backup verification)
-3. `SYNO.Core.Package` — list installed packages (security audit automation)
+2. `SYNO.Core.Package` — list installed packages (security audit automation)
+3. `SYNO.FileStation.CopyMove` — move/copy files (rename + cross-share ops)
 
-Blocked on admin access:
-- Share CRUD (need rune-api in administrators group)
-- NFS set (same)
+Done (v0.6.x):
+- ✅ `FileStationManager` — full CRUD: list, upload, download, mkdir, delete (v0.6.0–0.6.1)

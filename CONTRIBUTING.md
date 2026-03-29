@@ -12,55 +12,61 @@ pip install -e ".[dev]"
 pre-commit install   # installs git hooks — blocks commits with secrets or lint errors
 ```
 
-### Windows 11 (native, no WSL required)
+### Windows 11 with Git Bash
 
-#### 1. Install Python 3.13
+#### Step 1 — Install Python 3.13
 
-In **PowerShell or Git Bash**:
+Run in Git Bash (or PowerShell):
 ```bash
 winget install Python.Python.3.13
 ```
 
-#### 2. Fix Python not found in Git Bash (App Execution Aliases)
+#### Step 2 — Disable App Execution Aliases
 
-Windows intercepts `python` in Git Bash and redirects it to the Microsoft Store.
-**Disable the aliases:**
+Windows intercepts `python` in Git Bash and redirects it to the Microsoft Store instead of the real binary.
+**Disable the aliases before doing anything else:**
 
 ```
-Settings → Apps → Advanced app settings → App execution aliases
+Start → Settings → Apps → Advanced app settings → App execution aliases
 → Turn OFF: python.exe
 → Turn OFF: python3.exe
 ```
 
-Then close and reopen Git Bash, and verify:
+#### Step 3 — Add Python to Git Bash PATH
+
+The Python installer does **not** automatically add itself to Git Bash's PATH.
+Add it manually — run this once in Git Bash (replace `YourUsername` with your Windows username):
+
 ```bash
-python --version   # Expected: Python 3.13.x
+echo 'export PATH="/c/Users/YourUsername/AppData/Local/Programs/Python/Python313:/c/Users/YourUsername/AppData/Local/Programs/Python/Python313/Scripts:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-#### 3. Clone and set up (Git Bash)
+Verify:
+```bash
+python --version   # Expected: Python 3.13.x
+pip --version      # Expected: pip 2x.x from .../Python313/...
+```
+
+#### Step 4 — Clone and set up
 
 ```bash
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 cd lib-synology-dsm
-
-# Create and activate virtualenv
 python -m venv .venv
-source .venv/Scripts/activate   # Git Bash — note: Scripts not bin
-
+source .venv/Scripts/activate   # Git Bash: Scripts not bin
 pip install -e ".[dev]"
 pre-commit install
 ```
 
-> ℹ️ In Git Bash the activate script is at `.venv/Scripts/activate` (not `.venv/bin/activate` as on Linux/macOS).
-
-#### 4. Verify
+#### Step 5 — Verify
 
 ```bash
 pytest tests/unit/ -v
 # Expected: 223 passed, 0 failed
 ```
 
-> 💡 **Recommended alternative:** Use the VS Code Dev Container below — zero Python install required on your machine.
+> 💡 **Prefer no local setup?** Use the VS Code Dev Container below — Python is inside the container, nothing to install on your machine.
 
 ### VS Code Dev Container (recommended for consistency)
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.8.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.8.0...v0.8.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* apply compliance audit — typing, docstrings, dead code, packaging ([7ab1f79](https://github.com/by-openclaw/lib-synology-dsm/commit/7ab1f79fa9355086d9083b55412845594de6d818))
+* enforce consistent return pattern — all methods return {changed, action} ([b6b1690](https://github.com/by-openclaw/lib-synology-dsm/commit/b6b16902a550b5aa12a07f7afb20231335e7f261))
+* group member_list DSM firmware limitation + full ensure() integration test ([f97cdc1](https://github.com/by-openclaw/lib-synology-dsm/commit/f97cdc1e93272a13a1e2cc59b3d5b1e679be20e0))
+* integration test — 4 bugs fixed, 30/31 passing ([8c68bf5](https://github.com/by-openclaw/lib-synology-dsm/commit/8c68bf5d0f203dcb795ae2eec14e1bf0f0dc32c8))
+* list_members — proper fallback chain + document DSM 7.1.x member_list bug ([6a4cced](https://github.com/by-openclaw/lib-synology-dsm/commit/6a4cced48b94a0c0431197080c518b15580ea64f))
+* packaging, CI, pytest integration suite — second audit pass ([df6bdcb](https://github.com/by-openclaw/lib-synology-dsm/commit/df6bdcba7612c853c9f205a1dacd811f8ebac809))
+* upgrade DSM to 7.2.x — tracked in platform-setup[#54](https://github.com/by-openclaw/lib-synology-dsm/issues/54) ([6a4cced](https://github.com/by-openclaw/lib-synology-dsm/commit/6a4cced48b94a0c0431197080c518b15580ea64f))
+
+
+### Documentation
+
+* badges, dev container ext, false positive walkthrough ([0cfa53e](https://github.com/by-openclaw/lib-synology-dsm/commit/0cfa53efe02220adcfea5607543d7438fe32c7d3))
+* clarify pre-commit hooks table — LFS pointer behavior, binary file handling ([6018fd7](https://github.com/by-openclaw/lib-synology-dsm/commit/6018fd739c469f1fb3893b5bbc8ebecbec848577))
+* README — explicit dev container setup + pre-commit hooks section ([8187a2d](https://github.com/by-openclaw/lib-synology-dsm/commit/8187a2d4745b7120795b2e580c58bbcc104f2fc6))
+* update CLAUDE.md + AGENTS.md to v0.8.0 state — 0 open issues ([8d9d3b1](https://github.com/by-openclaw/lib-synology-dsm/commit/8d9d3b11adbd66dcc76398fa92eb92f31653041e))
+
 ## [0.8.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.7.3...v0.8.0) (2026-03-29)
 
 

@@ -22,16 +22,40 @@ class FileStationManager:
         resp = self._c.request("SYNO.FileStation.List", "list_share", version=2)
         return resp.get("shares", [])
 
-    def list(self, folder_path: str, offset: int = 0, limit: int = 1000) -> list[dict]:
-        """List files/folders inside *folder_path*."""
-        resp = self._c.request(
-            "SYNO.FileStation.List",
-            "list",
-            version=2,
-            folder_path=folder_path,
-            offset=offset,
-            limit=limit,
-        )
+    def list(
+        self,
+        folder_path: str,
+        offset: int = 0,
+        limit: int = 1000,
+        additional: list[str] | None = None,
+    ) -> list[dict]:
+        """List files/folders inside *folder_path*.
+
+        Args:
+            folder_path: Absolute NAS path to list.
+            offset:      Pagination offset.
+            limit:       Max items to return.
+            additional:  Extra properties to fetch per item. Available:
+                         ``real_path``, ``size``, ``owner``, ``time``,
+                         ``perm``, ``type``, ``mount_point_type``.
+
+        Returns:
+            List of file/folder dicts. When *additional* is set, each item
+            contains an ``additional`` sub-dict with the requested fields.
+
+        Example::
+
+            files = fs.list("/my-share", additional=["size", "time", "owner"])
+            for f in files:
+                print(f["name"], f["additional"]["size"])
+        """
+        import json as _json
+
+        params: dict = dict(folder_path=folder_path, offset=offset, limit=limit)
+        if additional:
+            params["additional"] = _json.dumps(additional)
+
+        resp = self._c.request("SYNO.FileStation.List", "list", version=2, **params)
         return resp.get("files", [])
 
     def mkdir(self, parent: str, name: str, force_parent: bool = True) -> dict:
@@ -66,10 +90,16 @@ class FileStationManager:
         Args:
             local_path:  Path to the local file to upload.
             dest_folder: Absolute NAS folder path (e.g. '/by-terraform-state/poc').
-            overwrite:   Overwrite if file already exists.
+            overwrite:   If True, overwrite existing file. If False, skip upload
+                         and return ``{"success": True, "skipped": True}`` when
+                         the file already exists (``blSkip`` in raw response).
 
         Returns:
-            API response dict (success=True on success).
+            Dict with keys:
+              - ``success`` (bool)
+              - ``skipped`` (bool) — True when file existed and overwrite=False
+              - ``file`` (str) — filename on NAS
+              - ``pid`` (int) — DSM task pid
 
         Raises:
             RuntimeError: On API or HTTP error.
@@ -99,7 +129,15 @@ class FileStationManager:
         data = resp.json()
         if not data.get("success"):
             raise RuntimeError(f"Upload failed: {data.get('error')}")
-        return data
+
+        # Normalise response: expose blSkip as skipped
+        result = data.get("data", {})
+        return {
+            "success": True,
+            "skipped": bool(result.get("blSkip", False)),
+            "file": result.get("file", p.name),
+            "pid": result.get("pid"),
+        }
 
     def download(self, remote_path: str, local_path: str) -> None:
         """Download a single file from the NAS.

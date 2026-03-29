@@ -86,11 +86,103 @@ python3 tests/integration/test_live_nas.py --report /tmp/nas-report
 
 ---
 
-## Dev container
+## Dev container (recommended — works on Windows, macOS, Linux)
 
-Open in VS Code with the Dev Containers extension — Python 3.12, ruff, mypy, pytest explorer all pre-configured.
+The dev container gives every developer an identical, pre-configured environment.
+No Python install on your machine. No WSL. No "works on my machine."
 
-See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json).
+### What you need (one-time install)
+
+| Tool | Download | Notes |
+|---|---|---|
+| **Docker Desktop** | https://www.docker.com/products/docker-desktop/ | Required. Free for personal/small team use. On Windows it uses a minimal background VM — you never interact with it. |
+| **VS Code** | https://code.visualstudio.com/ | Free. |
+| **Dev Containers extension** | https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers | Install inside VS Code: `Ctrl+Shift+X` → search "Dev Containers" → Install. |
+
+### How to open the project
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/by-openclaw/lib-synology-dsm.git
+   ```
+2. Open the folder in VS Code: `File → Open Folder` → select `lib-synology-dsm`
+3. VS Code shows a popup: **"Reopen in Container"** — click it
+   - If you miss it: press `Ctrl+Shift+P` → type `Dev Containers: Reopen in Container`
+4. Wait ~2 minutes for the first build (downloads Python 3.12 image, installs all deps)
+5. You now have a terminal inside the container with everything ready:
+   - Python 3.12, pip, venv
+   - ruff, mypy, pytest, pytest-cov
+   - pre-commit hooks already installed (automatic — no manual step)
+
+### Run unit tests inside the container
+
+```bash
+pytest tests/unit/ -v
+# Expected: 161 passed, 0 failed, 100% coverage
+```
+
+### Run integration tests (requires NAS reachable on your network)
+
+```bash
+# Set your NAS credentials in .env (copy from .env.example)
+cp .env.example .env
+# Edit .env with your values, then:
+source .env
+python tests/integration/test_live_nas.py --report /tmp/nas-report
+# Output: /tmp/nas-report.json + /tmp/nas-report.txt
+```
+
+---
+
+## Pre-commit hooks
+
+Pre-commit hooks run **automatically on every `git commit`** — no manual step needed.
+
+Inside the dev container they are installed automatically when the container starts
+(`postCreateCommand` in `.devcontainer/devcontainer.json`).
+
+If working **outside the container** (native Python setup), install once:
+```bash
+pip install -e ".[dev]"
+pre-commit install   # one-time — hooks run automatically on every commit from now on
+```
+
+### What the hooks check
+
+| Hook | What it does | Blocks commit? |
+|---|---|---|
+| `detect-secrets` | Scans for passwords, API tokens, private keys | ✅ Yes |
+| `check-added-large-files` | Blocks files > 500 KB | ✅ Yes |
+| `end-of-file-fixer` | Ensures files end with a newline | ✅ Yes (auto-fixes) |
+| `trailing-whitespace` | Removes trailing spaces | ✅ Yes (auto-fixes) |
+| `check-yaml` / `check-toml` / `check-json` | Syntax validation | ✅ Yes |
+| `ruff` | Python linting (auto-fixes what it can) | ✅ Yes |
+| `ruff-format` | Python formatting | ✅ Yes (auto-formats) |
+
+### If detect-secrets flags a false positive
+
+A false positive is when detect-secrets blocks a commit because it thinks something
+looks like a secret but it isn't (e.g. a test placeholder `"secret"` or a Vault path).
+
+**What to do:**
+
+```bash
+# 1. Run the audit tool — it shows each flagged item and asks: real secret or not?
+detect-secrets audit .secrets.baseline
+# For each finding: press 'y' if it IS a real secret, 'n' if it is NOT
+
+# 2. Commit the updated baseline (this tells detect-secrets to accept it in future)
+git add .secrets.baseline
+git commit -m "chore: update secrets baseline — mark false positives"
+```
+
+**What happens in CI:** CI does NOT run detect-secrets — that is a local pre-commit hook only.
+CI runs `ruff`, `mypy`, and `pytest`. A false positive baseline update commit goes through CI
+exactly like any other commit — green if tests pass, no special treatment.
+
+**What happens with release-please / version bumps:** A `chore:` commit does not trigger
+a version bump (neither minor nor patch). It appears in the CHANGELOG under a "chores" section
+but does not change the version number. Safe to commit.
 
 ---
 

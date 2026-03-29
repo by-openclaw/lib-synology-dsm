@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.2](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.7.1...v0.7.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* complete credential redaction in test_live_nas.py; add .env.example for integration tests ([101baf7](https://github.com/by-openclaw/lib-synology-dsm/commit/101baf756449696d8f6005d0b2f683196a99076d))
+* session complete — 100% coverage, integration report, ready for NAS testing ([2bcada9](https://github.com/by-openclaw/lib-synology-dsm/commit/2bcada935f315aa05fc0a30598e96a7e12e85979))
+
 ## [0.7.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.7.0...v0.7.1) (2026-03-29)
 
 

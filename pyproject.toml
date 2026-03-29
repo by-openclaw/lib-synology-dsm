@@ -33,7 +33,7 @@ skip_covered = false
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.7.2"
+version = "0.7.3"
 version_files = [
     "pyproject.toml:^version",
     "src/synology_dsm/__init__.py:^__version__"

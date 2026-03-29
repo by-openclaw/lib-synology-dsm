@@ -2,6 +2,19 @@
 
 ## Development setup
 
+**Choose one path. Do not mix them.**
+
+| Path | When to use |
+|---|---|
+| [A — Native (venv)](#path-a--native-venv) | Git Bash on Windows, or Linux/macOS terminal — Python installed locally |
+| [B — VS Code Dev Container](#path-b--vs-code-dev-container) | No local Python install, or you want a pre-configured IDE — requires Docker Desktop |
+
+---
+
+## Path A — Native (venv)
+
+No Docker required. Python runs directly on your machine.
+
 ### Linux / macOS
 
 ```bash
@@ -9,7 +22,8 @@ git clone https://github.com/by-openclaw/lib-synology-dsm.git
 cd lib-synology-dsm
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-pre-commit install   # installs git hooks — blocks commits with secrets or lint errors
+pre-commit install
+pytest tests/unit/ -v   # Expected: 223 passed, 0 failed
 ```
 
 ### Windows 11 with Git Bash
@@ -66,9 +80,9 @@ pytest tests/unit/ -v
 # Expected: 223 passed, 0 failed
 ```
 
-> 💡 **Prefer no local setup?** Use the VS Code Dev Container below — Python is inside the container, nothing to install on your machine.
+---
 
-### VS Code Dev Container (recommended for consistency)
+## Path B — VS Code Dev Container
 
 #### Prerequisites
 
@@ -136,6 +150,9 @@ git commit -m "chore: update secrets baseline"
 
 ## Running unit tests
 
+> **No `.env` needed. No NAS needed. No network needed.** All HTTP calls are mocked.
+> Unit tests are completely self-contained — just `pytest tests/unit/ -v` on either Path A or B.
+
 Unit tests are fully offline — no NAS required. All HTTP calls are mocked.
 
 ```bash
@@ -162,6 +179,9 @@ Coverage summary:
 ---
 
 ## Running integration tests (live NAS required)
+
+> **This is where `.env` is needed.** Integration tests connect to a real NAS.
+> Skip this entirely if you're just developing and running unit tests.
 
 Integration tests talk to a real Synology NAS. They create and delete test artifacts
 in controlled locations. **They never touch existing shares or user data.**

@@ -37,6 +37,8 @@ Before touching anything in this repo:
 
 ## What NOT To Do
 
+> ⛔ **Also read `CLAUDE.md` §HARD RULES** — architectural decisions enforced there. AGENTS.md and CLAUDE.md are both authoritative. When in doubt, CLAUDE.md wins.
+
 - ❌ Do NOT use `httpx` — use `urllib` for all HTTP calls
 - ❌ Do NOT use `auth.cgi` — always use `entry.cgi` for SYNO.API.Auth v6
 - ❌ Do NOT skip `X-SYNO-TOKEN` header on write requests
@@ -87,12 +89,13 @@ This ensures any AI agent (or human) picking up the project always has accurate,
 
 | Metric | Value |
 |---|---|
-| Version | v0.8.0 |
-| Tagged releases | 6 |
+| Version | v0.9.0 |
+| Tagged releases | 8 (v0.7.0–v0.9.0) |
 | Unit tests | 223 passing, 100% coverage |
-| Open issues | 0 |
+| Open issues | 3 HIGH (mypy, release path, verify_ssl) |
 | ADR decisions | 3 |
-| CI workflows | 2 (ci.yml, release-please.yml) |
+| CI workflows | 2 (ci.yml + security job, release-please.yml) |
 | Pre-commit hooks | detect-secrets, ruff, ruff-format |
 | Dev container | ✅ .devcontainer/ |
+| mypy | ❌ 27 errors — fix in progress |
 

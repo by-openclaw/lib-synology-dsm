@@ -28,7 +28,7 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 
 ---
 
-## Current State (v0.8.0 — 2026-03-29)
+## Current State (v0.9.0 — 2026-03-29)
 
 | Component | Status |
 |---|---|
@@ -38,25 +38,35 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 | Share CRUD + NFS permissions + ensure() | ✅ v0.7.0 |
 | NFS ensure() per-client rule | ✅ v0.8.0 |
 | FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 |
+| Quota manager | ✅ v0.9.0 |
+| Bandwidth manager | ✅ v0.9.0 |
+| Storage manager | ✅ v0.9.0 |
 | DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
 | Exception hierarchy (DSMError → 6 typed exceptions) | ✅ v0.7.3 |
 | dry_run support (all managers) | ✅ v0.7.0 |
-| Unit tests (161 tests, 100% coverage) | ✅ v0.8.0 |
-| CI: ruff + mypy + pytest on Python 3.10/3.11/3.12 | ✅ v0.7.1 |
+| Unit tests (223 tests, 100% coverage) | ✅ v0.9.0 |
+| CI: ruff + mypy + pytest on Python 3.10/3.11/3.12/3.13 | ✅ CI active |
+| CI: Bandit SAST + pip-audit CVE gate | ✅ 2026-03-29 |
 | Coverage artifacts (htmlcov + coverage.xml, 30-day) | ✅ v0.7.2 |
 | Pre-commit hooks (detect-secrets + ruff) | ✅ v0.7.3 |
 | Dev container (.devcontainer/) | ✅ v0.7.3 |
 | ADR: 3 decisions recorded | ✅ v0.7.3 |
 | LICENSE (MIT) + disclaimer | ✅ v0.7.3 |
-| Bash CRUD smoke test | ✅ tests/integration/dsm-crud-test.sh |
-| Python integration test + --report flag | ✅ v0.7.2 |
+| mypy — 27 open errors (7 files) | ❌ BLOCKING — fix in progress |
 | Ansible collection | ⏸ Phase 2 — see docs/ansible-roadmap.md |
 | Vault AppRole auth | ⏸ Phase 2 — blocked until Vault deployed |
 | Published to GitLab registry | ⏸ Phase 5 — blocked until GitLab CE deployed |
 
-## Open issues
+## Open issues (as of 2026-03-29 audit)
 
-None. Zero open issues as of v0.8.0.
+| Priority | Issue | Tracking |
+|---|---|---|
+| HIGH | mypy 27 errors — CI red on type check | Fix in progress |
+| HIGH | Two release paths — Release Please + scripts/release.sh | Decision: Release Please canonical, release.sh to be removed |
+| HIGH | verify_ssl=False default — pending TLS strategy decision | Blocked on platform cert/DNS decision |
+| MEDIUM | API reference lags code — missing list_detailed, add/remove_member | Backlog |
+| MEDIUM | README stale — test count + Python 3.13 badge missing | Backlog |
+| MEDIUM | build not in dev deps — wheel/sdist not CI-validated | Backlog |
 
 ## Known DSM version bugs
 
@@ -79,12 +89,56 @@ None. Zero open issues as of v0.8.0.
 
 ---
 
+## ⛔ HARD RULES — Non-negotiable. Read before touching any file.
+
+These are architectural decisions. They are NOT suggestions. Do not override them.
+
+### HTTP client — urllib only (ADR-0001)
+- **NEVER use `httpx`, `requests`, `aiohttp`, or any third-party HTTP library.**
+- Use `urllib.request` exclusively. Zero runtime dependencies is a hard requirement.
+- Rationale: ADR-0001 `docs/adr/0001-urllib-over-httpx.md`. Read it.
+- If you think httpx is better — it doesn't matter. The decision is made.
+
+### ensure() pattern on all managers (ADR-0002)
+- Every manager MUST implement `ensure()` with fetch-diff-noop semantics.
+- `ensure()` must return `{"changed": False}` when state already matches — never re-apply.
+- `dry_run=True` must be supported on all destructive methods.
+- Rationale: ADR-0002 `docs/adr/0002-ensure-pattern.md`.
+
+### Credential providers — no hardcoded credentials (ADR-0003)
+- Never hardcode credentials in source. Use `DSMCredentials`, `EnvCredentialProvider`, or `VaultCredentialProvider`.
+- Rationale: ADR-0003 `docs/adr/0003-credential-provider-hierarchy.md`.
+
+### TLS — verify_ssl default is PENDING DECISION
+- `verify_ssl=False` is the current default but is under review.
+- A platform-wide TLS/certificate strategy (naming convention, .arpa DNS, self-signed vs LE) must be decided first.
+- Do NOT change the `verify_ssl` default without explicit confirmation from the owner.
+- Track as open risk: `doc-platform-core/docs/raid.md`.
+
+### Commit and version discipline
+- All commits MUST follow Conventional Commits format.
+- Release Please is the canonical release path. Do NOT run `scripts/release.sh` on this repo.
+- Never manually edit version strings. Never run `cz bump` if Release Please is active.
+
+### Definition of Done — nothing ships at 60%
+- [ ] All public methods have docstrings
+- [ ] ensure() / idempotent pattern implemented
+- [ ] dry_run=True on all destructive methods
+- [ ] Unit tests (pytest) — happy path + error codes
+- [ ] mypy clean (zero errors)
+- [ ] ruff clean (zero warnings)
+- [ ] CHANGELOG entry
+- [ ] CLAUDE.md current state table updated
+
+---
+
 ## Constraints
 
 - Never commit DSM credentials or API tokens
 - `tests/` must pass before any merge to `main`
 - Breaking changes = MAJOR version bump + migration note in CHANGELOG
 - `ruff` linting must be clean before commit
+- `mypy` must be clean before commit (27 open errors as of 2026-03-29 — tracked, fix in progress)
 
 ---
 

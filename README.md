@@ -280,7 +280,7 @@ from synology_dsm import (
 import os
 
 try:
-    with DSMClient(os.environ["NAS_HOST"], verify_ssl=False) as client:
+    with DSMClient(creds.host, port=creds.port, verify_ssl=False) as client:
         client.login(os.environ["DSM_USER"], os.environ["DSM_PASS"])
         shares = ShareManager(client)
         result = shares.ensure("my-share", state="present")

@@ -149,3 +149,35 @@ def test_logout_suppresses_exception():
         client.logout()  # should not raise
 
     assert client._sid is None
+
+
+class TestResolveError:
+    def test_resolve_error_maps_code_119_to_session_error(self):
+        from synology_dsm.exceptions import DSMSessionError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMSessionError) as exc_info:
+            client._resolve_error({"code": 119}, context="test")
+        assert exc_info.value.code == 119
+
+    def test_resolve_error_maps_code_403_to_permission_error(self):
+        from synology_dsm.exceptions import DSMPermissionError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMPermissionError) as exc_info:
+            client._resolve_error({"code": 403}, context="test")
+        assert exc_info.value.code == 403
+
+    def test_resolve_error_uses_fallback_for_unknown_code(self):
+        from synology_dsm.exceptions import DSMAPIError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMAPIError):
+            client._resolve_error({"code": 9999}, context="test")
+
+    def test_resolve_error_handles_non_dict_error(self):
+        from synology_dsm.exceptions import DSMAPIError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMAPIError):
+            client._resolve_error("raw string error", context="test")

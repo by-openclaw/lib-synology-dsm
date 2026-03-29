@@ -12,7 +12,6 @@ Notes:
 
 from __future__ import annotations
 
-import builtins
 import json
 
 from .client import DSMClient
@@ -39,7 +38,7 @@ class UserManager:
         data = self._c.request("SYNO.Core.User", "list", version=1)
         return data.get("users", [])
 
-    def list_detailed(self) -> builtins.list[dict]:
+    def list_detailed(self) -> list[dict]:
         """List all users with full details.
 
         Returns fields: name, description, email, expired, 2fa_status.
@@ -164,14 +163,23 @@ class UserManager:
         """
         self._c.request("SYNO.Core.User", "set", version=1, name=name, expired="true")
 
-    def list_groups(self) -> builtins.list[dict]:
+    def list_groups(self) -> list[dict]:
         """List all groups.
 
-        Returns a list of dicts with at minimum: name, description.
-        Delegates to SYNO.Core.Group.list.
+        .. deprecated::
+            Use ``GroupManager(self._c).list()`` directly.
+            This method will be removed in v1.0.
         """
-        data = self._c.request("SYNO.Core.Group", "list", version=1)
-        return data.get("groups", [])
+        import warnings
+
+        warnings.warn(
+            "UserManager.list_groups() is deprecated. Use GroupManager(client).list() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from .groups import GroupManager
+
+        return GroupManager(self._c).list()
 
     def add_to_group(self, username: str, group: str) -> dict:
         """Add a user to a group (idempotent).

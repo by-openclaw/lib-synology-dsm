@@ -22,7 +22,6 @@ Notes:
 
 from __future__ import annotations
 
-import builtins
 import json
 
 from .client import DSMClient
@@ -148,7 +147,7 @@ class GroupManager:
         self._c.request("SYNO.Core.Group.Member", "remove", version=1, group=group, name=username)
         return {"changed": True, "action": "removed", "user": username, "group": group}
 
-    def list_members(self, group: str) -> builtins.list[dict]:
+    def list_members(self, group: str) -> list[dict]:
         """List members of a group.
 
         Falls back to SYNO.Core.Group.get if member_list is unavailable (DSM version dependent).
@@ -277,7 +276,7 @@ class GroupManager:
                         "action": "would_delete",
                         "before": existing_map[name],
                     }
-                self._c.request("SYNO.Core.Group", "delete", version=1, name=json.dumps([name]))
+                self.delete(name)
                 return {"changed": True, "action": "deleted", "before": existing_map[name]}
             return {"changed": False, "action": "noop"}
 

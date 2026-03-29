@@ -26,6 +26,40 @@ class TestUserCreate:
         )
 
 
+class TestUserListDetailed:
+    def test_list_detailed_normalizes_2fa_status(self, mock_client):
+        """list_detailed normalizes 2fa_status → 2fa_enabled and expired → enabled."""
+        mock_client.request.return_value = {
+            "users": [
+                {
+                    "name": "alice",
+                    "email": "alice@example.com",
+                    "description": "test user",
+                    "expired": "normal",
+                    "2fa_status": True,
+                },
+                {
+                    "name": "bob",
+                    "email": "bob@example.com",
+                    "description": "",
+                    "expired": "expired",
+                    "2fa_status": False,
+                },
+            ]
+        }
+        mgr = UserManager(mock_client)
+        result = mgr.list_detailed()
+        assert len(result) == 2
+
+        alice = result[0]
+        assert alice["2fa_enabled"] is True
+        assert alice["enabled"] is True  # expired="normal" → enabled
+
+        bob = result[1]
+        assert bob["2fa_enabled"] is False
+        assert bob["enabled"] is False  # expired="expired" → disabled
+
+
 class TestUserEnsure:
     def _setup(self, mock_client, existing_users=None):
         """Configure mock to return given list of users."""

@@ -29,7 +29,9 @@ Notes:
 
 from __future__ import annotations
 
+import builtins
 import json
+from typing import Any, cast
 
 from .client import DSMClient
 
@@ -45,13 +47,13 @@ class GroupManager:
         """
         self._c = client
 
-    def list(self) -> list[dict]:
+    def list(self) -> builtins.list[dict]:
         """List all groups.
 
         Returns a list of dicts with at minimum: name, description, gid.
         """
         data = self._c.request("SYNO.Core.Group", "list", version=1)
-        return data.get("groups", [])
+        return cast(builtins.list[dict[Any, Any]], data.get("groups", []))
 
     def create(self, name: str, description: str = "") -> dict:
         """Create a new group.
@@ -154,7 +156,7 @@ class GroupManager:
         self._c.request("SYNO.Core.Group.Member", "remove", version=1, group=group, name=username)
         return {"changed": True, "action": "removed", "user": username, "group": group}
 
-    def list_members(self, group: str) -> list[dict]:
+    def list_members(self, group: str) -> builtins.list[dict]:
         """List members of a group.
 
         Falls back to SYNO.Core.Group.get if member_list is unavailable (DSM version dependent).
@@ -179,7 +181,7 @@ class GroupManager:
             )
             # "offset" key is present on success (even for empty group: total=0, users=[])
             if "offset" in data:
-                return data.get("users", [])
+                return cast(builtins.list[dict[Any, Any]], data.get("users", []))
         except Exception:
             pass
 
@@ -187,7 +189,9 @@ class GroupManager:
         try:
             data = self._c.request("SYNO.Core.Group", "member_list", version=1, name=group)
             if "users" in data or "members" in data:
-                return data.get("users", data.get("members", []))
+                return cast(
+                    builtins.list[dict[Any, Any]], data.get("users", data.get("members", []))
+                )
         except Exception:
             pass
 
@@ -198,7 +202,7 @@ class GroupManager:
             current = groups_data[0] if groups_data else data
             members = current.get("members", current.get("users", []))
             if members:
-                return members
+                return cast(builtins.list[dict[Any, Any]], members)
         except Exception:
             pass
 

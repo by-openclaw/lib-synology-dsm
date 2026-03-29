@@ -6,8 +6,9 @@ SYNO.Core.Share.NFS does NOT exist on DSM 7.x and will return error 102.
 
 from __future__ import annotations
 
+import builtins
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from .client import DSMClient
@@ -23,7 +24,7 @@ class NFSManager:
     def __init__(self, client: DSMClient) -> None:
         self._c = client
 
-    def get_rules(self, share_name: str) -> list[dict]:
+    def get_rules(self, share_name: str) -> builtins.list[dict]:
         """Get NFS rules for a share.
 
         Args:
@@ -39,7 +40,7 @@ class NFSManager:
             version=1,
             share_name=share_name,
         )
-        return data.get("rule", [])
+        return cast(builtins.list[dict[Any, Any]], data.get("rule", []))
 
     def set_rules(self, share_name: str, rules: list[dict], dry_run: bool = False) -> dict:
         """Replace all NFS rules for a share.

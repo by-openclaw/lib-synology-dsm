@@ -12,7 +12,9 @@ Notes:
 
 from __future__ import annotations
 
+import builtins
 import json
+from typing import Any, cast
 
 from .client import DSMClient
 from .exceptions import DSMNotFoundError
@@ -29,16 +31,16 @@ class UserManager:
         """
         self._c = client
 
-    def list(self) -> list[dict]:
+    def list(self) -> builtins.list[dict[Any, Any]]:
         """List all users (names only).
 
         Returns a list of dicts with at minimum: name.
         Use list_detailed() for full user records.
         """
         data = self._c.request("SYNO.Core.User", "list", version=1)
-        return data.get("users", [])
+        return cast(builtins.list[dict[Any, Any]], data.get("users", []))
 
-    def list_detailed(self) -> list[dict]:
+    def list_detailed(self) -> builtins.list[dict[Any, Any]]:
         """List all users with full details.
 
         Returns fields: name, description, email, expired, 2fa_status.
@@ -89,7 +91,7 @@ class UserManager:
         users = self.list_detailed()
         for u in users:
             if u["name"] == name:
-                return u
+                return cast(dict[Any, Any], u)
         return None
 
     def create(self, name: str, password: str, email: str = "", description: str = "") -> dict:
@@ -163,7 +165,7 @@ class UserManager:
         """
         self._c.request("SYNO.Core.User", "set", version=1, name=name, expired="true")
 
-    def list_groups(self) -> list[dict]:
+    def list_groups(self) -> builtins.list[dict]:
         """List all groups.
 
         .. deprecated::

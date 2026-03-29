@@ -16,7 +16,8 @@ Read-only. No write/create/delete — volumes are managed via DSM Storage Manage
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import builtins
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from .client import DSMClient
@@ -43,7 +44,7 @@ class StorageManager:
         location: str = "internal",
         offset: int = 0,
         limit: int = -1,
-    ) -> list[dict]:
+    ) -> builtins.list[dict]:
         """List all storage volumes on the NAS.
 
         Args:
@@ -87,7 +88,7 @@ class StorageManager:
             version=1,
             **params,
         )
-        return data.get("volumes", [])
+        return cast(builtins.list[dict[Any, Any]], data.get("volumes", []))
 
     def get_volume(self, volume_path: str) -> dict | None:
         """Get details for a single volume by path.

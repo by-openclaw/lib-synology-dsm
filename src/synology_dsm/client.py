@@ -10,7 +10,7 @@ import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any
+from typing import Any, cast
 
 from .exceptions import (
     DSMAPIError,
@@ -67,7 +67,7 @@ class DSMClient:
                 req.add_header(k, v)
         try:
             with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=30) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
-                return json.loads(resp.read().decode("utf-8"))
+                return cast(dict[Any, Any], json.loads(resp.read().decode("utf-8")))
         except urllib.error.URLError as exc:
             raise DSMConnectionError(f"Cannot reach DSM at {url}: {exc.reason}", code=None) from exc
         except OSError as exc:
@@ -91,9 +91,11 @@ class DSMClient:
         Raises:
             DSMError subclass: Always raises.
         """
-        raw_code = error.get("code") if isinstance(error, dict) else None  # type: ignore[union-attr]
+        raw_code = error.get("code") if isinstance(error, dict) else None
         code: int | None = int(raw_code) if isinstance(raw_code, int) else None
-        exc_class = _ERROR_MAP.get(code, fallback)
+        exc_class = _ERROR_MAP.get(code) if code is not None else fallback
+        if exc_class is None:
+            exc_class = fallback
         raise exc_class(f"{context}: {error}", code=code)
 
     def login(self, account: str, password: str, session: str = "DSM") -> str:
@@ -159,7 +161,7 @@ class DSMClient:
             self._resolve_error(
                 data.get("error", {}), fallback=DSMAPIError, context=f"API error [{api}.{method}]"
             )
-        return data.get("data", {})
+        return cast(dict[Any, Any], data.get("data", {}))
 
     def __enter__(self) -> DSMClient:
         """Enter the context manager — return self for use in ``with`` blocks."""

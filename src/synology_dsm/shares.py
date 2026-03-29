@@ -25,7 +25,9 @@ NFS Permission Notes:
 
 from __future__ import annotations
 
+import builtins
 import json
+from typing import Any, cast
 
 from .client import DSMClient
 
@@ -41,7 +43,7 @@ class ShareManager:
         """
         self._c = client
 
-    def list(self, additional: list[str] | None = None) -> list[dict]:
+    def list(self, additional: list[str] | None = None) -> builtins.list[dict]:
         """List all shared folders.
 
         Args:
@@ -54,7 +56,7 @@ class ShareManager:
         """
         extra = json.dumps(additional or [])
         data = self._c.request("SYNO.Core.Share", "list", version=1, additional=extra)
-        return data.get("shares", [])
+        return cast(builtins.list[dict[Any, Any]], data.get("shares", []))
 
     def create(self, name: str, volume_path: str = "/volume1", description: str = "") -> dict:
         """Create a shared folder.
@@ -335,7 +337,7 @@ class ShareManager:
             ),
         )
 
-    def get_nfs_rules(self, share: str) -> list[dict]:
+    def get_nfs_rules(self, share: str) -> builtins.list[dict]:
         """Get NFS rules for a share.
 
         Uses SYNO.Core.FileServ.NFS.SharePrivilege.load (correct API on DS1513+ DSM 7.x).
@@ -353,7 +355,7 @@ class ShareManager:
             version=1,
             share_name=share,
         )
-        return data.get("rule", [])
+        return cast(builtins.list[dict[Any, Any]], data.get("rule", []))
 
     def set_nfs_permission(
         self,
@@ -406,9 +408,9 @@ class ShareManager:
     def list_shares_for_group(
         self,
         group_name: str,
-        share_type: list[str] | None = None,
-        additional: list[str] | None = None,
-    ) -> list[dict]:
+        share_type: builtins.list[str] | None = None,
+        additional: builtins.list[str] | None = None,
+    ) -> builtins.list[dict]:
         """List all shares accessible by a specific group.
 
         Uses ``SYNO.Core.Share.Permission list_by_group`` — the API observed
@@ -452,7 +454,7 @@ class ShareManager:
             version=1,
             **params,
         )
-        return data.get("shares", [])
+        return cast(builtins.list[dict[Any, Any]], data.get("shares", []))
 
     def ensure(
         self,

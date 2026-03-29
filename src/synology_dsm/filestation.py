@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import builtins
 import json
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from .client import DSMClient
@@ -42,10 +43,10 @@ class FileStationManager:
 
     # ── Folder ops ──────────────────────────────────────────────────────────
 
-    def list_shares(self) -> list[dict]:
+    def list_shares(self) -> builtins.list[dict]:
         """List all accessible shared folders."""
         resp = self._c.request("SYNO.FileStation.List", "list_share", version=2)
-        return resp.get("shares", [])
+        return cast(builtins.list[dict[Any, Any]], resp.get("shares", []))
 
     def list(
         self,
@@ -53,7 +54,7 @@ class FileStationManager:
         offset: int = 0,
         limit: int = 1000,
         additional: list[str] | None = None,
-    ) -> list[dict]:
+    ) -> builtins.list[dict]:
         """List files/folders inside *folder_path*.
 
         Args:
@@ -80,7 +81,7 @@ class FileStationManager:
             params["additional"] = json.dumps(additional)
 
         resp = self._c.request("SYNO.FileStation.List", "list", version=2, **params)
-        return resp.get("files", [])
+        return cast(builtins.list[dict[Any, Any]], resp.get("files", []))
 
     def mkdir(self, parent: str, name: str, force_parent: bool = True) -> dict:
         """Create a folder *name* inside *parent*.

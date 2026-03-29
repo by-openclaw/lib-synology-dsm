@@ -25,12 +25,12 @@ NAS_PORT = 5001
 BASE_URL = f"https://{NAS_HOST}:{NAS_PORT}/webapi/entry.cgi"
 
 ADMIN_USER = os.environ.get("API_USER", "")
-ADMIN_PASS = "YOUR_PASSWORD"
-AUDIT_USER = "rune-audit"
-AUDIT_PASS = "YOUR_PASSWORD"
+ADMIN_PASS = os.environ.get("API_PASS", "")
+AUDIT_USER = os.environ.get("AUDIT_USER", "")
+AUDIT_PASS = os.environ.get("AUDIT_PASS", "")
 
 TEST_USER = "rune-test-tmp"
-TEST_USER_PASS = "YOUR_PASSWORDtest!"
+TEST_USER_PASS = os.environ.get("TEST_USER_PASS", "")
 TEST_GROUP = "rune-test-group"
 TEST_SHARE = "rune-test-share"
 
@@ -145,24 +145,24 @@ def test_auth_admin() -> str | None:
 
 
 def test_auth_audit() -> str | None:
-    section("2. Auth v7 — rune-audit (read-only)")
+    section(f"2. Auth v7 — {AUDIT_USER} (read-only)")
     sid = login(AUDIT_USER, AUDIT_PASS)
     if sid:
-        record(PASS, "rune-audit login", f"sid={sid[:12]}…")
+        record(PASS, f"{AUDIT_USER} login", f"sid={sid[:12]}…")
         ok = logout(sid)
         if ok:
-            record(PASS, "rune-audit logout")
+            record(PASS, f"{AUDIT_USER} logout")
         else:
-            record(WARN, "rune-audit logout")
+            record(WARN, f"{AUDIT_USER} logout")
         return sid
     else:
-        # Error 402 = account disabled in DSM. Check DSM Control Panel > User if rune-audit is disabled.
+        # Error 402 = account disabled in DSM. Check DSM Control Panel > User if AUDIT_USER is disabled.
         # Error 400 = wrong password, 403 = 2FA required.
         record(
             WARN,
-            "rune-audit login",
+            f"{AUDIT_USER} login",
             "Failed — likely error 402 (account disabled). "
-            "Enable rune-audit in DSM Control Panel → User & Group, or reset password.",
+            f"Enable {AUDIT_USER} in DSM Control Panel → User & Group, or reset password.",
         )
         return None
 

@@ -7,8 +7,27 @@ name = "synology-dsm"
 version = "0.8.0"
 description = "Python library for Synology DSM API — shares, users, NFS, system management"
 readme = "README.md"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
+authors = [
+    { name = "BY-SYSTEMS", email = "engineering@by-systems.be" },
+]
+keywords = ["synology", "dsm", "nas", "api", "automation", "devops"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = []
 
 [project.optional-dependencies]
@@ -23,7 +42,7 @@ Changelog = "https://github.com/by-openclaw/lib-synology-dsm/blob/main/CHANGELOG
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
 markers = ["integration: live NAS required (deselect with -m 'not integration')"]
-addopts = "--cov=src/synology_dsm --cov-report=term-missing --cov-report=html:htmlcov --cov-report=xml --cov-fail-under=80"
+addopts = "-v --tb=short"
 
 [tool.coverage.run]
 source = ["src/synology_dsm"]

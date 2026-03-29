@@ -3,6 +3,7 @@
 Python library for [Synology DSM](https://www.synology.com/en-global/dsm) API automation — shares, users, groups, NFS, and FileStation operations.
 
 [![CI](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml/badge.svg)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/github/v/tag/by-openclaw/lib-synology-dsm?label=version&sort=semver)](https://github.com/by-openclaw/lib-synology-dsm/tags)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)

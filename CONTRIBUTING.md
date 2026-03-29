@@ -14,17 +14,32 @@ pre-commit install   # installs git hooks — blocks commits with secrets or lin
 
 ### Windows 11 (native, no WSL required)
 
-```powershell
-# Install Python if not present
-winget install Python.Python.3.12
+> ⚠️ **Use PowerShell or Windows Terminal — not Git Bash.**
+> Git Bash on Windows does not find the Python installed via `winget` or the Microsoft Store.
+> All commands below must be run in **PowerShell** or **cmd.exe**.
 
+```powershell
+# 1. Install Python 3.13 (if not already installed)
+#    Run in PowerShell — opens Microsoft Store if Python is missing
+winget install Python.Python.3.13
+
+# 2. Close and reopen PowerShell (so Python is on PATH), then verify:
+python --version   # Expected: Python 3.13.x
+
+# 3. Clone and set up
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 cd lib-synology-dsm
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e ".[dev]"
 pre-commit install
+
+# 4. Verify
+pytest tests/unit/ -v
+# Expected: 223 passed, 0 failed
 ```
+
+> 💡 **Recommended alternative:** Use the VS Code Dev Container below — zero Python install required on your machine.
 
 ### VS Code Dev Container (recommended for consistency)
 

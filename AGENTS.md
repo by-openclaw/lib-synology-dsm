@@ -39,7 +39,16 @@ Before touching anything in this repo:
 
 ## Known Blocker
 
-**rune-api DSM user:** Needs `Application → DSM = Allow` set in Synology Control Panel → User before live integration tests will pass.
+**DSM account requirements for integration tests:**
+
+Admin account (`API_USER` / e.g. `rune-api`):
+- Group: `administrators`
+- Applications: DSM = **Allow**, File Station = **Allow**
+
+Audit account (`AUDIT_USER` / e.g. `rune-audit`):
+- Group: `users` (no admin rights)
+- Applications: DSM = **Allow**, File Station = **Allow** (needed for section 7 FileStation list tests)
+- Note: error 402 on login = account disabled in DSM Control Panel → User & Group → Edit → Enable
 
 ## GitHub Repo
 

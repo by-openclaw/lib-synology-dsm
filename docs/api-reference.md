@@ -13,8 +13,8 @@ Session manager for Synology DSM API.
 ```python
 from synology_dsm import DSMClient
 
-with DSMClient("10.6.224.6", port=5001) as client:
-    client.login("rune-api", "password")
+with DSMClient("your-nas-host", port=5001) as client:
+    client.login(os.environ["DSM_USER"], os.environ["DSM_PASS"])
     # ... use managers
 # session automatically closed on exit
 ```

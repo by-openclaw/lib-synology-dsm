@@ -206,12 +206,28 @@ def test_users(sid: str) -> None:
         record(FAIL, f"SYNO.Core.User create ({TEST_USER})", f"error={err}")
         return
 
+    # Verify user now exists (ensure present)
+    resp_check = api(sid, "SYNO.Core.User", "list", version=1)
+    users_after = resp_check.get("users", []) if isinstance(resp_check, dict) else []
+    if any(u.get("name") == TEST_USER for u in users_after):
+        record(PASS, f"SYNO.Core.User ensure present — verified ({TEST_USER} in list)")
+    else:
+        record(FAIL, f"SYNO.Core.User ensure present — {TEST_USER} NOT found after create")
+
     # Delete test user — DSM requires JSON array
     resp = api(sid, "SYNO.Core.User", "delete", version=1, name=json.dumps([TEST_USER]))
     if resp.get("success", True) is not False:
         record(PASS, f"SYNO.Core.User delete ({TEST_USER})")
     else:
         record(FAIL, f"SYNO.Core.User delete ({TEST_USER})", str(resp)[:120])
+
+    # Verify user is gone (ensure absent)
+    resp_check2 = api(sid, "SYNO.Core.User", "list", version=1)
+    users_final = resp_check2.get("users", []) if isinstance(resp_check2, dict) else []
+    if not any(u.get("name") == TEST_USER for u in users_final):
+        record(PASS, f"SYNO.Core.User ensure absent — verified ({TEST_USER} gone)")
+    else:
+        record(FAIL, f"SYNO.Core.User ensure absent — {TEST_USER} still present after delete")
 
 
 def _api_raw(sid: str, api_name: str, method: str, version: int = 1, **params) -> dict:
@@ -311,12 +327,30 @@ def test_groups(sid: str) -> None:
     else:
         record(WARN, "SYNO.Core.Group clear members", str(resp.get("error", ""))[:80])
 
+    # Verify group exists before delete (ensure present)
+    resp_check = _api_raw(sid, "SYNO.Core.Group", "list", version=1)
+    groups_after = resp_check.get("data", {}).get("groups", []) if resp_check.get("success") else []
+    if any(g.get("name") == TEST_GROUP for g in groups_after):
+        record(PASS, f"SYNO.Core.Group ensure present — verified ({TEST_GROUP} in list)")
+    else:
+        record(FAIL, f"SYNO.Core.Group ensure present — {TEST_GROUP} NOT found after create")
+
     # Delete group — JSON array like users
     resp = _api_raw(sid, "SYNO.Core.Group", "delete", version=1, name=json.dumps([TEST_GROUP]))
     if resp.get("success"):
         record(PASS, f"SYNO.Core.Group delete ({TEST_GROUP})")
     else:
         record(FAIL, f"SYNO.Core.Group delete ({TEST_GROUP})", str(resp.get("error", ""))[:80])
+
+    # Verify group is gone (ensure absent)
+    resp_check2 = _api_raw(sid, "SYNO.Core.Group", "list", version=1)
+    groups_final = (
+        resp_check2.get("data", {}).get("groups", []) if resp_check2.get("success") else []
+    )
+    if not any(g.get("name") == TEST_GROUP for g in groups_final):
+        record(PASS, f"SYNO.Core.Group ensure absent — verified ({TEST_GROUP} gone)")
+    else:
+        record(FAIL, f"SYNO.Core.Group ensure absent — {TEST_GROUP} still present after delete")
 
 
 def test_shares(sid: str) -> None:
@@ -397,6 +431,16 @@ def test_shares(sid: str) -> None:
         else:
             record(WARN, "NFS SharePrivilege save", str(resp_nfs.get("error", ""))[:80])
 
+        # Verify share exists before delete (ensure present)
+        resp_check = _api_raw(sid, "SYNO.Core.Share", "list", version=1, additional=json.dumps([]))
+        shares_after = (
+            resp_check.get("data", {}).get("shares", []) if resp_check.get("success") else []
+        )
+        if any(s.get("name") == TEST_SHARE for s in shares_after):
+            record(PASS, f"SYNO.Core.Share ensure present — verified ({TEST_SHARE} in list)")
+        else:
+            record(FAIL, f"SYNO.Core.Share ensure present — {TEST_SHARE} NOT found after create")
+
         # Delete share
         resp_del = _api_raw(sid, "SYNO.Core.Share", "delete", version=1, name=TEST_SHARE)
         if resp_del.get("success"):
@@ -405,6 +449,16 @@ def test_shares(sid: str) -> None:
             record(
                 FAIL, f"SYNO.Core.Share delete ({TEST_SHARE})", str(resp_del.get("error", ""))[:80]
             )
+
+        # Verify share is gone (ensure absent)
+        resp_check2 = _api_raw(sid, "SYNO.Core.Share", "list", version=1, additional=json.dumps([]))
+        shares_final = (
+            resp_check2.get("data", {}).get("shares", []) if resp_check2.get("success") else []
+        )
+        if not any(s.get("name") == TEST_SHARE for s in shares_final):
+            record(PASS, f"SYNO.Core.Share ensure absent — verified ({TEST_SHARE} gone)")
+        else:
+            record(FAIL, f"SYNO.Core.Share ensure absent — {TEST_SHARE} still present after delete")
     else:
         err_code = resp.get("error", {}).get("code", "?")
         if err_code == 403 or str(err_code) == "403":

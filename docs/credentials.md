@@ -79,7 +79,7 @@ creds = VaultCredentialProvider(
 
 ```json
 {
-  "host": "10.6.224.6",
+  "host": "your-nas-host",
   "port": 5001,
   "user": "svc-rune-dsm",
   "password": "..."
@@ -89,7 +89,7 @@ creds = VaultCredentialProvider(
 Write the secret:
 ```bash
 vault kv put secret/synology/nas01 \
-  host=10.6.224.6 \
+  host=your-nas-host \
   port=5001 \
   user=svc-rune-dsm \
   password=...
@@ -104,7 +104,7 @@ Pass credentials directly. Never use in production.
 ```python
 from synology_dsm import DSMClient
 
-with DSMClient("10.6.224.6") as client:
+with DSMClient("your-nas-host") as client:
     client.login("svc-rune-dsm", "password")
 ```
 

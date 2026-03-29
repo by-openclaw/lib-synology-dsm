@@ -4,11 +4,12 @@ import pytest
 from unittest.mock import patch
 from synology_dsm import DSMClient
 from synology_dsm.exceptions import (
+    DSMAPIError,
     DSMAuthError,
+    DSMConnectionError,
+    DSMError,
     DSMPermissionError,
     DSMSessionError,
-    DSMAPIError,
-    DSMError,
 )
 
 
@@ -44,6 +45,15 @@ class TestExceptionHierarchy:
     def test_code_none_default(self):
         e = DSMError("msg")
         assert e.code is None
+
+    def test_dsmconnection_is_dsmerror(self):
+        e = DSMConnectionError("cannot reach NAS")
+        assert isinstance(e, DSMError)
+        assert e.code is None
+
+    def test_dsmconnection_message(self):
+        e = DSMConnectionError("timeout connecting to 10.x.x.x:5001")
+        assert "timeout" in str(e)
 
 
 class TestClientRequestErrorMapping:

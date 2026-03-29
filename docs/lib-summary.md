@@ -126,7 +126,7 @@ with DSMClient(creds.host) as client:
         description="srv-proxmox-prod-01 — VM/LXC backups — Production",
         owner_user="svc-rune-dsm",
         owner_group="svc-automation",
-        nfs_client="10.6.240.10",
+        nfs_client="your-nfs-client",
         nfs_rw=True,
     )
 ```

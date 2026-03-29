@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import ssl
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
@@ -14,6 +15,7 @@ from typing import Any
 from .exceptions import (
     DSMAPIError,
     DSMAuthError,
+    DSMConnectionError,
     DSMPermissionError,
     DSMSessionError,
 )
@@ -52,8 +54,15 @@ class DSMClient:
         if headers:
             for k, v in headers.items():
                 req.add_header(k, v)
-        with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=30) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=30) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.URLError as exc:
+            raise DSMConnectionError(f"Cannot reach DSM at {url}: {exc.reason}", code=None) from exc
+        except OSError as exc:
+            raise DSMConnectionError(
+                f"Network error reaching DSM at {url}: {exc}", code=None
+            ) from exc
 
     def login(self, account: str, password: str, session: str = "DSM") -> str:
         """Login and return session ID."""

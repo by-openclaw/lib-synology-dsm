@@ -1,8 +1,10 @@
 """Unit tests — FileStationManager."""
 
 import json
+import urllib.error
 from unittest.mock import MagicMock, patch, mock_open
 from synology_dsm.filestation import FileStationManager
+from synology_dsm import DSMConnectionError
 from synology_dsm import DSMClient
 
 
@@ -99,6 +101,64 @@ class TestDelete:
         call_args = mock_client.request.call_args
         assert call_args.args[0] == "SYNO.FileStation.Delete"
         assert call_args.args[1] == "start"
+
+
+class TestConnectionErrors:
+    def test_upload_raises_dsm_connection_error_on_network_failure(self):
+        """upload() raises DSMConnectionError when NAS is unreachable."""
+        from synology_dsm import DSMClient
+
+        client = DSMClient("your-nas-host", verify_ssl=False)
+        client._sid = "SID"
+        client._synotoken = "TOK"
+        mgr = FileStationManager(client)
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ):
+            with patch("builtins.open", mock_open(read_data=b"data")):
+                with __import__("pytest").raises(DSMConnectionError, match="cannot reach NAS"):
+                    mgr.upload("/tmp/f.txt", "/share")
+
+    def test_download_raises_dsm_connection_error_on_network_failure(self, tmp_path):
+        """download() raises DSMConnectionError when NAS is unreachable."""
+        from synology_dsm import DSMClient
+
+        client = DSMClient("your-nas-host", verify_ssl=False)
+        client._sid = "SID"
+        client._synotoken = "TOK"
+        mgr = FileStationManager(client)
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ):
+            with __import__("pytest").raises(DSMConnectionError, match="cannot reach NAS"):
+                mgr.download("/share/f.txt", str(tmp_path / "out.txt"))
+
+    def test_upload_raises_dsm_connection_error_on_os_error(self):
+        """upload() wraps OSError as DSMConnectionError."""
+        from synology_dsm import DSMClient
+
+        client = DSMClient("your-nas-host", verify_ssl=False)
+        client._sid = "SID"
+        client._synotoken = "TOK"
+        mgr = FileStationManager(client)
+        with patch("urllib.request.urlopen", side_effect=OSError("timed out")):
+            with patch("builtins.open", mock_open(read_data=b"data")):
+                with __import__("pytest").raises(DSMConnectionError, match="network error"):
+                    mgr.upload("/tmp/f.txt", "/share")
+
+    def test_download_raises_dsm_connection_error_on_os_error(self, tmp_path):
+        """download() wraps OSError as DSMConnectionError."""
+        from synology_dsm import DSMClient
+
+        client = DSMClient("your-nas-host", verify_ssl=False)
+        client._sid = "SID"
+        client._synotoken = "TOK"
+        mgr = FileStationManager(client)
+        with patch("urllib.request.urlopen", side_effect=OSError("timed out")):
+            with __import__("pytest").raises(DSMConnectionError, match="network error"):
+                mgr.download("/share/f.txt", str(tmp_path / "out.txt"))
 
 
 class TestUploadFailure:

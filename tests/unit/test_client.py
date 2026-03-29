@@ -1,8 +1,10 @@
 """Tests for DSM client session management."""
 
+import urllib.error
+
 import pytest
 from unittest.mock import patch
-from synology_dsm import DSMClient
+from synology_dsm import DSMClient, DSMConnectionError
 from synology_dsm.exceptions import DSMAuthError
 
 
@@ -110,6 +112,28 @@ def test_post_adds_headers():
     assert result == {"ok": True}
     assert captured_req["ct"] == "application/x-www-form-urlencoded"
     assert captured_req["xsyn"] == "tok"
+
+
+def test_post_raises_connection_error_on_url_error():
+    """_post wraps urllib.error.URLError as DSMConnectionError."""
+    client = DSMClient("your-nas-host", https=False)
+    with patch(
+        "urllib.request.urlopen",
+        side_effect=urllib.error.URLError("Connection refused"),
+    ):
+        with pytest.raises(DSMConnectionError, match="Cannot reach DSM"):
+            client._post("http://nas/api", {"key": "val"})
+
+
+def test_post_raises_connection_error_on_os_error():
+    """_post wraps OSError (e.g. socket timeout) as DSMConnectionError."""
+    client = DSMClient("your-nas-host", https=False)
+    with patch(
+        "urllib.request.urlopen",
+        side_effect=OSError("timed out"),
+    ):
+        with pytest.raises(DSMConnectionError, match="Network error"):
+            client._post("http://nas/api", {"key": "val"})
 
 
 def test_logout_suppresses_exception():

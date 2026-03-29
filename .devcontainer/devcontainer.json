@@ -1,0 +1,56 @@
+{
+  "name": "lib-synology-dsm",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+
+  "postCreateCommand": "pip install -e '.[dev]'",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker",
+        "hbenl.vscode-test-explorer",
+        "littlefoxteam.vscode-python-test-adapter",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.terminal.activateEnvironment": true,
+
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+          }
+        },
+
+        "ruff.enable": true,
+        "ruff.lint.enable": true,
+
+        "mypy-type-checker.args": ["--ignore-missing-imports"],
+
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests/unit"],
+        "python.testing.unittestEnabled": false,
+
+        "editor.rulers": [100],
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true
+      }
+    }
+  },
+
+  "remoteEnv": {
+    "SYNOLOGY_HOST": "${localEnv:SYNOLOGY_HOST}",
+    "API_USER": "${localEnv:API_USER}",
+    "API_PASS": "${localEnv:API_PASS}",
+    "AUDIT_USER": "${localEnv:AUDIT_USER}",
+    "AUDIT_PASS": "${localEnv:AUDIT_PASS}",
+    "NFS_CLIENT": "${localEnv:NFS_CLIENT}"
+  }
+}

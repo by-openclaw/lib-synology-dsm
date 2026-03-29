@@ -10,6 +10,7 @@ from .credentials import (
 from .exceptions import (
     DSMAPIError,
     DSMAuthError,
+    DSMConnectionError,
     DSMError,
     DSMNotFoundError,
     DSMPermissionError,
@@ -24,6 +25,7 @@ __all__ = [
     "DSMAPIError",
     "DSMAuthError",
     "DSMClient",
+    "DSMConnectionError",
     "DSMCredentials",
     "DSMError",
     "DSMNotFoundError",

@@ -2,7 +2,7 @@
 
 ## Context
 
-`rune-api` (future: `svc-rune-dsm`) requires the `administrators` group.
+`${API_USER}` (future: `svc-rune-dsm`) requires the `administrators` group.
 This is a DSM constraint — no workaround exists. Without it, all write operations
 return error 119. Harden the account instead.
 
@@ -32,7 +32,7 @@ return error 119. Harden the account instead.
 
 ### App privilege by IP (DSM Control Panel → Application Privileges)
 
-Restrict `rune-api` to automation subnets only:
+Restrict `${API_USER}` to automation subnets only:
 
 | Network | CIDR | Purpose |
 |---|---|---|
@@ -41,7 +41,7 @@ Restrict `rune-api` to automation subnets only:
 
 **How to configure:**
 1. Control Panel → Application Privileges
-2. Find DSM → Edit → add IP restriction for rune-api
+2. Find DSM → Edit → add IP restriction for ${API_USER}
 3. Allow: 10.6.224.0/20, 10.6.240.0/20
 4. Deny: all others
 
@@ -50,19 +50,19 @@ Restrict `rune-api` to automation subnets only:
 Control Panel → Security → Account → Enable auto-block:
 - After X failed logins → block IP
 - Recommended: 5 attempts, 10 minute block
-- Note: this affects all users, not only rune-api
+- Note: this affects all users, not only ${API_USER}
 
-### Log Center — audit rune-api activity
+### Log Center — audit ${API_USER} activity
 
 Control Panel → Log Center → enable:
 - File access logs
 - User/group change logs
-- Filter/export by user: rune-api
+- Filter/export by user: ${API_USER}
 
 ## Summary
 
 ```
-rune-api (future: svc-rune-dsm)
+${API_USER} (future: svc-rune-dsm)
  ├── Groups
  │   ├── administrators  ← required (write ops)
  │   ├── users           ← required (auth)
@@ -80,7 +80,7 @@ rune-api (future: svc-rune-dsm)
 
 ## Rename roadmap
 
-Current: `rune-api` → Target: `svc-rune-dsm`
+Current: `${API_USER}` → Target: `svc-rune-dsm`
 
 DSM does not support renaming users — requires delete + recreate.
 Track: platform-setup#56 — do before any production use.

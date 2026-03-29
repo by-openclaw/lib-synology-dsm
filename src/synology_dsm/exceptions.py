@@ -43,3 +43,16 @@ class DSMAPIError(DSMError):
     """Generic API error — any other DSM error code."""
 
     pass
+
+
+class DSMConnectionError(DSMError):
+    """Network-level failure — cannot reach the NAS (connection refused, timeout, DNS failure).
+
+    Wraps urllib.error.URLError and socket-level errors so callers never
+    need to import urllib internals to handle connection failures.
+
+    Attributes:
+        code: Always None (no DSM error code for network failures).
+    """
+
+    pass

@@ -1,8 +1,27 @@
 # lib-synology-dsm
 
-Python library for Synology DSM API — idempotent CRUD for shared folders, NFS permissions, users, groups, and file operations.
+Python library for [Synology DSM](https://www.synology.com/en-global/dsm) API automation — shares, users, groups, NFS, and FileStation operations.
 
-**Hardware:** DS1513+ · **DSM:** 7.1.1-42962 Update 9 · **Auth:** SYNO.API.Auth v7
+[![CI](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml/badge.svg)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> **Internal use — BY-SYSTEMS DevOps platform.**
+> See [LICENSE](LICENSE) for terms and disclaimer of liability.
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|---|---|
+| [docs/api-reference.md](docs/api-reference.md) | Full API reference — all managers, methods, parameters |
+| [docs/credentials.md](docs/credentials.md) | Credential providers — env vars, `.env`, HashiCorp Vault |
+| [docs/feature-coverage.md](docs/feature-coverage.md) | DSM API coverage matrix |
+| [docs/hardening.md](docs/hardening.md) | DSM account hardening — IP restrictions, app permissions |
+| [docs/licenses.md](docs/licenses.md) | Dependency license table |
+| [docs/ansible-roadmap.md](docs/ansible-roadmap.md) | Planned Ansible collection |
+| [docs/adr/README.md](docs/adr/README.md) | Architecture Decision Records |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, unit tests, integration tests |
 
 ---
 
@@ -10,258 +29,107 @@ Python library for Synology DSM API — idempotent CRUD for shared folders, NFS 
 
 ```bash
 pip install git+https://github.com/by-openclaw/lib-synology-dsm.git
-
-# Smoke test (requires curl + jq)
-bash tests/integration/dsm-crud-test.sh
-
-# Full Python integration test
-python3 tests/integration/test_live_nas.py
 ```
+
+```python
+import os
+from synology_dsm import DSMClient, ShareManager, UserManager, GroupManager
+
+with DSMClient(os.environ["NAS_HOST"], port=5001, verify_ssl=False) as client:
+    client.login(os.environ["DSM_USER"], os.environ["DSM_PASS"])
+
+    # Idempotent share creation
+    shares = ShareManager(client)
+    result = shares.ensure("by-data", state="present", description="Data share")
+    print(result)  # {"changed": True, "action": "created"}
+
+    # Idempotent user creation
+    users = UserManager(client)
+    result = users.ensure("alice", state="present", password="secret", email="a@b.com")
+    print(result)  # {"changed": False, "action": "noop"}  — if already exists with same values
+```
+
+See [docs/api-reference.md](docs/api-reference.md) for full usage examples.
 
 ---
 
 ## DSM account requirements
 
-The API user must be configured in DSM before any write operation will work.
+### Admin account (`API_USER`)
+- DSM group: `administrators`
+- Applications: **DSM = Allow**, **File Station = Allow**
 
-### Groups
+### Audit account (`AUDIT_USER`, optional — for read-only integration tests)
+- DSM group: `users` (no admin)
+- Applications: **DSM = Allow**, **File Station = Allow**
 
-| Group | Required | Why |
-|---|---|---|
-| `administrators` | **Yes** | Share create/delete, NFS rules — fail with 403 without this |
-| `users` | Yes | Default group — required for basic auth |
-
-### Application permissions (Control Panel → User & Group → Edit → Applications)
-
-| Application | Permission |
-|---|---|
-| DSM | **Allow** |
-| File Station | **Allow** |
-| All others | Deny (default) |
-
-### One-time setup in DSM UI
-
-1. Control Panel → User & Group → select user → Edit
-2. **User Groups tab** → check `administrators` + `users`
-3. **Applications tab** → DSM = Allow, File Station = Allow
-4. Save
-
-### Verify setup
-
-```bash
-curl -sk "https://10.6.224.6:5001/webapi/entry.cgi" \
-  --data "api=SYNO.API.Auth&version=7&method=login&account=rune-api&passwd=YOUR_PASS&session=DSM&format=sid&enable_syno_token=yes"
-# success=true AND synotoken must be a real token (not "--------")
-```
-
----
-
-## Known API quirks (DS1513+ DSM 7.x)
-
-These are documented from live testing — not from official docs.
-
-| API | Issue | Fix |
-|---|---|---|
-| All write ops | Return 403 without `X-SYNO-TOKEN` header | Login with `enable_syno_token=yes`, send token on every write |
-| `SYNO.Core.Share.create` | Flat params (`vol_path`, `desc`) return 403 | Must use `shareinfo` JSON object: `{"name":..,"vol_path":..,"desc":..,"name_org":""}` |
-| `SYNO.Core.Group.member_set` | Error 103 (invalid parameter) | Use `SYNO.Core.Group.set` with `members=["user1","user2"]` instead |
-| `SYNO.Core.Share.NFS.set` | Error 102 (no such API) | Use `SYNO.Core.FileServ.NFS.SharePrivilege.save` with `share_name=` + `rule=` |
-| `SYNO.Core.User.delete` | Requires JSON array | `name=["username"]` not `name=username` |
-| `SYNO.Core.Group.delete` | Requires JSON array | Same as user delete |
-| `SYNO.FileStation.Upload` | Error 101 with `_sid` form field or `dest_folder_path` | Token in URL (`?SynoToken=`), session as cookie `id=`, field is `path` not `dest_folder_path` — discovered via browser DevTools |
-| `SYNO.FileStation.Upload` | Error 101 with `session=FileStation` or `version=2` in body | Use `session=DSM` at login; SynoToken in URL query string only |
-
----
-
-## Usage
-
-### Shares
-
-```python
-from synology_dsm import DSMClient
-from synology_dsm.shares import ShareManager
-
-with DSMClient("10.6.224.6") as client:
-    client.login("rune-api", "password")
-    mgr = ShareManager(client)
-
-    # Create
-    mgr.create("my-share", volume_path="/volume1", description="My share")
-
-    # Create with permissions + NFS in one call
-    mgr.create_with_permissions(
-        "my-share",
-        owner_user="by-systems",
-        owner_group="svc-automation",
-        nfs_client="10.6.224.0/20",
-        nfs_rw=True,
-    )
-
-    # List
-    for s in mgr.list():
-        print(s["name"])
-
-    # NFS rules
-    mgr.set_nfs_permission("my-share", "10.6.224.0/20", rw=True)
-    rules = mgr.get_nfs_rules("my-share")
-
-    # Idempotent ensure
-    mgr.ensure("my-share", state="present", description="desc")
-    mgr.ensure("my-share", state="absent")
-```
-
-### Users
-
-```python
-from synology_dsm.users import UserManager
-
-with DSMClient("10.6.224.6") as client:
-    client.login("rune-api", "password")
-    mgr = UserManager(client)
-
-    mgr.create("alice", password="Secret123!", description="Alice")
-    mgr.update("alice", description="Alice — updated")
-    users = mgr.list()
-    mgr.ensure("alice", state="absent")
-```
-
-### Groups
-
-```python
-from synology_dsm.groups import GroupManager
-
-with DSMClient("10.6.224.6") as client:
-    client.login("rune-api", "password")
-    mgr = GroupManager(client)
-
-    mgr.create("svc-automation", description="Automation accounts")
-    mgr.add_member("svc-automation", "rune-api")   # uses Group.set internally
-    mgr.remove_member("svc-automation", "rune-api")
-    mgr.ensure("svc-automation", state="absent")
-```
-
-### FileStation (file & folder operations)
-
-```python
-from synology_dsm.filestation import FileStationManager
-
-with DSMClient("10.6.224.6") as client:
-    client.login("rune-api", "password")
-    fs = FileStationManager(client)
-
-    # List shares
-    shares = fs.list_shares()
-
-    # List folder contents
-    files = fs.list("/by-terraform-state/poc")
-
-    # Create folder
-    fs.mkdir("/by-terraform-state", "prod")
-
-    # Upload a file
-    fs.upload("/local/path/terraform.tfstate", "/by-terraform-state/poc", overwrite=True)
-
-    # Download a file
-    fs.download("/by-terraform-state/poc/terraform.tfstate", "/local/path/terraform.tfstate")
-
-    # Delete a file or folder
-    fs.delete("/by-terraform-state/poc/old-file.json")
-```
-
----
-
-## Credentials
-
-Never hardcode credentials. Supported patterns:
-
-### `.env` (development)
-
-```bash
-cp .env.example .env
-```
-
-```python
-from synology_dsm.credentials import EnvCredentialProvider
-creds = EnvCredentialProvider().get()
-```
-
-### HashiCorp Vault (production — Layer 2+)
-
-```python
-from synology_dsm.credentials import get_credentials
-creds = get_credentials()  # auto-detects Vault when VAULT_ADDR is set
-```
-
-### Explicit (tests only)
-
-```python
-client.login("rune-api", "password")
-```
+See [docs/hardening.md](docs/hardening.md) for IP restriction and log center setup.
 
 ---
 
 ## Testing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full instructions.
+
 ```bash
-# Bash smoke test — full CRUD cycle, no Python deps needed
-bash tests/integration/dsm-crud-test.sh
+# Unit tests (offline, no NAS)
+pytest tests/unit/ -v
+# 141 passing | 100% coverage | htmlcov/index.html generated
 
-# Python integration test
-python3 tests/integration/test_live_nas.py
-
-# Override NAS target
-NAS_HOST=10.6.x.x API_PASS=mypass bash tests/integration/dsm-crud-test.sh
+# Integration tests (live NAS)
+NAS_HOST=your-nas-host API_USER=your-user API_PASS=your-pass \
+AUDIT_USER=your-audit AUDIT_PASS=your-audit-pass \
+NFS_CLIENT=your-nfs-subnet TEST_USER_PASS=TmpPass123! \
+python3 tests/integration/test_live_nas.py --report /tmp/nas-report
+# Writes: /tmp/nas-report.json + /tmp/nas-report.txt
 ```
-
-**Current test results (2026-03-29):**
-
-| Test | Status |
-|---|---|
-| Auth (rune-api) | ✅ |
-| User create / update / delete | ✅ |
-| Group create / members / delete | ✅ |
-| Share create / permissions / NFS / delete | ✅ |
-| FileStation list shares | ✅ |
-| FileStation list folder | ✅ |
-| FileStation mkdir | ✅ |
-| FileStation upload | ✅ |
-| FileStation download | ✅ |
-| FileStation delete | ✅ |
-| rune-audit login | ⚠️ disabled in DSM — re-enable to test read-only path |
 
 ---
 
-## Install
+## Dev container
 
-```bash
-# From GitHub (current)
-pip install git+https://github.com/by-openclaw/lib-synology-dsm.git
+Open in VS Code with the Dev Containers extension — Python 3.12, ruff, mypy, pytest explorer all pre-configured.
 
-# From GitLab Package Registry (when GitLab CE is live — Phase 5)
-pip install synology-dsm
-```
+See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json).
 
 ---
 
 ## Modules
 
-| Module | Purpose |
-|---|---|
-| `client.py` | Session management, auth, `X-SYNO-TOKEN` handling |
-| `shares.py` | Shared folder CRUD + NFS + permissions |
-| `groups.py` | Group CRUD + membership |
-| `users.py` | User CRUD |
-| `filestation.py` | File/folder ops — upload, download, list, mkdir, delete |
-| `credentials.py` | Env + Vault credential providers |
+| Module | Class | Description |
+|---|---|---|
+| `synology_dsm.client` | `DSMClient` | Session management, auth, raw API calls |
+| `synology_dsm.shares` | `ShareManager` | Shared folder CRUD, NFS rules, permissions |
+| `synology_dsm.users` | `UserManager` | User CRUD, group membership |
+| `synology_dsm.groups` | `GroupManager` | Group CRUD, member management |
+| `synology_dsm.filestation` | `FileStationManager` | Upload, download, list, mkdir, delete |
+| `synology_dsm.nfs` | `NFSManager` | NFS rule management (per share) |
+| `synology_dsm.credentials` | `EnvCredentialProvider`, `VaultCredentialProvider`, `get_credentials` | Credential resolution |
+| `synology_dsm.exceptions` | `DSMError` hierarchy | Typed exceptions — auth, permission, connection, API |
 
 ---
 
-## References
+## Exception hierarchy
 
-- DSM API on your NAS: `https://NAS_IP:5001/webapi/entry.cgi?api=SYNO.API.Info&version=1&method=query&query=all`
-- Community reference: <https://github.com/pmilano1/synology-dsm-api>
-- Platform charter: [ADR-0006](https://github.com/by-openclaw/doc-platform-core/blob/main/docs/adr/0006-platform-charter.md)
+```
+DSMError
+├── DSMAuthError          — codes 400, 402 (bad credentials, account disabled)
+├── DSMPermissionError    — code 403 (insufficient privileges)
+├── DSMSessionError       — code 119 (session expired)
+├── DSMNotFoundError      — code 408 (resource not found)
+├── DSMConnectionError    — network failure (connection refused, timeout, DNS)
+└── DSMAPIError           — any other DSM error code
+```
+
+All exceptions expose `.code: int | None`.
 
 ---
 
-**Agent:** Rune | **Owner:** @yboujraf | **Org:** [by-openclaw](https://github.com/by-openclaw)
+## Install from source
+
+```bash
+git clone https://github.com/by-openclaw/lib-synology-dsm.git
+cd lib-synology-dsm
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+```

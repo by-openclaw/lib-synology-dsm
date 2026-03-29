@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .client import DSMClient
 
+from .exceptions import DSMConnectionError
+
 _BOUNDARY = b"----DSMUploadBoundary1234567890"
 
 
@@ -188,8 +190,15 @@ class FileStationManager:
 
         ssl_ctx = self._c._ssl_ctx
 
-        with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
-            data = _json.loads(resp.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
+                data = _json.loads(resp.read().decode("utf-8"))
+        except urllib.error.URLError as exc:
+            raise DSMConnectionError(
+                f"FileStation upload failed — cannot reach NAS: {exc.reason}", code=None
+            ) from exc
+        except OSError as exc:
+            raise DSMConnectionError(f"FileStation upload network error: {exc}", code=None) from exc
 
         if not data.get("success"):
             raise RuntimeError(f"Upload failed: {data.get('error')}")
@@ -224,9 +233,18 @@ class FileStationManager:
         req = urllib.request.Request(url, method="GET")
         req.add_header("X-SYNO-TOKEN", self._c._synotoken)
         ssl_ctx = self._c._ssl_ctx
-        with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
-            with open(local_path, "wb") as fh:
-                fh.write(resp.read())
+        try:
+            with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
+                with open(local_path, "wb") as fh:
+                    fh.write(resp.read())
+        except urllib.error.URLError as exc:
+            raise DSMConnectionError(
+                f"FileStation download failed — cannot reach NAS: {exc.reason}", code=None
+            ) from exc
+        except OSError as exc:
+            raise DSMConnectionError(
+                f"FileStation download network error: {exc}", code=None
+            ) from exc
 
     def delete(self, path: str, dry_run: bool = False) -> dict:
         """Delete a file or folder at *path*.

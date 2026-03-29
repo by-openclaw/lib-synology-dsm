@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 
 from .client import DSMClient
+from .exceptions import DSMNotFoundError
 
 
 class UserManager:
@@ -109,7 +110,7 @@ class UserManager:
             description=description,
         )
 
-    def delete(self, name: str) -> None:
+    def delete(self, name: str, dry_run: bool = False) -> dict | None:
         """Delete a user by name.
 
         Note: DSM API requires name as a JSON array string e.g. '["username"]'.
@@ -117,8 +118,21 @@ class UserManager:
 
         Args:
             name: Username to delete.
+            dry_run: If True, return what would happen without making changes.
+
+        Returns:
+            None (or dry_run result dict).
+
+        Raises:
+            DSMNotFoundError: If the user does not exist.
         """
+        existing = {u["name"] for u in self.list()}
+        if name not in existing:
+            raise DSMNotFoundError(f"User '{name}' not found", code=408)
+        if dry_run:
+            return {"changed": True, "dry_run": True, "action": "would_delete", "target": name}
         self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))
+        return None
 
     def update(self, name: str, **kwargs: object) -> None:
         """Update user attributes.
@@ -188,11 +202,12 @@ class UserManager:
         password: str = "",
         email: str = "",
         description: str = "",
+        dry_run: bool = False,
     ) -> dict:
         """Ensure a user exists or is absent — idempotent.
 
         Mirrors Ansible state semantics:
-            state="present" → create if not exists, update description/email if exists
+            state="present" → create if not exists, update description/email if changed
             state="absent"  → delete if exists, no-op if already gone
 
         Args:
@@ -201,24 +216,74 @@ class UserManager:
             password: Required when creating (ignored on update).
             email: Email address.
             description: Human-readable description.
+            dry_run: If True, return what would happen without making changes.
 
         Returns:
-            Dict with keys: changed (bool), action (str: created/updated/deleted/noop)
+            Dict with keys:
+              - changed (bool)
+              - action (str: created/updated/deleted/noop or would_* prefix for dry_run)
+              - dry_run (bool, only when dry_run=True)
+              - before/after (dicts, when changed and not noop)
         """
-        existing = {u["name"] for u in self.list()}
+        existing = self.get(name)
 
         if state == "present":
-            if name not in existing:
+            if existing is None:
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_create",
+                        "after": {
+                            "name": name,
+                            "email": email,
+                            "description": description,
+                        },
+                    }
                 self.create(name, password=password, email=email, description=description)
-                return {"changed": True, "action": "created"}
+                return {
+                    "changed": True,
+                    "action": "created",
+                    "after": {"name": name, "email": email, "description": description},
+                }
             else:
-                self.update(name, description=description, email=email)
-                return {"changed": True, "action": "updated"}
+                # Check for actual diff
+                diff = {}
+                if existing.get("description", "") != description:
+                    diff["description"] = description
+                if existing.get("email", "") != email:
+                    diff["email"] = email
+
+                if not diff:
+                    return {"changed": False, "action": "noop"}
+
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_update",
+                        "before": {k: existing.get(k) for k in diff},
+                        "after": diff,
+                    }
+                self.update(name, **diff)
+                return {
+                    "changed": True,
+                    "action": "updated",
+                    "before": {k: existing.get(k) for k in diff},
+                    "after": diff,
+                }
 
         elif state == "absent":
-            if name in existing:
-                self.delete(name)
-                return {"changed": True, "action": "deleted"}
+            if existing is not None:
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_delete",
+                        "before": existing,
+                    }
+                self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))
+                return {"changed": True, "action": "deleted", "before": existing}
             return {"changed": False, "action": "noop"}
 
         else:

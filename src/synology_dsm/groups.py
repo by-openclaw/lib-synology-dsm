@@ -75,7 +75,7 @@ class GroupManager:
         """
         self._c.request("SYNO.Core.Group", "set", version=1, name=name, **kwargs)
 
-    def delete(self, name: str) -> None:
+    def delete(self, name: str, dry_run: bool = False) -> dict | None:
         """Delete a group by name.
 
         Note: DSM API requires the name as a JSON array string, e.g. '["grpname"]'.
@@ -83,8 +83,15 @@ class GroupManager:
 
         Args:
             name: Group name to delete.
+            dry_run: If True, return what would happen without making changes.
+
+        Returns:
+            None (or dry_run result dict).
         """
+        if dry_run:
+            return {"changed": True, "dry_run": True, "action": "would_delete", "target": name}
         self._c.request("SYNO.Core.Group", "delete", version=1, name=json.dumps([name]))
+        return None
 
     def get(self, name: str) -> dict:
         """Get group details by name.
@@ -166,35 +173,81 @@ class GroupManager:
         name: str,
         state: str = "present",
         description: str = "",
+        dry_run: bool = False,
     ) -> dict:
         """Ensure a group exists or is absent — idempotent.
 
         Mirrors Ansible state semantics:
-            state="present" → create if not exists, update description if exists
+            state="present" → create if not exists, update description if changed
             state="absent"  → delete if exists, no-op if already gone
 
         Args:
             name: Group name.
             state: "present" or "absent".
             description: Human-readable description.
+            dry_run: If True, return what would happen without making changes.
 
         Returns:
-            Dict with keys: changed (bool), action (str: created/updated/deleted/noop)
+            Dict with keys:
+              - changed (bool)
+              - action (str: created/updated/deleted/noop or would_* prefix for dry_run)
+              - dry_run (bool, only when dry_run=True)
+              - before/after (dicts, when changed and not noop)
         """
-        existing = {g["name"] for g in self.list()}
+        existing_list = self.list()
+        existing_map = {g["name"]: g for g in existing_list}
 
         if state == "present":
-            if name not in existing:
+            if name not in existing_map:
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_create",
+                        "after": {"name": name, "description": description},
+                    }
                 self.create(name, description=description)
-                return {"changed": True, "action": "created"}
+                return {
+                    "changed": True,
+                    "action": "created",
+                    "after": {"name": name, "description": description},
+                }
             else:
-                self.update(name, description=description)
-                return {"changed": True, "action": "updated"}
+                current = existing_map[name]
+                diff = {}
+                if current.get("description", "") != description:
+                    diff["description"] = description
+
+                if not diff:
+                    return {"changed": False, "action": "noop"}
+
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_update",
+                        "before": {k: current.get(k) for k in diff},
+                        "after": diff,
+                    }
+                self.update(name, **diff)
+                return {
+                    "changed": True,
+                    "action": "updated",
+                    "before": {k: current.get(k) for k in diff},
+                    "after": diff,
+                }
 
         elif state == "absent":
-            if name in existing:
-                self.delete(name)
-                return {"changed": True, "action": "deleted"}
+            if name in existing_map:
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_delete",
+                        "before": existing_map[name],
+                    }
+                self._c.request("SYNO.Core.Group", "delete", version=1, name=json.dumps([name]))
+                return {"changed": True, "action": "deleted", "before": existing_map[name]}
             return {"changed": False, "action": "noop"}
 
         else:

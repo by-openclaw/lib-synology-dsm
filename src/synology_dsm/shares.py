@@ -274,15 +274,22 @@ class ShareManager:
         """
         self._c.request("SYNO.Core.Share", "set", version=1, name=name, **kwargs)
 
-    def delete(self, name: str) -> None:
+    def delete(self, name: str, dry_run: bool = False) -> dict | None:
         """Delete a shared folder.
 
         Requires administrators group membership.
 
         Args:
             name: Share name to delete.
+            dry_run: If True, return what would happen without making changes.
+
+        Returns:
+            None (or dry_run result dict).
         """
+        if dry_run:
+            return {"changed": True, "dry_run": True, "action": "would_delete", "target": name}
         self._c.request("SYNO.Core.Share", "delete", version=1, name=name)
+        return None
 
     def set_permission(
         self,
@@ -397,10 +404,11 @@ class ShareManager:
         state: str = "present",
         volume_path: str = "/volume1",
         description: str = "",
+        dry_run: bool = False,
     ) -> dict:
         """Ensure a shared folder exists or is absent — idempotent.
 
-        state="present" → create if not exists, update description if exists
+        state="present" → create if not exists, update description if changed
         state="absent"  → delete if exists, no-op if already gone
 
         Args:
@@ -408,24 +416,74 @@ class ShareManager:
             state: "present" or "absent".
             volume_path: Volume mount point (used only on create).
             description: Human-readable description.
+            dry_run: If True, return what would happen without making changes.
 
         Returns:
-            Dict with keys: changed (bool), action (str).
+            Dict with keys:
+              - changed (bool)
+              - action (str: created/updated/deleted/noop or would_* prefix for dry_run)
+              - dry_run (bool, only when dry_run=True)
+              - before/after (dicts, when changed and not noop)
         """
-        existing = {s["name"] for s in self.list()}
+        existing_list = self.list()
+        existing_map = {s["name"]: s for s in existing_list}
 
         if state == "present":
-            if name not in existing:
+            if name not in existing_map:
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_create",
+                        "after": {
+                            "name": name,
+                            "vol_path": volume_path,
+                            "description": description,
+                        },
+                    }
                 self.create(name, volume_path=volume_path, description=description)
-                return {"changed": True, "action": "created"}
+                return {
+                    "changed": True,
+                    "action": "created",
+                    "after": {"name": name, "vol_path": volume_path, "description": description},
+                }
             else:
-                self.update(name, desc=description)
-                return {"changed": True, "action": "updated"}
+                current = existing_map[name]
+                current_desc = current.get("desc", current.get("description", ""))
+                diff = {}
+                if current_desc != description:
+                    diff["desc"] = description
+
+                if not diff:
+                    return {"changed": False, "action": "noop"}
+
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_update",
+                        "before": {"desc": current_desc},
+                        "after": diff,
+                    }
+                self.update(name, **diff)
+                return {
+                    "changed": True,
+                    "action": "updated",
+                    "before": {"desc": current_desc},
+                    "after": diff,
+                }
 
         elif state == "absent":
-            if name in existing:
-                self.delete(name)
-                return {"changed": True, "action": "deleted"}
+            if name in existing_map:
+                if dry_run:
+                    return {
+                        "changed": True,
+                        "dry_run": True,
+                        "action": "would_delete",
+                        "before": existing_map[name],
+                    }
+                self._c.request("SYNO.Core.Share", "delete", version=1, name=name)
+                return {"changed": True, "action": "deleted", "before": existing_map[name]}
             return {"changed": False, "action": "noop"}
 
         else:

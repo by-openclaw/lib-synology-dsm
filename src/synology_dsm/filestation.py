@@ -84,7 +84,17 @@ class FileStationManager:
 
     # ── File ops ─────────────────────────────────────────────────────────────
 
-    def upload(self, local_path: str, dest_folder: str, overwrite: bool = True) -> dict:
+    def _file_exists(self, dest_folder: str, filename: str) -> bool:
+        """Check if a file exists in dest_folder on the NAS."""
+        try:
+            files = self.list(dest_folder)
+            names = [f.get("name", "") for f in files]
+            return filename in names
+        except Exception:
+            return False
+
+    def upload(self, local_path: str, dest_folder: str, overwrite: bool = True,
+               dry_run: bool = False) -> dict:
         """Upload a local file to *dest_folder* on the NAS.
 
         Args:
@@ -93,6 +103,8 @@ class FileStationManager:
             overwrite:   If True, overwrite existing file. If False, skip upload
                          and return ``{"success": True, "skipped": True}`` when
                          the file already exists (``blSkip`` in raw response).
+            dry_run:     If True, check if file exists and return what would happen,
+                         without actually uploading.
 
         Returns:
             Dict with keys:
@@ -100,11 +112,31 @@ class FileStationManager:
               - ``skipped`` (bool) — True when file existed and overwrite=False
               - ``file`` (str) — filename on NAS
               - ``pid`` (int) — DSM task pid
+              - ``dry_run`` (bool) — True when dry_run=True
 
         Raises:
             RuntimeError: On API or HTTP error.
         """
         p = PurePosixPath(local_path)
+
+        if dry_run:
+            exists = self._file_exists(dest_folder, p.name)
+            if exists and not overwrite:
+                return {
+                    "success": True,
+                    "skipped": True,
+                    "dry_run": True,
+                    "action": "noop",
+                    "file": p.name,
+                }
+            return {
+                "success": True,
+                "skipped": False,
+                "dry_run": True,
+                "action": "would_upload" if not exists else "would_overwrite",
+                "file": p.name,
+            }
+
         with open(local_path, "rb") as fh:
             content = fh.read()
 
@@ -146,8 +178,6 @@ class FileStationManager:
             remote_path: Absolute NAS file path (e.g. '/by-terraform-state/poc/terraform.tfstate').
             local_path:  Local destination path.
         """
-        import urllib.parse
-
         resp = self._c._client.get(
             f"{self._c.base_url}/entry.cgi",
             headers={"X-SYNO-TOKEN": self._c._synotoken},
@@ -164,15 +194,23 @@ class FileStationManager:
         with open(local_path, "wb") as fh:
             fh.write(resp.content)
 
-    def delete(self, path: str) -> dict:
+    def delete(self, path: str, dry_run: bool = False) -> dict:
         """Delete a file or folder at *path*.
 
         Args:
             path: Absolute NAS path to delete.
+            dry_run: If True, return what would be deleted without making changes.
 
         Returns:
-            API response dict.
+            API response dict (or dry_run info dict).
         """
+        if dry_run:
+            return {
+                "changed": True,
+                "dry_run": True,
+                "action": "would_delete",
+                "target": path,
+            }
         resp = self._c.request(
             "SYNO.FileStation.Delete",
             "start",

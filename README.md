@@ -1,6 +1,6 @@
 # lib-synology-dsm
 
-Python library for Synology DSM API — idempotent CRUD for shared folders, NFS permissions, users, and groups.
+Python library for Synology DSM API — idempotent CRUD for shared folders, NFS permissions, users, groups, and file operations.
 
 **Hardware:** DS1513+ · **DSM:** 7.1.1-42962 Update 9 · **Auth:** SYNO.API.Auth v7
 
@@ -68,6 +68,8 @@ These are documented from live testing — not from official docs.
 | `SYNO.Core.Share.NFS.set` | Error 102 (no such API) | Use `SYNO.Core.FileServ.NFS.SharePrivilege.save` with `share_name=` + `rule=` |
 | `SYNO.Core.User.delete` | Requires JSON array | `name=["username"]` not `name=username` |
 | `SYNO.Core.Group.delete` | Requires JSON array | Same as user delete |
+| `SYNO.FileStation.Upload` | Error 101 with `_sid` form field or `dest_folder_path` | Token in URL (`?SynoToken=`), session as cookie `id=`, field is `path` not `dest_folder_path` — discovered via browser DevTools |
+| `SYNO.FileStation.Upload` | Error 101 with `session=FileStation` or `version=2` in body | Use `session=DSM` at login; SynoToken in URL query string only |
 
 ---
 
@@ -138,6 +140,34 @@ with DSMClient("10.6.224.6") as client:
     mgr.ensure("svc-automation", state="absent")
 ```
 
+### FileStation (file & folder operations)
+
+```python
+from synology_dsm.filestation import FileStationManager
+
+with DSMClient("10.6.224.6") as client:
+    client.login("rune-api", "password")
+    fs = FileStationManager(client)
+
+    # List shares
+    shares = fs.list_shares()
+
+    # List folder contents
+    files = fs.list("/by-terraform-state/poc")
+
+    # Create folder
+    fs.mkdir("/by-terraform-state", "prod")
+
+    # Upload a file
+    fs.upload("/local/path/terraform.tfstate", "/by-terraform-state/poc", overwrite=True)
+
+    # Download a file
+    fs.download("/by-terraform-state/poc/terraform.tfstate", "/local/path/terraform.tfstate")
+
+    # Delete a file or folder
+    fs.delete("/by-terraform-state/poc/old-file.json")
+```
+
 ---
 
 ## Credentials
@@ -183,7 +213,7 @@ python3 tests/integration/test_live_nas.py
 NAS_HOST=10.6.x.x API_PASS=mypass bash tests/integration/dsm-crud-test.sh
 ```
 
-**Current test results (2026-03-28):**
+**Current test results (2026-03-29):**
 
 | Test | Status |
 |---|---|
@@ -191,6 +221,12 @@ NAS_HOST=10.6.x.x API_PASS=mypass bash tests/integration/dsm-crud-test.sh
 | User create / update / delete | ✅ |
 | Group create / members / delete | ✅ |
 | Share create / permissions / NFS / delete | ✅ |
+| FileStation list shares | ✅ |
+| FileStation list folder | ✅ |
+| FileStation mkdir | ✅ |
+| FileStation upload | ✅ |
+| FileStation download | ✅ |
+| FileStation delete | ✅ |
 | rune-audit login | ⚠️ disabled in DSM — re-enable to test read-only path |
 
 ---
@@ -215,6 +251,7 @@ pip install synology-dsm
 | `shares.py` | Shared folder CRUD + NFS + permissions |
 | `groups.py` | Group CRUD + membership |
 | `users.py` | User CRUD |
+| `filestation.py` | File/folder ops — upload, download, list, mkdir, delete |
 | `credentials.py` | Env + Vault credential providers |
 
 ---

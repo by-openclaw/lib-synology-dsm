@@ -5,7 +5,7 @@
   // To test against min: change to mcr.microsoft.com/devcontainers/python:3.10
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
-  "postCreateCommand": "pip install -e '.[dev]' && pre-commit install",
+  "postCreateCommand": "sudo pip install -e '.[dev]' && pre-commit install",
 
   "customizations": {
     "vscode": {
@@ -50,11 +50,10 @@
   },
 
   "remoteEnv": {
-    "SYNOLOGY_HOST": "${localEnv:SYNOLOGY_HOST}",
+    "NAS_HOST": "${localEnv:NAS_HOST}",
+    "NAS_PORT": "${localEnv:NAS_PORT}",
     "API_USER": "${localEnv:API_USER}",
     "API_PASS": "${localEnv:API_PASS}",
-    "AUDIT_USER": "${localEnv:AUDIT_USER}",
-    "AUDIT_PASS": "${localEnv:AUDIT_PASS}",
     "NFS_CLIENT": "${localEnv:NFS_CLIENT}"
   }
 }

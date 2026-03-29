@@ -78,7 +78,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full instructions.
 ```bash
 # Unit tests (offline, no NAS)
 pytest tests/unit/ -v
-# 170 passing | 100% coverage | htmlcov/index.html generated
+# 175 passing | 100% coverage | htmlcov/index.html generated
 
 # Integration tests (live NAS)
 NAS_HOST=your-nas-host API_USER=your-user API_PASS=your-pass \
@@ -122,7 +122,7 @@ No Python install on your machine. No WSL. No "works on my machine."
 
 ```bash
 pytest tests/unit/ -v
-# Expected: 170 passed, 0 failed, 100% coverage
+# Expected: 175 passed, 0 failed, 100% coverage
 ```
 
 ### Run integration tests (requires NAS reachable on your network)

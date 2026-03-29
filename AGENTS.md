@@ -89,7 +89,7 @@ This ensures any AI agent (or human) picking up the project always has accurate,
 |---|---|
 | Version | v0.8.0 |
 | Tagged releases | 6 |
-| Unit tests | 170 passing, 100% coverage |
+| Unit tests | 175 passing, 100% coverage |
 | Open issues | 0 |
 | ADR decisions | 3 |
 | CI workflows | 2 (ci.yml, release-please.yml) |

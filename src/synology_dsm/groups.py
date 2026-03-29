@@ -1,23 +1,30 @@
 """Synology DSM — group management.
 
 API: SYNO.Core.Group (version 1, entry.cgi)
+Member API: SYNO.Core.Group.Member (version 1, entry.cgi)
 
 Verified against DSM 7.1.1-42962 Update 9 (DS1513+).
 
-MEMBER MANAGEMENT — CORRECT METHOD (discovered via live API probing 2026-03-28):
-    DSM error 103 (invalid parameter) on member_set/member_add/add_member is because
-    the correct method for member management is SYNO.Core.Group.set with 'members' param.
-    NOT member_set. This replaces the full member list atomically.
+MEMBER MANAGEMENT — confirmed via Chrome DevTools F12 (2026-03-29):
+    DSM web UI uses SYNO.Core.Group.Member for all membership operations.
+    SYNO.Core.Group.set with members= is NOT used — it does not persist
+    membership correctly and broke silently on DS1513+ firmware.
 
-    Correct shape:
-        api=SYNO.Core.Group method=set name=<group> members=["user1","user2"] description="..."
+    Correct API shape:
+        list:   api=SYNO.Core.Group.Member method=list   group=<name> ingroup=true
+        add:    api=SYNO.Core.Group.Member method=add    group=<name> name=<user>
+        remove: api=SYNO.Core.Group.Member method=remove group=<name> name=<user>
 
-    Requires: X-SYNO-TOKEN header (write op) + session=DSM + admin user.
+    Requires: X-SYNO-TOKEN header (write ops) + session=DSM + admin user.
+
+    Fallback chain in list_members():
+        1. SYNO.Core.Group.Member list ingroup=true  (primary — matches DSM UI)
+        2. SYNO.Core.Group member_list               (may work on DSM 7.2.x+)
+        3. SYNO.Core.Group get                       (last resort — parse members from detail)
 
 Notes:
 - delete() requires name as JSON array string: '["grpname"]'
-- set() with members= replaces the full list — fetch current members first to add/remove
-- X-SYNO-TOKEN is required for all write ops (set, create, delete)
+- X-SYNO-TOKEN is required for all write ops (create, set, delete, add, remove)
 """
 
 from __future__ import annotations

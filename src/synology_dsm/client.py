@@ -72,8 +72,9 @@ class DSMClient:
         )
         if not data.get("success"):
             error = data.get("error", {})
-            code = error.get("code") if isinstance(error, dict) else None
-            exc_class = _ERROR_MAP.get(code, DSMAuthError)
+            raw_code = error.get("code") if isinstance(error, dict) else None
+            code: int | None = int(raw_code) if isinstance(raw_code, int) else None
+            exc_class = _ERROR_MAP[code] if code in _ERROR_MAP else DSMAuthError
             raise exc_class(f"Login failed: {error}", code=code)
         self._sid = data["data"]["sid"]
         self._synotoken = data["data"].get("synotoken", "")
@@ -117,8 +118,9 @@ class DSMClient:
         data = self._post(f"{self.base_url}/entry.cgi", payload, headers=headers)
         if not data.get("success"):
             error = data.get("error", {})
-            code = error.get("code") if isinstance(error, dict) else None
-            exc_class = _ERROR_MAP.get(code, DSMAPIError)
+            raw_code = error.get("code") if isinstance(error, dict) else None
+            code: int | None = int(raw_code) if isinstance(raw_code, int) else None
+            exc_class = _ERROR_MAP[code] if code in _ERROR_MAP else DSMAPIError
             raise exc_class(f"API error [{api}.{method}]: {error}", code=code)
         return data.get("data", {})
 

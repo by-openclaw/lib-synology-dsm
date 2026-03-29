@@ -11,6 +11,7 @@ Notes:
 """
 
 from __future__ import annotations
+from typing import List
 
 import json
 
@@ -33,7 +34,7 @@ class UserManager:
         data = self._c.request("SYNO.Core.User", "list", version=1)
         return data.get("users", [])
 
-    def list_detailed(self) -> list[dict]:
+    def list_detailed(self) -> List[dict]:
         """List all users with full details.
 
         Returns fields: name, description, email, expired, 2fa_status.
@@ -158,7 +159,7 @@ class UserManager:
         """
         self._c.request("SYNO.Core.User", "set", version=1, name=name, expired="true")
 
-    def list_groups(self) -> list[dict]:
+    def list_groups(self) -> List[dict]:
         """List all groups.
 
         Returns a list of dicts with at minimum: name, description.

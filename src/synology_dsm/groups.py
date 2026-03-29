@@ -21,6 +21,7 @@ Notes:
 """
 
 from __future__ import annotations
+from typing import List
 
 import json
 
@@ -149,7 +150,7 @@ class GroupManager:
             description="",
         )
 
-    def list_members(self, group: str) -> list[dict]:
+    def list_members(self, group: str) -> List[dict]:
         """List members of a group.
 
         Falls back to SYNO.Core.Group.get if member_list is unavailable (DSM version dependent).

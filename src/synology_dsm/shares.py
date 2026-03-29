@@ -24,6 +24,7 @@ NFS Permission Notes:
 """
 
 from __future__ import annotations
+from typing import List
 
 import json
 
@@ -330,7 +331,7 @@ class ShareManager:
             ),
         )
 
-    def get_nfs_rules(self, share: str) -> list[dict]:
+    def get_nfs_rules(self, share: str) -> List[dict]:
         """Get NFS rules for a share.
 
         Uses SYNO.Core.FileServ.NFS.SharePrivilege.load (correct API on DS1513+ DSM 7.x).

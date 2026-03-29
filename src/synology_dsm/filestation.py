@@ -2,11 +2,34 @@
 
 from __future__ import annotations
 
+import json as _json
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .client import DSMClient
+
+_BOUNDARY = b"----DSMUploadBoundary1234567890"
+
+
+def _build_multipart(fields: dict[str, str], file_name: str, file_content: bytes) -> bytes:
+    """Build a multipart/form-data body for FileStation upload."""
+    body = b""
+    for key, val in fields.items():
+        body += b"--" + _BOUNDARY + b"\r\n"
+        body += f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode()
+        body += val.encode() + b"\r\n"
+    body += b"--" + _BOUNDARY + b"\r\n"
+    body += (
+        f'Content-Disposition: form-data; name="file"; filename="{file_name}"\r\n'
+        f"Content-Type: application/octet-stream\r\n\r\n"
+    ).encode()
+    body += file_content + b"\r\n"
+    body += b"--" + _BOUNDARY + b"--\r\n"
+    return body
 
 
 class FileStationManager:
@@ -49,7 +72,6 @@ class FileStationManager:
             for f in files:
                 print(f["name"], f["additional"]["size"])
         """
-        import json as _json
 
         params: dict = dict(folder_path=folder_path, offset=offset, limit=limit)
         if additional:
@@ -69,14 +91,13 @@ class FileStationManager:
         Returns:
             Dict with created folder info.
         """
-        import json
 
         resp = self._c.request(
             "SYNO.FileStation.CreateFolder",
             "create",
             version=2,
-            folder_path=json.dumps([parent]),
-            name=json.dumps([name]),
+            folder_path=_json.dumps([parent]),
+            name=_json.dumps([name]),
             force_parent="true" if force_parent else "false",
         )
         folders = resp.get("folders", [])
@@ -146,20 +167,30 @@ class FileStationManager:
         # - Session passed as cookie id= (not _sid form field)
         # - X-Syno-Token header also required
         # - field name is "path" not "dest_folder_path"
-        resp = self._c._client.post(
+        url = (
             f"{self._c.base_url}/entry.cgi"
-            f"?api=SYNO.FileStation.Upload&method=upload&version=2&SynoToken={self._c._synotoken}",
-            headers={"X-Syno-Token": self._c._synotoken},
-            cookies={"id": self._c._sid},
-            data={
+            f"?api=SYNO.FileStation.Upload&method=upload&version=2"
+            f"&SynoToken={urllib.parse.quote(self._c._synotoken)}"
+        )
+        body = _build_multipart(
+            fields={
                 "path": dest_folder,
                 "create_parents": "true",
                 "overwrite": "true" if overwrite else "false",
             },
-            files={"file": (p.name, content, "application/octet-stream")},
+            file_name=p.name,
+            file_content=content,
         )
-        resp.raise_for_status()
-        data = resp.json()
+        req = urllib.request.Request(url, data=body, method="POST")
+        req.add_header("Content-Type", f"multipart/form-data; boundary={_BOUNDARY.decode()}")
+        req.add_header("X-Syno-Token", self._c._synotoken)
+        req.add_header("Cookie", f"id={self._c._sid}")
+
+        ssl_ctx = self._c._ssl_ctx
+
+        with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
+            data = _json.loads(resp.read().decode("utf-8"))
+
         if not data.get("success"):
             raise RuntimeError(f"Upload failed: {data.get('error')}")
 
@@ -179,21 +210,23 @@ class FileStationManager:
             remote_path: Absolute NAS file path (e.g. '/by-terraform-state/poc/terraform.tfstate').
             local_path:  Local destination path.
         """
-        resp = self._c._client.get(
-            f"{self._c.base_url}/entry.cgi",
-            headers={"X-SYNO-TOKEN": self._c._synotoken},
-            params={
+        params = urllib.parse.urlencode(
+            {
                 "_sid": self._c._sid,
                 "api": "SYNO.FileStation.Download",
                 "version": "2",
                 "method": "download",
                 "path": remote_path,
                 "mode": "download",
-            },
+            }
         )
-        resp.raise_for_status()
-        with open(local_path, "wb") as fh:
-            fh.write(resp.content)
+        url = f"{self._c.base_url}/entry.cgi?{params}"
+        req = urllib.request.Request(url, method="GET")
+        req.add_header("X-SYNO-TOKEN", self._c._synotoken)
+        ssl_ctx = self._c._ssl_ctx
+        with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
+            with open(local_path, "wb") as fh:
+                fh.write(resp.read())
 
     def delete(self, path: str, dry_run: bool = False) -> dict:
         """Delete a file or folder at *path*.

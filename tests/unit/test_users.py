@@ -207,31 +207,42 @@ class TestUserListGroups:
 
 class TestUserAddToGroup:
     def test_add_to_group_delegates_to_group_manager(self, mock_client):
-        # alice is NOT yet in the group — add_member should call set
-        mock_client.request.side_effect = lambda api, method, **kw: (
-            {"users": [{"name": "other"}]} if method == "member_list" else {}
-        )
+        # alice NOT in group — list returns only "other"
+        def side_effect(api, method, **kw):
+            if api == "SYNO.Core.Group.Member" and method == "list":
+                return {"offset": 0, "total": 1, "users": [{"name": "other"}]}
+            return {}
+
+        mock_client.request.side_effect = side_effect
         mgr = _mgr(mock_client)
         result = mgr.add_to_group("alice", "devops")
         assert result["changed"] is True
-        set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
-        assert len(set_calls) == 1
+        add_calls = [
+            c
+            for c in mock_client.request.call_args_list
+            if c.args[0] == "SYNO.Core.Group.Member" and c.args[1] == "add"
+        ]
+        assert len(add_calls) == 1
 
 
 class TestUserRemoveFromGroup:
     def test_remove_from_group_delegates_to_group_manager(self, mock_client):
-        mock_client.request.side_effect = lambda api, method, **kw: (
-            {"users": [{"name": "alice"}, {"name": "bob"}]} if method == "member_list" else {}
-        )
+        def side_effect(api, method, **kw):
+            if api == "SYNO.Core.Group.Member" and method == "list":
+                return {"offset": 0, "total": 2, "users": [{"name": "alice"}, {"name": "bob"}]}
+            return {}
+
+        mock_client.request.side_effect = side_effect
         mgr = _mgr(mock_client)
         result = mgr.remove_from_group("alice", "devops")
         assert result["changed"] is True
-        set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
-        assert len(set_calls) == 1
-        import json
-
-        members = json.loads(set_calls[0].kwargs["members"])
-        assert "alice" not in members
+        remove_calls = [
+            c
+            for c in mock_client.request.call_args_list
+            if c.args[0] == "SYNO.Core.Group.Member" and c.args[1] == "remove"
+        ]
+        assert len(remove_calls) == 1
+        assert remove_calls[0].kwargs["name"] == "alice"
 
 
 class TestUserEnsureDryRunEdgeCases:

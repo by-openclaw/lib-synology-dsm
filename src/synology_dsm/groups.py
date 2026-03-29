@@ -109,86 +109,44 @@ class GroupManager:
         return groups[0] if groups else {}
 
     def add_member(self, group: str, username: str) -> dict:
-        """Add a user to a group.
+        """Add a user to a group (idempotent).
 
-        Fetches current members first (via list_members) to avoid overwriting the list.
-        Returns noop if the user is already a member AND the member list was readable.
-
-        On DSM versions where member_list and get do not return members (e.g. DS1513+
-        with older firmware), list_members returns []. In that case the operation
-        always applies (set is safe — DSM deduplicates) and returns changed=True.
-
-        Uses SYNO.Core.Group.set with members= (NOT member_set — error 103 on DS1513+).
+        Uses SYNO.Core.Group.Member add/list — the correct DSM UI API pair,
+        discovered via DevTools F12 on DSM 7.1.1-42962 Update 9 (DS1513+).
 
         Args:
             group:    Group name.
             username: Username to add.
 
         Returns:
-            Dict with keys: ``changed`` (bool), ``action`` (str),
-            optionally ``warning`` (str) when member list could not be verified.
+            Dict with keys: ``changed`` (bool), ``action`` (str).
         """
         current = self.list_members(group)
         current_names = [m.get("name", m) if isinstance(m, dict) else m for m in current]
         if username in current_names:
             return {"changed": False, "action": "noop"}
-        current_names.append(username)
-        self._c.request(
-            "SYNO.Core.Group",
-            "set",
-            version=1,
-            name=group,
-            members=json.dumps(current_names),
-            description="",
-        )
-        result: dict = {"changed": True, "action": "added", "user": username, "group": group}
-        if not current:
-            result["warning"] = (
-                "member_list unavailable on this DSM version — "
-                "idempotency unverifiable, set applied unconditionally"
-            )
-        return result
+        self._c.request("SYNO.Core.Group.Member", "add", version=1, group=group, name=username)
+        return {"changed": True, "action": "added", "user": username, "group": group}
 
     def remove_member(self, group: str, username: str) -> dict:
-        """Remove a user from a group.
+        """Remove a user from a group (idempotent).
 
-        Fetches current members first (via list_members) and removes the specified user.
-        Returns noop if the user is not a member AND the member list was readable.
-
-        On DSM versions where member_list and get do not return members (e.g. DS1513+
-        with older firmware), list_members returns []. In that case the operation
-        always applies (set with empty list or filtered list) and returns changed=True.
-
-        Uses SYNO.Core.Group.set with members= (NOT member_set — error 103 on DS1513+).
+        Uses SYNO.Core.Group.Member remove/list — the correct DSM UI API pair,
+        discovered via DevTools F12 on DSM 7.1.1-42962 Update 9 (DS1513+).
 
         Args:
             group:    Group name.
             username: Username to remove.
 
         Returns:
-            Dict with keys: ``changed`` (bool), ``action`` (str),
-            optionally ``warning`` (str) when member list could not be verified.
+            Dict with keys: ``changed`` (bool), ``action`` (str).
         """
         current = self.list_members(group)
         current_names = [m.get("name", m) if isinstance(m, dict) else m for m in current]
-        if current and username not in current_names:
+        if username not in current_names:
             return {"changed": False, "action": "noop"}
-        updated = [n for n in current_names if n != username]
-        self._c.request(
-            "SYNO.Core.Group",
-            "set",
-            version=1,
-            name=group,
-            members=json.dumps(updated),
-            description="",
-        )
-        result: dict = {"changed": True, "action": "removed", "user": username, "group": group}
-        if not current:
-            result["warning"] = (
-                "member_list unavailable on this DSM version — "
-                "idempotency unverifiable, set applied unconditionally"
-            )
-        return result
+        self._c.request("SYNO.Core.Group.Member", "remove", version=1, group=group, name=username)
+        return {"changed": True, "action": "removed", "user": username, "group": group}
 
     def list_members(self, group: str) -> builtins.list[dict]:
         """List members of a group.
@@ -201,30 +159,43 @@ class GroupManager:
         Returns:
             List of user dicts (at minimum: name).
         """
-        # Primary: SYNO.Core.Group member_list (works on DSM 7.2.x+)
+        # Primary: SYNO.Core.Group.Member list with group= + ingroup=true
+        # Discovered via DevTools F12 — this is what DSM web UI calls.
+        # Works on DSM 7.1.1-42962 Update 9 (DS1513+).
+        # Returns total=N + users=[...] where N is count of users IN the group.
+        try:
+            data = self._c.request(
+                "SYNO.Core.Group.Member",
+                "list",
+                version=1,
+                group=group,
+                ingroup="true",
+            )
+            # "offset" key is present on success (even for empty group: total=0, users=[])
+            if "offset" in data:
+                return data.get("users", [])
+        except Exception:
+            pass
+
+        # Fallback: SYNO.Core.Group member_list (may work on DSM 7.2.x+)
         try:
             data = self._c.request("SYNO.Core.Group", "member_list", version=1, name=group)
-            users = data.get("users", data.get("members", []))
-            if users:
-                return users
+            if "users" in data or "members" in data:
+                return data.get("users", data.get("members", []))
         except Exception:
             pass
 
-        # Fallback: SYNO.Core.Group get — some versions include members here
+        # Last resort: SYNO.Core.Group get
         try:
             data = self._c.request("SYNO.Core.Group", "get", version=1, name=group)
-            groups = data.get("groups", [])
-            current = groups[0] if groups else data
-            users = current.get("members", current.get("users", []))
-            if users:
-                return users
+            groups_data = data.get("groups", [])
+            current = groups_data[0] if groups_data else data
+            members = current.get("members", current.get("users", []))
+            if members:
+                return members
         except Exception:
             pass
 
-        # Both APIs returned nothing or errored — known regression in DSM 7.1.x.
-        # member_list is broken (error 103) in DSM 7.1.1-42962 (all params).
-        # Fixed in DSM 7.2.x — see GitHub issue #54.
-        # When this returns [], callers apply operations unconditionally and flag a warning.
         return []
 
     def ensure(

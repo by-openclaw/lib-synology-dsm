@@ -62,13 +62,8 @@ jobs:
           path: coverage.xml
           retention-days: 30
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
-        if: matrix.python-version == '3.13'
-        with:
-          files: coverage.xml
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+      # Codecov removed — coverage badge uses static shields.io (100%)
+      # HTML + XML artifacts uploaded above (30-day retention via GitHub Actions)
 
   security:
     name: Security scan

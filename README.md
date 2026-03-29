@@ -3,7 +3,7 @@
 Python library for [Synology DSM](https://www.synology.com/en-global/dsm) API automation — shares, users, groups, NFS, and FileStation operations.
 
 [![CI](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml/badge.svg)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/by-openclaw/lib-synology-dsm/branch/main/graph/badge.svg)](https://codecov.io/gh/by-openclaw/lib-synology-dsm)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Dev Container](https://img.shields.io/badge/dev%20container-ready-blue?logo=docker)](https://containers.dev/)
@@ -75,17 +75,51 @@ See [docs/hardening.md](docs/hardening.md) for IP restriction and log center set
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full instructions.
 
-```bash
-# Unit tests (offline, no NAS)
-pytest tests/unit/ -v
-# 223 passing | 100% coverage | htmlcov/index.html generated
+### Unit tests (offline — no NAS required)
 
-# Integration tests (live NAS)
+```bash
+pytest tests/unit/ -v
+# 223 passing | 100% coverage
+# HTML report generated at: htmlcov/index.html
+```
+
+HTML coverage reports are also uploaded as **CI artifacts** on every push — available under:
+`Actions → latest CI run → Artifacts → coverage-report-html` (retained 30 days).
+
+### Integration tests (live NAS)
+
+Requires a reachable Synology NAS and env vars set (see [CONTRIBUTING.md](CONTRIBUTING.md)):
+
+```bash
 NAS_HOST=your-nas-host API_USER=your-user API_PASS=your-pass \
 AUDIT_USER=your-audit AUDIT_PASS=your-audit-pass \
 NFS_CLIENT=your-nfs-subnet TEST_USER_PASS=TmpPass123! \
+pytest tests/integration/ -m integration -v
+# 51 tests — full CRUD coverage against live DSM
+# Or use --report for a standalone JSON/text summary:
 python3 tests/integration/test_live_nas.py --report /tmp/nas-report
 # Writes: /tmp/nas-report.json + /tmp/nas-report.txt
+```
+
+### curl API reference scripts
+
+Raw `curl` scripts that map 1-to-1 with DSM API calls — useful for debugging or validating DSM behaviour directly without the library:
+
+| Script | What it covers |
+|---|---|
+| [`tests/integration/curl/00-auth.sh`](tests/integration/curl/00-auth.sh) | Session login / logout / SynoToken |
+| [`tests/integration/curl/01-users.sh`](tests/integration/curl/01-users.sh) | User CRUD |
+| [`tests/integration/curl/02-groups.sh`](tests/integration/curl/02-groups.sh) | Group CRUD + membership |
+| [`tests/integration/curl/03-shares.sh`](tests/integration/curl/03-shares.sh) | Shared folder CRUD |
+| [`tests/integration/curl/04-filestation.sh`](tests/integration/curl/04-filestation.sh) | FileStation list/upload/download/mkdir/delete |
+| [`tests/integration/curl/05-storage.sh`](tests/integration/curl/05-storage.sh) | Storage volumes + SMART info |
+| [`tests/integration/curl/06-quota-bandwidth.sh`](tests/integration/curl/06-quota-bandwidth.sh) | Quota + bandwidth controls |
+| [`tests/integration/curl/07-share-permissions.sh`](tests/integration/curl/07-share-permissions.sh) | Share ACL + NFS permissions |
+
+```bash
+# Example — run auth smoke test
+NAS_HOST=your-nas API_USER=your-user API_PASS=your-pass \
+bash tests/integration/curl/00-auth.sh
 ```
 
 ---

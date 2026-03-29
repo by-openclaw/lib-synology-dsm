@@ -78,7 +78,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full instructions.
 ```bash
 # Unit tests (offline, no NAS)
 pytest tests/unit/ -v
-# 175 passing | 100% coverage | htmlcov/index.html generated
+# 223 passing | 100% coverage | htmlcov/index.html generated
 
 # Integration tests (live NAS)
 NAS_HOST=your-nas-host API_USER=your-user API_PASS=your-pass \

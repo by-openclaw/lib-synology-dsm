@@ -138,6 +138,33 @@ class TestVaultCredentialProvider:
         assert creds.port == 5001
 
 
+class TestVaultFallbackWarning:
+    def test_vault_fallback_emits_runtime_warning(self):
+        """get_credentials() emits RuntimeWarning when Vault fails and falls back to env."""
+        import warnings
+        from unittest.mock import patch
+
+        env = {
+            "VAULT_ADDR": "https://vault.example.com",
+            "VAULT_TOKEN": "tok",
+            "SYNOLOGY_HOST": "fallback-nas",
+            "SYNOLOGY_USER": "u",
+            "SYNOLOGY_PASS": "p",
+        }
+        with (
+            patch.dict(os.environ, env, clear=False),
+            patch(
+                "synology_dsm.credentials.VaultCredentialProvider.get",
+                side_effect=RuntimeError("vault down"),
+            ),
+            warnings.catch_warnings(record=True) as w,
+        ):
+            warnings.simplefilter("always")
+            creds = get_credentials(env_file=None)
+        assert creds.host == "fallback-nas"
+        assert any(issubclass(x.category, RuntimeWarning) for x in w)
+
+
 class TestGetCredentials:
     def test_uses_env_when_vault_not_configured(self):
         env = {

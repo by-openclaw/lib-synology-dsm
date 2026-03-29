@@ -467,3 +467,183 @@ if __name__ == "__main__":
 
     result = subprocess.run(cmd)
     sys.exit(result.returncode)
+
+
+# ── StorageManager ───────────────────────────────────────────────────────────
+
+
+@nas_required
+class TestStorageManager:
+    """Read-only volume queries — no resources created or deleted."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client) -> None:  # noqa: ANN001
+        from synology_dsm.storage import StorageManager
+
+        self.storage = StorageManager(client)
+
+    def test_list_volumes_returns_list(self) -> None:
+        volumes = self.storage.list_volumes()
+        assert isinstance(volumes, list)
+
+    def test_list_volumes_has_at_least_one(self) -> None:
+        volumes = self.storage.list_volumes()
+        assert len(volumes) >= 1, "Expected at least one volume on NAS"
+
+    def test_volume_has_expected_fields(self) -> None:
+        volumes = self.storage.list_volumes()
+        assert len(volumes) >= 1
+        v = volumes[0]
+        # DSM 7.x uses volume_path; older DSM uses id — accept either
+        assert "volume_path" in v or "id" in v
+        assert "status" in v
+        assert "size_total_byte" in v
+
+    def test_get_volume_returns_dict(self) -> None:
+        volumes = self.storage.list_volumes()
+        assert len(volumes) >= 1
+        # Use volume_path (DSM 7.x) or id (older DSM) as identifier
+        vol_ref = volumes[0].get("volume_path") or volumes[0].get("id")
+        assert vol_ref is not None, "volume has neither volume_path nor id"
+        result = self.storage.get_volume(vol_ref)
+        assert result is not None
+
+    def test_get_volume_returns_none_for_missing(self) -> None:
+        result = self.storage.get_volume("/volume999")
+        assert result is None
+
+
+# ── QuotaManager ─────────────────────────────────────────────────────────────
+
+
+@nas_required
+class TestQuotaManager:
+    """Quota queries — read-only, uses admin user and administrators group."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client) -> None:  # noqa: ANN001
+        from synology_dsm.quota import QuotaManager
+
+        self.quota = QuotaManager(client)
+
+    def test_get_group_quota_returns_dict(self) -> None:
+        result = self.quota.get_group_quota("administrators")
+        assert isinstance(result, dict)
+
+    def test_get_user_quota_returns_dict(self) -> None:
+        result = self.quota.get_user_quota(ADMIN_USER)
+        assert isinstance(result, dict)
+
+    def test_get_quota_group_subject_type(self) -> None:
+        result = self.quota.get_quota("administrators", "group")
+        assert isinstance(result, dict)
+
+    def test_get_quota_user_subject_type(self) -> None:
+        result = self.quota.get_quota(ADMIN_USER, "user")
+        assert isinstance(result, dict)
+
+    def test_invalid_subject_type_raises(self) -> None:
+        with pytest.raises(ValueError, match="Invalid subject_type"):
+            self.quota.get_quota("administrators", "invalid")
+
+
+# ── BandwidthManager ──────────────────────────────────────────────────────────
+
+
+@nas_required
+class TestBandwidthManager:
+    """Bandwidth limit queries — read-only."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client) -> None:  # noqa: ANN001
+        from synology_dsm.bandwidth import BandwidthManager
+
+        self.bw = BandwidthManager(client)
+
+    def test_get_group_limit_returns_dict(self) -> None:
+        result = self.bw.get_group_limit("administrators")
+        assert isinstance(result, dict)
+
+    def test_get_user_limit_returns_dict(self) -> None:
+        result = self.bw.get_user_limit(ADMIN_USER)
+        assert isinstance(result, dict)
+
+    def test_get_limit_local_group(self) -> None:
+        result = self.bw.get_limit("administrators", "local_group")
+        assert isinstance(result, dict)
+
+    def test_get_limit_local_user(self) -> None:
+        result = self.bw.get_limit(ADMIN_USER, "local_user")
+        assert isinstance(result, dict)
+
+    def test_invalid_owner_type_raises(self) -> None:
+        with pytest.raises(ValueError, match="Invalid owner_type"):
+            self.bw.get_limit("administrators", "domain_user")
+
+
+# ── ShareManager — list_shares_for_group ──────────────────────────────────────
+
+
+@nas_required
+class TestSharePermissionsByGroup:
+    """Group share permission queries — read-only."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client) -> None:  # noqa: ANN001
+        from synology_dsm import ShareManager
+
+        self.shares = ShareManager(client)
+
+    def test_list_shares_for_group_returns_list(self) -> None:
+        result = self.shares.list_shares_for_group("administrators")
+        assert isinstance(result, list)
+
+    def test_shares_have_permission_fields(self) -> None:
+        result = self.shares.list_shares_for_group("administrators")
+        if not result:
+            pytest.skip("administrators group has no share permissions configured")
+        s = result[0]
+        assert "name" in s
+        assert "is_writable" in s or "is_readonly" in s or "is_deny" in s
+
+    def test_custom_share_type_filter(self) -> None:
+        result = self.shares.list_shares_for_group("administrators", share_type=["local"])
+        assert isinstance(result, list)
+
+    def test_with_additional_fields(self) -> None:
+        result = self.shares.list_shares_for_group(
+            "administrators",
+            additional=["hidden", "encryption", "is_aclmode"],
+        )
+        assert isinstance(result, list)
+
+
+# ── Standalone runner (for human-readable report) ─────────────────────────────
+
+if __name__ == "__main__":
+    import subprocess
+    import sys
+
+    args = sys.argv[1:]
+    report_path = None
+    if "--report" in args:
+        idx = args.index("--report")
+        report_path = args[idx + 1]
+        args = args[:idx] + args[idx + 2 :]
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "tests/integration/test_live_nas.py",
+        "-m",
+        "integration",
+        "-v",
+        "--tb=short",
+        "--no-header",
+    ]
+    if report_path:
+        cmd += [f"--junitxml={report_path}.xml"]
+
+    result = subprocess.run(cmd)
+    sys.exit(result.returncode)

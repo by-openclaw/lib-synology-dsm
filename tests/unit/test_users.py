@@ -60,6 +60,26 @@ class TestUserListDetailed:
         assert bob["enabled"] is False  # expired="expired" → disabled
 
 
+class TestUserGet:
+    def test_get_returns_none_when_user_missing(self, mock_client):
+        """get() returns None when user not found."""
+        mock_client.request.return_value = {"users": [{"name": "other"}]}
+        from synology_dsm import UserManager
+
+        mgr = UserManager(mock_client)
+        assert mgr.get("nonexistent") is None
+
+    def test_get_returns_user_when_found(self, mock_client):
+        """get() returns user dict when found."""
+        mock_client.request.return_value = {"users": [{"name": "alice", "email": "a@b.com"}]}
+        from synology_dsm import UserManager
+
+        mgr = UserManager(mock_client)
+        result = mgr.get("alice")
+        assert result is not None
+        assert result["name"] == "alice"
+
+
 class TestUserEnsure:
     def _setup(self, mock_client, existing_users=None):
         """Configure mock to return given list of users."""
@@ -221,6 +241,21 @@ class TestUserDisable:
 
 
 class TestUserListGroups:
+    def test_list_groups_emits_deprecation_warning(self, mock_client):
+        """list_groups() must emit DeprecationWarning directing to GroupManager."""
+        import warnings
+
+        mock_client.request.return_value = {"groups": []}
+        from synology_dsm import UserManager
+
+        mgr = UserManager(mock_client)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            mgr.list_groups()
+        dep = [x for x in w if issubclass(x.category, DeprecationWarning)]
+        assert len(dep) >= 1
+        assert "GroupManager" in str(dep[0].message)
+
     def test_list_groups_returns_groups(self, mock_client):
         mock_client.request.return_value = {
             "groups": [{"name": "administrators"}, {"name": "users"}]

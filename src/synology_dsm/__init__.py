@@ -1,5 +1,6 @@
 """Synology DSM API library."""
 
+from .bandwidth import BandwidthManager
 from .client import DSMClient
 from .credentials import (
     DSMCredentials,
@@ -19,7 +20,9 @@ from .exceptions import (
 from .filestation import FileStationManager
 from .groups import GroupManager
 from .nfs import NFSManager
+from .quota import QuotaManager
 from .shares import ShareManager
+from .storage import StorageManager
 from .users import UserManager
 
 __all__ = [
@@ -33,12 +36,15 @@ __all__ = [
     "DSMPermissionError",
     "DSMSessionError",
     "EnvCredentialProvider",
+    "BandwidthManager",
     "FileStationManager",
     "GroupManager",
     "NFSManager",
+    "QuotaManager",
     "ShareManager",
+    "StorageManager",
     "UserManager",
     "VaultCredentialProvider",
     "get_credentials",
 ]
-__version__: str = "0.8.2"
+__version__: str = "0.9.0"

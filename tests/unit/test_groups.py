@@ -99,11 +99,38 @@ class TestGroupGet:
 
 
 class TestGroupListMembers:
-    def test_list_members_via_member_list(self, mock_client):
-        mock_client.request.return_value = {"users": [{"name": "alice"}, {"name": "bob"}]}
+    def test_list_members_via_group_member_api(self, mock_client):
+        """Primary path: SYNO.Core.Group.Member list ingroup=true — offset key required."""
+        mock_client.request.return_value = {
+            "offset": 0,
+            "total": 2,
+            "users": [{"name": "alice"}, {"name": "bob"}],
+        }
         mgr = _mgr(mock_client)
         members = mgr.list_members("devops")
         assert len(members) == 2
+        assert members[0]["name"] == "alice"
+        # Confirm primary path used — only 1 API call
+        assert mock_client.request.call_count == 1
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.Core.Group.Member"
+        assert call.args[1] == "list"
+        assert call.kwargs.get("ingroup") == "true"
+
+    def test_list_members_primary_path_offset_detection(self, mock_client):
+        """Primary path skipped when offset key absent — falls to secondary."""
+
+        def side_effect(api, method, **kw):
+            if api == "SYNO.Core.Group.Member":
+                return {"users": []}  # no offset key → primary skips
+            if method == "member_list":
+                return {"users": [{"name": "fallback-user"}]}
+            return {}
+
+        mock_client.request.side_effect = side_effect
+        mgr = _mgr(mock_client)
+        members = mgr.list_members("devops")
+        assert any(m.get("name") == "fallback-user" for m in members)
 
     def test_list_members_fallback_to_get(self, mock_client):
         """Falls back to SYNO.Core.Group.get when member_list raises RuntimeError."""

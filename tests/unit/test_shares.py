@@ -107,6 +107,18 @@ class TestShareEnsure:
         assert result["action"] == "would_delete"
 
 
+class TestShareUpdateDirect:
+    def test_update_passes_kwargs_to_request(self, mock_client):
+        """update() passes all kwargs through to SYNO.Core.Share set."""
+        mock_client.request.return_value = {}
+        mgr = ShareManager(mock_client)
+        mgr.update("myshare", description="new desc")
+        mock_client.request.assert_called_once()
+        call = mock_client.request.call_args
+        assert call.args[1] == "set"
+        assert call.kwargs.get("description") == "new desc"
+
+
 class TestShareDelete:
     def test_delete_calls_api(self, mock_client):
         mock_client.request.return_value = {}

@@ -403,6 +403,57 @@ class ShareManager:
             rule=json.dumps(rule),
         )
 
+    def list_shares_for_group(
+        self,
+        group_name: str,
+        share_type: list[str] | None = None,
+        additional: list[str] | None = None,
+    ) -> list[dict]:
+        """List all shares accessible by a specific group.
+
+        Uses ``SYNO.Core.Share.Permission list_by_group`` — the API observed
+        in Chrome DevTools F12 when opening Group properties in DSM Control Panel.
+
+        Args:
+            group_name: DSM group name (e.g. ``"administrators"``).
+            share_type: Share types to include. Defaults to all standard types:
+                ``["dec", "local", "usb", "sata", "cluster", "c2", "cold_storage"]``.
+                Pass a subset to filter (e.g. ``["local"]`` for internal shares only).
+            additional: Extra fields to include per share.
+                Common values: ``"hidden"``, ``"encryption"``, ``"is_aclmode"``.
+
+        Returns:
+            List of share permission dicts. Each dict contains at minimum:
+
+            - ``name`` (str): Share name.
+            - ``is_writable`` (bool): Group has write access.
+            - ``is_readonly`` (bool): Group has read-only access.
+            - ``is_deny`` (bool): Group is explicitly denied.
+
+        Example::
+
+            shares = ShareManager(client)
+            for s in shares.list_shares_for_group("svc-automation"):
+                access = "rw" if s["is_writable"] else ("ro" if s["is_readonly"] else "deny")
+                print(f"  {s['name']}: {access}")
+        """
+        _share_type = share_type or ["dec", "local", "usb", "sata", "cluster", "c2", "cold_storage"]
+        params: dict[str, object] = {
+            "name": group_name,
+            "user_group_type": "local_group",
+            "share_type": json.dumps(_share_type),
+        }
+        if additional:
+            params["additional"] = json.dumps(additional)
+
+        data = self._c.request(
+            "SYNO.Core.Share.Permission",
+            "list_by_group",
+            version=1,
+            **params,
+        )
+        return data.get("shares", [])
+
     def ensure(
         self,
         name: str,

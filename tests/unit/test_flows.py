@@ -108,18 +108,18 @@ class TestGroupMembershipFlow:
         result = mgr.ensure("ops-team", state="present")
         assert result["action"] == "created"
 
-        # Add member — alice not yet in group (member_list returns empty users list)
-        client.request.return_value = {"users": []}
+        # Add member — alice not yet in group (Group.Member list returns offset + empty list)
+        client.request.return_value = {"offset": 0, "total": 0, "users": []}
         result = mgr.add_member("ops-team", "alice")
         assert result["changed"] is True
 
-        # Add same member again — idempotent (member_list returns alice)
-        client.request.return_value = {"users": [{"name": "alice"}]}
+        # Add same member again — idempotent (Group.Member list returns alice)
+        client.request.return_value = {"offset": 0, "total": 1, "users": [{"name": "alice"}]}
         result = mgr.add_member("ops-team", "alice")
         assert result["changed"] is False
 
-        # Remove member (member_list returns alice)
-        client.request.return_value = {"users": [{"name": "alice"}]}
+        # Remove member (Group.Member list returns alice)
+        client.request.return_value = {"offset": 0, "total": 1, "users": [{"name": "alice"}]}
         result = mgr.remove_member("ops-team", "alice")
         assert result["changed"] is True
 

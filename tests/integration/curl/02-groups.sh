@@ -85,22 +85,20 @@ print('1' if '${TEST_GROUP}' in groups else '0')" 2>/dev/null || echo "0")
     && step 1 "ensure present — ${TEST_GROUP} in group list" \
     || step 0 "ensure present — ${TEST_GROUP} NOT found in list"
 
-# ── Step 4: set members ───────────────────────────────────────────────────────
-echo ""; echo "  Step 4 — set members: add ${TEST_MEMBER} to ${TEST_GROUP}"
-MEMBERS_JSON=$(python3 -c "import json,urllib.parse; print(urllib.parse.quote(json.dumps(['${TEST_MEMBER}'])))")
-R=$(api "api=SYNO.Core.Group&version=1&method=set&name=${TEST_GROUP}&description=&members=${MEMBERS_JSON}")
-check "SYNO.Core.Group set (members=[${TEST_MEMBER}])" "$R"
+# ── Step 4: add member ────────────────────────────────────────────────────────
+echo ""; echo "  Step 4 — add member: ${TEST_MEMBER} → ${TEST_GROUP}"
+R=$(api "api=SYNO.Core.Group.Member&version=1&method=add&group=${TEST_GROUP}&name=${TEST_MEMBER}")
+check "SYNO.Core.Group.Member add (${TEST_MEMBER})" "$R"
 
-# ── Step 5: member_list (expected to fail on DSM 7.1.1) ──────────────────────
-echo ""; echo "  Step 5 — member_list read-back (DSM 7.1.1 known bug)"
-R=$(api "api=SYNO.Core.Group&version=1&method=member_list&name=${TEST_GROUP}")
-OK=$(echo "$R" | python3 -c "import sys,json; print('1' if json.load(sys.stdin).get('success') else '0')" 2>/dev/null || echo "0")
+# ── Step 5: read members via correct API ──────────────────────────────────────
+echo ""; echo "  Step 5 — member read-back (SYNO.Core.Group.Member list ingroup=true)"
+R=$(api "api=SYNO.Core.Group.Member&version=1&method=list&group=${TEST_GROUP}&ingroup=true")
+OK=$(echo "$R" | python3 -c "import sys,json; d=json.load(sys.stdin); print('1' if d.get('success') or 'offset' in d else '0')" 2>/dev/null || echo "0")
 if [[ "$OK" == "1" ]]; then
     MEMBERS=$(echo "$R" | python3 -c "import sys,json; print([u['name'] for u in json.load(sys.stdin).get('data',{}).get('users',[])])" 2>/dev/null || echo "[]")
-    step 1 "member_list — ${MEMBERS}"
+    step 1 "SYNO.Core.Group.Member list — members: ${MEMBERS}"
 else
-    CODE=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin).get('error',{}).get('code','?'))" 2>/dev/null || echo "?")
-    warn "member_list returned error ${CODE}" "Known DSM 7.1.1 bug — fixed in 7.2.x (platform-setup#54)"
+    step 0 "SYNO.Core.Group.Member list" "$R"
 fi
 
 # ── Step 6: delete ────────────────────────────────────────────────────────────

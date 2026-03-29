@@ -1,0 +1,84 @@
+@startuml lib-synology-dsm Architecture
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+
+title lib-synology-dsm — Component Overview
+
+package "Your Code (Ansible / Script)" as consumer {
+  component [Ansible Module\nor Python Script] as script
+}
+
+package "lib-synology-dsm" as lib {
+
+  package "Credentials" {
+    component [get_credentials()] as gc
+    component [EnvCredentialProvider\n(reads SYNOLOGY_* from .env)] as env_prov
+    component [VaultCredentialProvider\n(reads from HashiCorp Vault)] as vault_prov
+    gc --> env_prov : default
+    gc --> vault_prov : if VAULT_ADDR set
+  }
+
+  component [DSMClient\n(HTTP session, login/logout,\nSID + SynoToken)] as client
+
+  package "Managers" {
+    component [UserManager] as users
+    component [GroupManager] as groups
+    component [ShareManager] as shares
+    component [NFSManager] as nfs
+    component [FileStationManager] as fs
+    component [StorageManager] as storage
+    component [QuotaManager] as quota
+    component [BandwidthManager] as bw
+    component [SharePermissionsManager] as perms
+  }
+
+  gc ..> client : returns DSMCredentials\n(host, port, user, pass)
+  client --> users
+  client --> groups
+  client --> shares
+  client --> nfs
+  client --> fs
+  client --> storage
+  client --> quota
+  client --> bw
+  client --> perms
+}
+
+package "Integration Tests\n(tests/integration/)" as itests {
+  component [test_live_nas.py\nreads NAS_HOST / API_USER / API_PASS\nfrom shell environment] as live
+}
+
+package "Unit Tests\n(tests/unit/)" as utests {
+  component [223 tests\nfully mocked — no NAS\nno .env needed] as unit
+}
+
+database "Synology NAS\nDSM API (HTTPS :5001)" as nas
+
+script --> gc : get_credentials()
+script --> client : DSMClient(host, port)
+client --> nas : HTTPS POST /webapi/
+
+live --> client : direct DSMClient(NAS_HOST)
+live --> nas : live calls
+
+utests --> client : mocked urllib
+
+note right of env_prov
+  Used by scripts/Ansible
+  SYNOLOGY_HOST
+  SYNOLOGY_PORT
+  SYNOLOGY_USER
+  SYNOLOGY_PASS
+end note
+
+note right of live
+  Used by integration tests
+  NAS_HOST
+  NAS_PORT
+  API_USER
+  API_PASS
+end note
+
+@enduml

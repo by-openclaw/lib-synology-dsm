@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.6.1] — 2026-03-29
+
+### Added
+- `FileStationManager.upload()`: now returns normalised dict with `skipped` flag (`overwrite=False` + file exists → `skipped: True`)
+- `FileStationManager.list()`: supports `additional` parameter for per-file metadata (`size`, `time`, `owner`, `perm`, `real_path`, `type`)
+
+## [0.6.0] — 2026-03-29
+
+### Added
+- `FileStationManager`: full File Station CRUD — `list_shares()`, `list()`, `mkdir()`, `upload()`, `download()`, `delete()`
+- `docs/feature-coverage.md`: FileStation section updated — all operations ✅
+
+### Fixed
+- FileStation upload auth pattern corrected (discovered via browser DevTools):
+  - `SynoToken` in URL query string, not request body
+  - Session as cookie `id=`, not form field `_sid`
+  - Upload field is `path`, not `dest_folder_path`
+- `docs/feature-coverage.md`: FileStation was listed as 🚧 Planned — now reflects actual ✅ state
+
 ## [0.4.1] — 2026-03-28
 
 ### Fixed

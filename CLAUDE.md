@@ -28,7 +28,7 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 
 ---
 
-## Current State
+## Current State (v0.6.1 — 2026-03-29)
 
 | Component | Status |
 |---|---|
@@ -37,6 +37,7 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 | Group CRUD + membership | ✅ working |
 | Share CRUD | ✅ working |
 | NFS permissions | ✅ working |
+| FileStation: list/upload/download/mkdir/delete | ✅ working (v0.6.0+) |
 | Bash CRUD smoke test | ✅ `tests/integration/dsm-crud-test.sh` |
 | Python integration test | ✅ 17/19 (2 non-blocking warnings) |
 | CI tests | ⏸ blocked pending GitLab CE |
@@ -45,14 +46,14 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 ## Remaining warnings (non-blocking)
 
 - `rune-audit` account: error 402 (disabled in DSM) — re-enable in Control Panel → User & Group
-- `FileStation.List /`: error 401 — rune-api lacks FileStation browse permission on root
 
-## API gotchas (read before touching share/group code)
+## API gotchas (read before touching any FileStation or Core code)
 
 - ALL write ops require `X-SYNO-TOKEN` header — missing it returns 403
 - Share create: must use `shareinfo` JSON object, not flat params
 - Group members: use `SYNO.Core.Group.set` with `members=[]`, NOT `member_set` (error 103)
 - NFS rules: use `SYNO.Core.FileServ.NFS.SharePrivilege.save`, NOT `SYNO.Core.Share.NFS` (error 102)
+- **FileStation upload**: `SynoToken` in URL query string only; session as cookie `id=`; field `path` not `dest_folder_path` — do NOT bypass `FileStationManager`
 - User/Group delete: name must be a JSON array string: `'["name"]'`
 
 ---

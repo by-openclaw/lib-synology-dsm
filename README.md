@@ -155,13 +155,45 @@ pre-commit install   # one-time — hooks run automatically on every commit from
 
 | Hook | What it does | Blocks commit? |
 |---|---|---|
-| `detect-secrets` | Scans for passwords, API tokens, private keys | ✅ Yes |
-| `check-added-large-files` | Blocks files > 500 KB | ✅ Yes |
-| `end-of-file-fixer` | Ensures files end with a newline | ✅ Yes (auto-fixes) |
-| `trailing-whitespace` | Removes trailing spaces | ✅ Yes (auto-fixes) |
-| `check-yaml` / `check-toml` / `check-json` | Syntax validation | ✅ Yes |
-| `ruff` | Python linting (auto-fixes what it can) | ✅ Yes |
-| `ruff-format` | Python formatting | ✅ Yes (auto-formats) |
+| `detect-secrets` | Scans **text files** for passwords, API tokens, private keys | ✅ Yes — skips binary files and Git LFS pointer files automatically |
+| `check-added-large-files` | Blocks files whose **committed size** exceeds 500 KB | ✅ Yes — see LFS note below |
+| `end-of-file-fixer` | Ensures text files end with a newline | ✅ Yes (auto-fixes) — skips binary files |
+| `trailing-whitespace` | Removes trailing spaces from text files | ✅ Yes (auto-fixes) — skips binary files |
+| `check-yaml` / `check-toml` / `check-json` | Syntax validation for config files | ✅ Yes |
+| `ruff` | Python linting (auto-fixes what it can) | ✅ Yes — Python files only |
+| `ruff-format` | Python formatting | ✅ Yes (auto-formats) — Python files only |
+
+#### Git LFS and large files
+
+This repo uses **Git LFS** for binary files: `.pdf`, `.png`, `.svg`, `.drawio`, `.mp4`, `.zip`
+(configured in `.gitattributes`).
+
+When you commit a file tracked by LFS, Git does **not** store the binary in the repo.
+Instead it commits a small **pointer file** (~134 bytes) like this:
+
+```
+version https://git-lfs.github.com/spec/v1
+oid sha256:4d7a8f...
+size 5242880
+```
+
+**What the hooks see:**
+
+| Scenario | What gets committed | `check-added-large-files` | `detect-secrets` | `ruff` |
+|---|---|---|---|---|
+| `assets/diagram.png` (10 MB, LFS tracked) | 134-byte LFS pointer | ✅ Passes (134 B < 500 KB) | ✅ Passes (not text content) | ✅ Passes (not Python) |
+| `docs/report.pdf` (50 MB, LFS tracked) | 134-byte LFS pointer | ✅ Passes | ✅ Passes | ✅ Passes |
+| `big-file.bin` (2 MB, **not** LFS tracked) | Full 2 MB binary | ❌ **Blocked** (2 MB > 500 KB) | ✅ Passes (binary) | ✅ Passes (not Python) |
+| `secret.py` with `password = "abc123"` | Text file | ✅ Passes | ❌ **Blocked** | ✅ Passes (or fix linting) |
+
+**Rule:** Binary files must be tracked by LFS — otherwise `check-added-large-files` blocks the commit.
+To add a new file type to LFS:
+```bash
+git lfs track "*.ext"     # adds to .gitattributes
+git add .gitattributes
+git add your-file.ext
+git commit -m "chore: add *.ext to LFS tracking"
+```
 
 ### If detect-secrets blocks your commit (false positive)
 

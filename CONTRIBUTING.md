@@ -14,27 +14,48 @@ pre-commit install   # installs git hooks — blocks commits with secrets or lin
 
 ### Windows 11 (native, no WSL required)
 
-> ⚠️ **Use PowerShell or Windows Terminal — not Git Bash.**
-> Git Bash on Windows does not find the Python installed via `winget` or the Microsoft Store.
-> All commands below must be run in **PowerShell** or **cmd.exe**.
+#### 1. Install Python 3.13
 
-```powershell
-# 1. Install Python 3.13 (if not already installed)
-#    Run in PowerShell — opens Microsoft Store if Python is missing
+In **PowerShell or Git Bash**:
+```bash
 winget install Python.Python.3.13
+```
 
-# 2. Close and reopen PowerShell (so Python is on PATH), then verify:
+#### 2. Fix Python not found in Git Bash (App Execution Aliases)
+
+Windows intercepts `python` in Git Bash and redirects it to the Microsoft Store.
+**Disable the aliases:**
+
+```
+Settings → Apps → Advanced app settings → App execution aliases
+→ Turn OFF: python.exe
+→ Turn OFF: python3.exe
+```
+
+Then close and reopen Git Bash, and verify:
+```bash
 python --version   # Expected: Python 3.13.x
+```
 
-# 3. Clone and set up
+#### 3. Clone and set up (Git Bash)
+
+```bash
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 cd lib-synology-dsm
+
+# Create and activate virtualenv
 python -m venv .venv
-.venv\Scripts\activate
+source .venv/Scripts/activate   # Git Bash — note: Scripts not bin
+
 pip install -e ".[dev]"
 pre-commit install
+```
 
-# 4. Verify
+> ℹ️ In Git Bash the activate script is at `.venv/Scripts/activate` (not `.venv/bin/activate` as on Linux/macOS).
+
+#### 4. Verify
+
+```bash
 pytest tests/unit/ -v
 # Expected: 223 passed, 0 failed
 ```

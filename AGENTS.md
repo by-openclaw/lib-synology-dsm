@@ -1,6 +1,6 @@
 # AGENTS.md — lib-synology-dsm
 
-Python library for Synology DSM API automation — session management, user/group/share CRUD, and NFS export rules.
+Python library for Synology DSM API automation — session management, user/group/share CRUD, NFS export rules, and FileStation file operations (upload/download/list/mkdir/delete).
 
 ## Always Read First
 

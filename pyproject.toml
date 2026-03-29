@@ -15,8 +15,23 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "mypy", "python-dotenv"]
+dev = ["pytest", "ruff", "mypy", "python-dotenv", "commitizen"]
 vault = ["hvac", "python-dotenv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+markers = ["integration: live NAS required (deselect with -m 'not integration')"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.6.1"
+version_files = [
+    "pyproject.toml:^version",
+    "src/synology_dsm/__init__.py:^__version__"
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
 
 [tool.ruff]
 line-length = 100

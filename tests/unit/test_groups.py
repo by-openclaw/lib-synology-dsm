@@ -19,16 +19,22 @@ class TestGroupEnsure:
         assert len(create_calls) == 1
 
     def test_ensure_present_noop_when_same(self, mock_client):
-        mock_client.request.return_value = {
-            "groups": [{"name": "devops", "description": "DevOps group"}]
-        }
+        # list() + get() both return the same description — noop
+        mock_client.request.side_effect = lambda api, method, **kw: (
+            {"groups": [{"name": "devops", "description": "DevOps group"}]}
+        )
         mgr = _mgr(mock_client)
         result = mgr.ensure("devops", state="present", description="DevOps group")
         assert result["changed"] is False
         assert result["action"] == "noop"
 
     def test_ensure_present_updates_when_diff(self, mock_client):
-        mock_client.request.return_value = {"groups": [{"name": "devops", "description": "old"}]}
+        # list() returns group; get() returns accurate description
+        mock_client.request.side_effect = lambda api, method, **kw: (
+            {"groups": [{"name": "devops", "description": "old"}]}
+            if method in ("list", "get")
+            else {}
+        )
         mgr = _mgr(mock_client)
         result = mgr.ensure("devops", state="present", description="new")
         assert result["changed"] is True
@@ -145,9 +151,35 @@ class TestRemoveMember:
         assert len(set_calls) == 0  # no write when user not present
 
 
+class TestListMembersFallbackChain:
+    def test_list_members_returns_empty_when_both_apis_fail(self, mock_client):
+        """Both member_list and get fail — list_members returns [] safely."""
+        mock_client.request.side_effect = Exception("network error")
+        mgr = _mgr(mock_client)
+        result = mgr.list_members("devops")
+        assert result == []
+
+
+class TestRemoveMemberFallback:
+    def test_remove_member_applies_unconditionally_when_list_unavailable(self, mock_client):
+        """When member_list returns nothing, remove_member always applies and warns."""
+        mock_client.request.side_effect = lambda api, method, **kw: {}
+        mgr = _mgr(mock_client)
+        result = mgr.remove_member("devops", "alice")
+        assert result["changed"] is True
+        assert result["action"] == "removed"
+        assert "warning" in result
+        set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
+        assert len(set_calls) == 1
+
+
 class TestGroupEnsureDryRunUpdate:
     def test_ensure_dry_run_would_update(self, mock_client):
-        mock_client.request.return_value = {"groups": [{"name": "devops", "description": "old"}]}
+        mock_client.request.side_effect = lambda api, method, **kw: (
+            {"groups": [{"name": "devops", "description": "old"}]}
+            if method in ("list", "get")
+            else {}
+        )
         mgr = _mgr(mock_client)
         result = mgr.ensure("devops", state="present", description="new", dry_run=True)
         assert result["dry_run"] is True
@@ -191,7 +223,7 @@ class TestAddMember:
         assert "newuser" in members_arg
 
     def test_add_member_idempotent(self, mock_client):
-        """add_member returns noop without calling set when user already in group."""
+        """add_member returns noop without calling set when user already in group (list readable)."""
         mock_client.request.side_effect = lambda api, method, **kw: (
             {"users": [{"name": "alice"}]} if method == "member_list" else {}
         )
@@ -201,3 +233,18 @@ class TestAddMember:
         assert result["action"] == "noop"
         set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
         assert len(set_calls) == 0  # no write when already member
+
+    def test_add_member_applies_unconditionally_when_list_unavailable(self, mock_client):
+        """When member_list and get both fail, add_member always applies and warns."""
+        mock_client.request.side_effect = lambda api, method, **kw: (
+            {} if method in ("member_list", "get") else {}
+        )
+        # member_list returns {} → users=[] → list_members returns []
+        mock_client.request.side_effect = lambda api, method, **kw: {}
+        mgr = _mgr(mock_client)
+        result = mgr.add_member("devops", "alice")
+        assert result["changed"] is True
+        assert result["action"] == "added"
+        assert "warning" in result
+        set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
+        assert len(set_calls) == 1

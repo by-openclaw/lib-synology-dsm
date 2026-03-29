@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.8.2...v0.9.0) (2026-03-29)
+
+
+### Features
+
+* v0.9.0 — StorageManager, QuotaManager, BandwidthManager, SharePermissions ([4ffaaa6](https://github.com/by-openclaw/lib-synology-dsm/commit/4ffaaa6defd3504c24e024190012ecc92a202664))
+
+
+### Bug Fixes
+
+* fourth audit pass — module docstring, test counts, noxfile ([9d6bedb](https://github.com/by-openclaw/lib-synology-dsm/commit/9d6bedb58c17ae3bd5f38b8950ca173861642e5c))
+* sync __version__ and commitizen to 0.8.2 ([ad9f89e](https://github.com/by-openclaw/lib-synology-dsm/commit/ad9f89ebde3f77a604632dd8cc6c67ef346a38ee))
+
 ## [0.8.2](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.8.1...v0.8.2) (2026-03-29)
 
 

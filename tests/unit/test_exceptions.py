@@ -84,7 +84,9 @@ class TestClientRequestErrorMapping:
 
     def test_success_returns_data(self):
         client = _make_client_with_sid()
-        with patch.object(client, "_post", return_value={"success": True, "data": {"users": [{"name": "admin"}]}}):
+        with patch.object(
+            client, "_post", return_value={"success": True, "data": {"users": [{"name": "admin"}]}}
+        ):
             result = client.request("SYNO.Core.User", "list")
         assert result == {"users": [{"name": "admin"}]}
 

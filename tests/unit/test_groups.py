@@ -19,7 +19,9 @@ class TestGroupEnsure:
         assert len(create_calls) == 1
 
     def test_ensure_present_noop_when_same(self, mock_client):
-        mock_client.request.return_value = {"groups": [{"name": "devops", "description": "DevOps group"}]}
+        mock_client.request.return_value = {
+            "groups": [{"name": "devops", "description": "DevOps group"}]
+        }
         mgr = _mgr(mock_client)
         result = mgr.ensure("devops", state="present", description="DevOps group")
         assert result["changed"] is False
@@ -60,6 +62,7 @@ class TestGroupEnsure:
 class TestAddMember:
     def test_add_member_fetches_and_appends(self, mock_client):
         """add_member fetches current members then calls set with merged list."""
+
         # list_members falls back to member_list — mock it to return empty
         def side_effect(api, method, **kw):
             if method == "member_list":

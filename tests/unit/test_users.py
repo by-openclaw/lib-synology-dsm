@@ -50,7 +50,16 @@ class TestUserEnsure:
 
     def test_ensure_present_noop_when_data_matches(self, mock_client):
         mgr = _mgr(mock_client)
-        existing = [{"name": "alice", "email": "a@b.com", "description": "same", "expired": "normal", "2fa_enabled": False, "enabled": True}]
+        existing = [
+            {
+                "name": "alice",
+                "email": "a@b.com",
+                "description": "same",
+                "expired": "normal",
+                "2fa_enabled": False,
+                "enabled": True,
+            }
+        ]
         mock_client.request.return_value = {"users": existing}
         result = mgr.ensure("alice", state="present", email="a@b.com", description="same")
         assert result["changed"] is False
@@ -61,7 +70,16 @@ class TestUserEnsure:
 
     def test_ensure_present_updates_when_diff(self, mock_client):
         mgr = _mgr(mock_client)
-        existing = [{"name": "alice", "email": "old@b.com", "description": "old", "expired": "normal", "2fa_enabled": False, "enabled": True}]
+        existing = [
+            {
+                "name": "alice",
+                "email": "old@b.com",
+                "description": "old",
+                "expired": "normal",
+                "2fa_enabled": False,
+                "enabled": True,
+            }
+        ]
         mock_client.request.return_value = {"users": existing}
         result = mgr.ensure("alice", state="present", email="new@b.com", description="new")
         assert result["changed"] is True
@@ -70,7 +88,16 @@ class TestUserEnsure:
 
     def test_ensure_absent_deletes_when_exists(self, mock_client):
         mgr = _mgr(mock_client)
-        existing = [{"name": "alice", "email": "", "description": "", "expired": "normal", "2fa_enabled": False, "enabled": True}]
+        existing = [
+            {
+                "name": "alice",
+                "email": "",
+                "description": "",
+                "expired": "normal",
+                "2fa_enabled": False,
+                "enabled": True,
+            }
+        ]
         mock_client.request.return_value = {"users": existing}
         result = mgr.ensure("alice", state="absent")
         assert result["changed"] is True
@@ -98,7 +125,16 @@ class TestUserEnsure:
 
     def test_ensure_dry_run_absent_no_delete(self, mock_client):
         mgr = _mgr(mock_client)
-        existing = [{"name": "alice", "email": "", "description": "", "expired": "normal", "2fa_enabled": False, "enabled": True}]
+        existing = [
+            {
+                "name": "alice",
+                "email": "",
+                "description": "",
+                "expired": "normal",
+                "2fa_enabled": False,
+                "enabled": True,
+            }
+        ]
         mock_client.request.return_value = {"users": existing}
         result = mgr.ensure("alice", state="absent", dry_run=True)
         assert result["changed"] is True
@@ -118,6 +154,7 @@ class TestUserDelete:
 
     def test_delete_calls_api_for_existing(self, mock_client):
         import json
+
         mgr = _mgr(mock_client)
         mock_client.request.return_value = {"users": [{"name": "alice"}]}
         mgr.delete("alice")

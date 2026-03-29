@@ -93,8 +93,9 @@ class FileStationManager:
         except Exception:
             return False
 
-    def upload(self, local_path: str, dest_folder: str, overwrite: bool = True,
-               dry_run: bool = False) -> dict:
+    def upload(
+        self, local_path: str, dest_folder: str, overwrite: bool = True, dry_run: bool = False
+    ) -> dict:
         """Upload a local file to *dest_folder* on the NAS.
 
         Args:

@@ -390,7 +390,10 @@ def test_shares(sid: str) -> None:
             rule=nfs_rule,
         )
         if resp_nfs.get("success"):
-            record(PASS, f"NFS SharePrivilege save ({TEST_SHARE} → {os.environ.get('NFS_CLIENT', 'your-nfs-subnet')} rw)")
+            record(
+                PASS,
+                f"NFS SharePrivilege save ({TEST_SHARE} → {os.environ.get('NFS_CLIENT', 'your-nfs-subnet')} rw)",
+            )
         else:
             record(WARN, "NFS SharePrivilege save", str(resp_nfs.get("error", ""))[:80])
 

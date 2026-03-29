@@ -8,7 +8,11 @@ from synology_dsm.exceptions import DSMAuthError
 
 def test_login_success():
     client = DSMClient("your-nas-host")
-    with patch.object(client, "_post", return_value={"success": True, "data": {"sid": "test-session-123", "synotoken": "tok123"}}):
+    with patch.object(
+        client,
+        "_post",
+        return_value={"success": True, "data": {"sid": "test-session-123", "synotoken": "tok123"}},
+    ):
         sid = client.login("admin", "password")
     assert sid == "test-session-123"
     assert client._sid == "test-session-123"
@@ -63,6 +67,7 @@ def test_https_false_no_ssl_ctx():
 
 def test_https_verify_ssl_true():
     import ssl
+
     client = DSMClient("your-nas-host", https=True, verify_ssl=True)
     assert isinstance(client._ssl_ctx, ssl.SSLContext)
 

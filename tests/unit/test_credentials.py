@@ -50,13 +50,12 @@ class TestEnvCredentialProvider:
 
     def test_dotenv_loaded_when_file_exists(self, tmp_path):
         env_file = tmp_path / ".env"
-        env_file.write_text(
-            "SYNOLOGY_HOST=dotenv-host\nSYNOLOGY_USER=u\nSYNOLOGY_PASS=p\n"
-        )
+        env_file.write_text("SYNOLOGY_HOST=dotenv-host\nSYNOLOGY_USER=u\nSYNOLOGY_PASS=p\n")
         # Ensure env is clean of SYNOLOGY_HOST
         with patch.dict(os.environ, {}, clear=True):
             try:
                 from dotenv import load_dotenv  # noqa: F401
+
                 creds = EnvCredentialProvider(env_file=str(env_file)).get()
                 assert creds.host == "dotenv-host"
             except ImportError:
@@ -72,6 +71,7 @@ class TestEnvCredentialProvider:
 class TestVaultCredentialProvider:
     def test_raises_import_error_without_hvac(self):
         import sys
+
         with patch.dict(sys.modules, {"hvac": None}):
             provider = VaultCredentialProvider(
                 vault_addr="https://vault.example.com",

@@ -24,6 +24,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pre-commit install
 pytest tests/unit/ -v   # Expected: 223 passed, 0 failed
+deactivate              # when done
 ```
 
 ### Windows 11 with Git Bash
@@ -34,6 +35,8 @@ Run in Git Bash (or PowerShell):
 ```bash
 winget install Python.Python.3.13
 ```
+
+Restart Git Bash after install.
 
 #### Step 2 — Disable App Execution Aliases
 
@@ -68,57 +71,103 @@ pip --version      # Expected: pip 2x.x from .../Python313/...
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 cd lib-synology-dsm
 python -m venv .venv
-source .venv/Scripts/activate   # Git Bash: Scripts not bin
+source .venv/Scripts/activate   # Git Bash on Windows: Scripts, not bin
 pip install -e ".[dev]"
 pre-commit install
 ```
 
-#### Step 5 — Verify
+> ⚠️ `bin/activate` is Linux/macOS. On Windows Git Bash it is always `Scripts/activate`.
+
+#### Step 5 — Run unit tests
 
 ```bash
 pytest tests/unit/ -v
-# Expected: 223 passed, 0 failed
+# Expected: 223 passed, 3 warnings, 0 failed
+# The 3 warnings are intentional — they test that deprecation/fallback warnings fire correctly
+```
+
+#### Step 6 — Run integration tests (live NAS)
+
+```bash
+cp .env.example .env
+notepad .env   # fill in NAS_HOST, NAS_PORT, API_USER, API_PASS
+
+# Load env vars into shell — no inline comments in .env or this will fail
+export $(grep -v '^#' .env | xargs)
+
+pytest tests/integration/ -v
+# Expected: 51 passed, ~96s
+```
+
+#### Step 7 — Deactivate when done
+
+```bash
+deactivate
 ```
 
 ---
 
 ## Path B — VS Code Dev Container
 
-#### Prerequisites
+Python runs inside a Docker container. Nothing to install locally except Docker and VS Code.
+
+### Prerequisites
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 2. Install [VS Code](https://code.visualstudio.com/) + [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
-#### Docker Desktop install settings (Windows)
+### Docker Desktop install settings (Windows)
 
-During Docker Desktop installation you will see a configuration screen.
-Use these settings — anything else will cause issues:
+During Docker Desktop installation you will see a configuration screen:
 
 | Option | Setting | Why |
 |---|---|---|
-| ✅ Use WSL 2 instead of Hyper-V | **Enable** | Required for Linux containers — better performance, less RAM overhead |
-| ☐ Add shortcut to desktop | Optional | No impact |
-| ☐ Allow Windows Containers | **Leave disabled** | We use Linux containers only (Python 3.13 image) — enabling this switches Docker to a different engine |
-
-![Docker Desktop install settings](.devcontainer/assets/docker-desktop-install-settings.png)
+| ✅ Use WSL 2 instead of Hyper-V | **Enable** | Required for Linux containers |
+| ☐ Allow Windows Containers | **Leave disabled** | We use Linux containers only |
 
 After install, Docker Desktop will prompt for a logout/restart — do it before continuing.
 
-#### Open in container
-
-1. `File → Open Folder` → select the `lib-synology-dsm` folder
-2. VS Code shows a popup: **"Reopen in Container"** → click it
-   (or: `Ctrl+Shift+P` → `Dev Containers: Reopen in Container`)
-3. First time: ~2 min to pull Python 3.13 image and install deps
-4. Done — Python 3.13, ruff, mypy, pytest explorer all pre-configured
-
-#### Verify it works
+### Step 1 — Clone the repo
 
 ```bash
-# Inside the container terminal:
-pytest tests/unit/ -v
-# Expected: 223 passed, 0 failed, 100% coverage
+git clone https://github.com/by-openclaw/lib-synology-dsm.git
 ```
+
+### Step 2 — Open in VS Code
+
+```
+File → Open Folder → select lib-synology-dsm
+```
+
+VS Code will detect `.devcontainer/devcontainer.json` and show a popup:
+**"Reopen in Container"** → click it.
+
+Or: `Ctrl+Shift+P` → `Dev Containers: Reopen in Container`
+
+First time: ~2 min to pull Python 3.13 image and install all deps automatically.
+
+### Step 3 — Run unit tests
+
+Open the VS Code terminal (inside the container) and run:
+
+```bash
+pytest tests/unit/ -v
+# Expected: 223 passed, 3 warnings, 0 failed
+```
+
+### Step 4 — Run integration tests (live NAS)
+
+```bash
+cp .env.example .env
+# Edit .env — use VS Code editor or: nano .env
+# Fill in: NAS_HOST, NAS_PORT, API_USER, API_PASS
+
+export $(grep -v '^#' .env | xargs)
+pytest tests/integration/ -v
+# Expected: 51 passed, ~96s
+```
+
+> ⚠️ The container terminal is a Linux bash shell. `source .venv/Scripts/activate` does NOT apply here — Python is already active system-wide inside the container.
 
 See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) for full config.
 
@@ -204,56 +253,29 @@ in controlled locations. **They never touch existing shares or user data.**
 4. Create a read-only audit user (e.g. `your-audit-user`) — normal user, no admin rights
 5. NFS service must be enabled if testing NFS rules: Control Panel → File Services → NFS
 
-### Setup env vars
+### Setup
 
 ```bash
 cp .env.example .env
-# Edit .env with your values:
-#   NAS_HOST, API_USER, API_PASS, AUDIT_USER, AUDIT_PASS, NFS_CLIENT
+notepad .env   # or your editor — fill in NAS_HOST, NAS_PORT, API_USER, API_PASS
 ```
+
+> ⚠️ **Do not add inline comments** (`# ...`) after values in `.env`. The `xargs` loader will fail.
 
 ### Run
 
 ```bash
-# Option 1 — via env file (if python-dotenv installed)
-pip install python-dotenv
-source .env && python3 tests/integration/test_live_nas.py
-
-# Option 2 — inline env vars
-NAS_HOST=192.168.1.100 \
-API_USER=your-dsm-user \
-API_PASS=your-password \
-AUDIT_USER=your-audit-user \
-AUDIT_PASS=your-audit-password \
-NFS_CLIENT=192.168.1.0/24 \
-TEST_USER_PASS=TmpPass123! \
-python3 tests/integration/test_live_nas.py
+# Export env vars from file, then run
+export $(grep -v '^#' .env | xargs)
+pytest tests/integration/ -v
+# Expected: 51 passed, ~96s
 ```
 
-### Output format
+### What it does
 
-```
-============================================================
-  lib-synology-dsm — Live NAS Integration Test
-  Target: https://192.168.1.100:5001/webapi/entry.cgi
-============================================================
-
-── Section 1: Auth v7 ─────────────────────────────
-  ✅  your-dsm-user login  sid=abc123…
-  ✅  your-dsm-user logout
-  ✅  your-dsm-user re-login (for subsequent tests)
-
-  ...
-
-── Summary ───────────────────────────────────────
-  Total: 42  |  ✅ 40  |  ⚠️ 2  |  ❌ 0
-```
-
-- `✅` = PASS
-- `⚠️` = WARN (non-blocking — e.g. optional feature not configured on NAS)
-- `❌` = FAIL (blocking)
-
-Exit code: `0` if no failures, `1` if any `❌`.
+Each test creates a uniquely named object (e.g. `rune-u-b4c9d1cc`), runs assertions, then deletes it.
+Your NAS audit log will show create/delete pairs for each test — this is expected and correct.
+**Nothing persists on the NAS after the run.**
 
 ---
 

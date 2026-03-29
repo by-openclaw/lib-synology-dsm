@@ -7,14 +7,28 @@ from .credentials import (
     VaultCredentialProvider,
     get_credentials,
 )
+from .exceptions import (
+    DSMAPIError,
+    DSMAuthError,
+    DSMError,
+    DSMNotFoundError,
+    DSMPermissionError,
+    DSMSessionError,
+)
 from .filestation import FileStationManager
 from .groups import GroupManager
 from .shares import ShareManager
 from .users import UserManager
 
 __all__ = [
+    "DSMAPIError",
+    "DSMAuthError",
     "DSMClient",
     "DSMCredentials",
+    "DSMError",
+    "DSMNotFoundError",
+    "DSMPermissionError",
+    "DSMSessionError",
     "EnvCredentialProvider",
     "FileStationManager",
     "GroupManager",

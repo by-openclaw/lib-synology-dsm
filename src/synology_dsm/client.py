@@ -4,6 +4,21 @@ from __future__ import annotations
 import httpx
 from typing import Any
 
+from .exceptions import (
+    DSMAPIError,
+    DSMAuthError,
+    DSMPermissionError,
+    DSMSessionError,
+)
+
+# Map DSM error codes to exception classes
+_ERROR_MAP = {
+    400: DSMAuthError,
+    402: DSMAuthError,
+    403: DSMPermissionError,
+    119: DSMSessionError,
+}
+
 
 class DSMClient:
     """Synology DSM API client with session lifecycle management."""
@@ -34,7 +49,10 @@ class DSMClient:
         resp.raise_for_status()
         data = resp.json()
         if not data.get("success"):
-            raise RuntimeError(f"Login failed: {data.get('error')}")
+            error = data.get("error", {})
+            code = error.get("code") if isinstance(error, dict) else None
+            exc_class = _ERROR_MAP.get(code, DSMAuthError)
+            raise exc_class(f"Login failed: {error}", code=code)
         self._sid = data["data"]["sid"]
         self._synotoken = data["data"].get("synotoken", "")
         return self._sid
@@ -56,6 +74,12 @@ class DSMClient:
         ALL write operations on DSM 7.x — share create/delete, group set, etc.).
         Without X-SYNO-TOKEN, write ops return 403 even with valid SID.
         Token is obtained during login() via enable_syno_token=yes.
+
+        Raises:
+            DSMAuthError: On error codes 400 or 402.
+            DSMPermissionError: On error code 403.
+            DSMSessionError: On error code 119.
+            DSMAPIError: On any other API error.
         """
         if not self._sid:
             raise RuntimeError("Not logged in. Call login() first.")
@@ -73,7 +97,10 @@ class DSMClient:
         resp.raise_for_status()
         data = resp.json()
         if not data.get("success"):
-            raise RuntimeError(f"API error [{api}.{method}]: {data.get('error')}")
+            error = data.get("error", {})
+            code = error.get("code") if isinstance(error, dict) else None
+            exc_class = _ERROR_MAP.get(code, DSMAPIError)
+            raise exc_class(f"API error [{api}.{method}]: {error}", code=code)
         return data.get("data", {})
 
     def __enter__(self) -> "DSMClient":

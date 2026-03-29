@@ -99,3 +99,124 @@ class TestDelete:
         call_args = mock_client.request.call_args
         assert call_args.args[0] == "SYNO.FileStation.Delete"
         assert call_args.args[1] == "start"
+
+
+class TestListShares:
+    def test_list_shares_returns_list(self, mock_client):
+        mock_client.request.return_value = {"shares": [{"name": "data"}, {"name": "backup"}]}
+        mgr = FileStationManager(mock_client)
+        shares = mgr.list_shares()
+        assert len(shares) == 2
+        assert shares[0]["name"] == "data"
+
+    def test_list_shares_empty(self, mock_client):
+        mock_client.request.return_value = {"shares": []}
+        mgr = FileStationManager(mock_client)
+        assert mgr.list_shares() == []
+
+    def test_list_shares_calls_correct_api(self, mock_client):
+        mock_client.request.return_value = {"shares": []}
+        mgr = FileStationManager(mock_client)
+        mgr.list_shares()
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.FileStation.List"
+        assert call.args[1] == "list_share"
+
+
+class TestList:
+    def test_list_returns_files(self, mock_client):
+        mock_client.request.return_value = {"files": [{"name": "file.txt"}, {"name": "subdir"}]}
+        mgr = FileStationManager(mock_client)
+        files = mgr.list("/my-share")
+        assert len(files) == 2
+
+    def test_list_empty_folder(self, mock_client):
+        mock_client.request.return_value = {"files": []}
+        mgr = FileStationManager(mock_client)
+        assert mgr.list("/my-share") == []
+
+    def test_list_with_additional(self, mock_client):
+        mock_client.request.return_value = {"files": []}
+        mgr = FileStationManager(mock_client)
+        mgr.list("/my-share", additional=["size", "time"])
+        call = mock_client.request.call_args
+        assert "additional" in call.kwargs
+        additional = json.loads(call.kwargs["additional"])
+        assert "size" in additional
+        assert "time" in additional
+
+    def test_list_pagination(self, mock_client):
+        mock_client.request.return_value = {"files": []}
+        mgr = FileStationManager(mock_client)
+        mgr.list("/my-share", offset=10, limit=50)
+        call = mock_client.request.call_args
+        assert call.kwargs.get("offset") == 10
+        assert call.kwargs.get("limit") == 50
+
+
+class TestMkdir:
+    def test_mkdir_returns_folder_info(self, mock_client):
+        mock_client.request.return_value = {
+            "folders": [{"name": "poc", "path": "/by-terraform-state/poc"}]
+        }
+        mgr = FileStationManager(mock_client)
+        result = mgr.mkdir("/by-terraform-state", "poc")
+        assert result["name"] == "poc"
+
+    def test_mkdir_calls_correct_api(self, mock_client):
+        mock_client.request.return_value = {"folders": [{"name": "new"}]}
+        mgr = FileStationManager(mock_client)
+        mgr.mkdir("/parent", "new")
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.FileStation.CreateFolder"
+        assert call.args[1] == "create"
+
+    def test_mkdir_force_parent_true(self, mock_client):
+        mock_client.request.return_value = {"folders": [{"name": "new"}]}
+        mgr = FileStationManager(mock_client)
+        mgr.mkdir("/parent", "new", force_parent=True)
+        call = mock_client.request.call_args
+        assert call.kwargs.get("force_parent") == "true"
+
+    def test_mkdir_force_parent_false(self, mock_client):
+        mock_client.request.return_value = {"folders": [{"name": "new"}]}
+        mgr = FileStationManager(mock_client)
+        mgr.mkdir("/parent", "new", force_parent=False)
+        call = mock_client.request.call_args
+        assert call.kwargs.get("force_parent") == "false"
+
+
+class TestDownload:
+    def test_download_writes_file(self, tmp_path):
+        """download() fetches URL and writes bytes to local file."""
+        client = _real_client()
+        mgr = _mgr(client)
+        dest = tmp_path / "output.txt"
+        file_content = b"hello from nas"
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = file_content
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            mgr.download("/share/output.txt", str(dest))
+
+        assert dest.read_bytes() == file_content
+
+    def test_download_url_contains_path_param(self, tmp_path):
+        """download() URL must include the remote path parameter."""
+        client = _real_client()
+        mgr = _mgr(client)
+        dest = tmp_path / "f.txt"
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"data"
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_resp) as mock_open_url:
+            mgr.download("/by-share/file.txt", str(dest))
+
+        req = mock_open_url.call_args.args[0]
+        assert "path=%2Fby-share%2Ffile.txt" in req.full_url

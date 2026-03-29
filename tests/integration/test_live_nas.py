@@ -422,25 +422,113 @@ def test_shares(sid: str) -> None:
 
 
 def test_filestation(sid: str) -> None:
-    section("7. SYNO.FileStation.List — list root (read-only)")
+    """FileStation tests — all file/folder operations use a dedicated temp folder
+    inside TEST_SHARE (/TEST_SHARE/rune-test-fs-tmp/) to avoid touching existing data.
+    The temp folder is created at test start and deleted at test end.
+    """
+    section("7. SYNO.FileStation — list / mkdir / upload / download / delete")
     if not sid:
         record(WARN, "FileStation tests skipped", "no admin session")
         return
 
-    resp = _api_raw(sid, "SYNO.FileStation.List", "list_share", version=2)
-    if resp.get("success"):
-        shares = resp.get("data", {}).get("shares", [])
-        record(PASS, "SYNO.FileStation.List list_share", f"{len(shares)} shares visible")
-    else:
-        record(FAIL, "SYNO.FileStation.List list_share", str(resp.get("error", ""))[:120])
+    from synology_dsm import DSMClient
+    from synology_dsm.filestation import FileStationManager
 
-    # Also test list (files in /)
-    resp2 = _api_raw(sid, "SYNO.FileStation.List", "list", version=2, folder_path="/")
-    if resp2.get("success"):
-        files = resp2.get("data", {}).get("files", [])
-        record(PASS, "SYNO.FileStation.List list /", f"{len(files)} entries")
-    else:
-        record(WARN, "SYNO.FileStation.List list /", str(resp2.get("error", ""))[:80])
+    TEST_FS_FOLDER = "rune-test-fs-tmp"
+    TEST_FS_PATH = f"/{TEST_SHARE}/{TEST_FS_FOLDER}"
+
+    client = DSMClient(NAS_HOST, port=NAS_PORT, verify_ssl=False)
+    # Inject the existing session — no new login needed
+    client._sid = sid
+    # Re-login to get synotoken (needed for write operations)
+    try:
+        client.login(ADMIN_USER, ADMIN_PASS)
+    except Exception as e:
+        record(WARN, "FileStation re-login for synotoken", str(e)[:80])
+        return
+
+    fs = FileStationManager(client)
+
+    # 7a. list_share — read-only, always safe
+    try:
+        shares = fs.list_shares()
+        record(PASS, "FileStation.list_shares", f"{len(shares)} shares visible")
+    except Exception as e:
+        record(FAIL, "FileStation.list_shares", str(e)[:120])
+
+    # 7b. list root — read-only
+    try:
+        files = fs.list(f"/{TEST_SHARE}")
+        record(PASS, f"FileStation.list /{TEST_SHARE}", f"{len(files)} entries")
+    except Exception as e:
+        record(WARN, f"FileStation.list /{TEST_SHARE}", str(e)[:80])
+
+    # 7c. mkdir — create dedicated test folder (will be cleaned up)
+    try:
+        result = fs.mkdir(f"/{TEST_SHARE}", TEST_FS_FOLDER)
+        record(PASS, f"FileStation.mkdir {TEST_FS_PATH}", f"created: {result.get('name')}")
+    except Exception as e:
+        record(FAIL, "FileStation.mkdir", str(e)[:120])
+        try:
+            client.logout()
+        except Exception:
+            pass
+        return  # Cannot proceed with upload/download without the folder
+
+    # 7d. upload — write a small test file into the temp folder only
+    import tempfile
+
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".txt", prefix="rune-test-", delete=False) as tmp:
+            tmp.write(b"lib-synology-dsm integration test file\n")
+            tmp_path = tmp.name
+        test_filename = "rune-test-upload.txt"
+        result = fs.upload(tmp_path, TEST_FS_PATH, overwrite=True)
+        if result.get("success"):
+            record(PASS, f"FileStation.upload → {TEST_FS_PATH}/{test_filename}")
+        else:
+            record(FAIL, "FileStation.upload", str(result))
+        os.unlink(tmp_path)
+    except Exception as e:
+        record(FAIL, "FileStation.upload", str(e)[:120])
+
+    # 7e. list temp folder — verify file appears
+    try:
+        files = fs.list(TEST_FS_PATH)
+        names = [f.get("name", "") for f in files]
+        if any("rune-test" in n for n in names):
+            record(PASS, f"FileStation.list {TEST_FS_PATH}", f"test file visible: {names}")
+        else:
+            record(WARN, f"FileStation.list {TEST_FS_PATH}", f"file not found in: {names}")
+    except Exception as e:
+        record(WARN, f"FileStation.list {TEST_FS_PATH}", str(e)[:80])
+
+    # 7f. download — fetch the file back
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as dl:
+            dl_path = dl.name
+        fs.download(f"{TEST_FS_PATH}/rune-test-upload.txt", dl_path)
+        with open(dl_path, "rb") as fh:
+            content = fh.read()
+        if b"lib-synology-dsm" in content:
+            record(PASS, "FileStation.download", f"{len(content)} bytes — content verified")
+        else:
+            record(WARN, "FileStation.download", f"unexpected content: {content[:40]}")
+        os.unlink(dl_path)
+    except Exception as e:
+        record(WARN, "FileStation.download", str(e)[:120])
+
+    # 7g. delete temp folder (entire rune-test-fs-tmp — contains only test artifacts)
+    try:
+        fs.delete(TEST_FS_PATH)
+        record(PASS, f"FileStation.delete {TEST_FS_PATH}")
+    except Exception as e:
+        record(WARN, f"FileStation.delete {TEST_FS_PATH}", str(e)[:120])
+
+    try:
+        client.logout()
+    except Exception:
+        pass
 
 
 def cleanup(sid: str) -> None:

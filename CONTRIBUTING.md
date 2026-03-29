@@ -2,12 +2,62 @@
 
 ## Development setup
 
+### Linux / macOS
+
 ```bash
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 cd lib-synology-dsm
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+pre-commit install   # installs git hooks — blocks commits with secrets or lint errors
 ```
+
+### Windows 11 (native, no WSL required)
+
+```powershell
+# Install Python if not present
+winget install Python.Python.3.12
+
+git clone https://github.com/by-openclaw/lib-synology-dsm.git
+cd lib-synology-dsm
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e ".[dev]"
+pre-commit install
+```
+
+### VS Code Dev Container (recommended for consistency)
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) + VS Code + [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. `File → Open Folder` → select `lib-synology-dsm`
+3. Click **"Reopen in Container"** when prompted
+4. Python 3.12, ruff, mypy, pytest explorer all pre-configured — no manual steps
+
+See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json).
+
+---
+
+## Pre-commit hooks (mandatory)
+
+After cloning, run `pre-commit install` once. This installs git hooks that run automatically on every `git commit`:
+
+| Hook | What it checks |
+|---|---|
+| `detect-secrets` | Blocks commits containing passwords, API tokens, private keys |
+| `check-added-large-files` | Blocks files > 500KB |
+| `end-of-file-fixer` | Ensures files end with newline |
+| `ruff` | Python linting (auto-fix) |
+| `ruff-format` | Python formatting |
+
+**If detect-secrets flags a false positive** (e.g. a test placeholder like `"secret"`):
+```bash
+detect-secrets audit .secrets.baseline
+# Follow prompts: press 'n' to mark as not a real secret
+git add .secrets.baseline
+git commit -m "chore: update secrets baseline"
+```
+
+**Never bypass the hooks** with `git commit --no-verify` unless you have an explicit reason and review it immediately.
 
 ---
 

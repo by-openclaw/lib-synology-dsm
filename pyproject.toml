@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen"]
+dev = ["pre-commit", "detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen"]
 vault = ["hvac", "python-dotenv"]
 
 [tool.pytest.ini_options]

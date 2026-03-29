@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synology-dsm"
-version = "0.6.1"
+version = "0.7.0"
 description = "Python library for Synology DSM API — shares, users, NFS, system management"
 readme = "README.md"
 license = { text = "MIT" }
@@ -24,7 +24,7 @@ markers = ["integration: live NAS required (deselect with -m 'not integration')"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.6.1"
+version = "0.7.0"
 version_files = [
     "pyproject.toml:^version",
     "src/synology_dsm/__init__.py:^__version__"

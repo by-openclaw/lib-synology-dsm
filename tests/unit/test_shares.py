@@ -1,7 +1,6 @@
 """Unit tests — ShareManager."""
 
 import json
-import pytest
 from synology_dsm.shares import ShareManager
 
 

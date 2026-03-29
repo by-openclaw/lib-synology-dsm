@@ -1,7 +1,6 @@
 """Unit tests — UserManager."""
 
 import pytest
-from unittest.mock import call, MagicMock
 from synology_dsm.users import UserManager
 from synology_dsm.exceptions import DSMNotFoundError
 

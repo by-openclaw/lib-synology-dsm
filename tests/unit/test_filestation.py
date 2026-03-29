@@ -1,6 +1,5 @@
 """Unit tests — FileStationManager."""
 
-import pytest
 from unittest.mock import MagicMock, patch, mock_open
 from synology_dsm.filestation import FileStationManager
 
@@ -122,7 +121,7 @@ class TestDelete:
     def test_delete_calls_api(self, mock_client):
         mock_client.request.return_value = {"taskid": "abc"}
         mgr = _mgr(mock_client)
-        result = mgr.delete("/share/file.txt")
+        mgr.delete("/share/file.txt")
         mock_client.request.assert_called_once()
         call_args = mock_client.request.call_args
         assert call_args.args[0] == "SYNO.FileStation.Delete"

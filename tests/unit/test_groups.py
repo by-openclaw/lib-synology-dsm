@@ -1,8 +1,6 @@
 """Unit tests — GroupManager."""
 
-import pytest
 import json
-from unittest.mock import MagicMock
 from synology_dsm.groups import GroupManager
 
 

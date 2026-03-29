@@ -1,6 +1,9 @@
 {
   "name": "lib-synology-dsm",
-  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  // Python 3.13 — matches CI matrix upper bound (3.10–3.13).
+  // Min supported: 3.10 (requires-python in pyproject.toml).
+  // To test against min: change to mcr.microsoft.com/devcontainers/python:3.10
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
   "postCreateCommand": "pip install -e '.[dev]' && pre-commit install",
 

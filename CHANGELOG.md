@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.7.3...v0.8.0) (2026-03-29)
+
+
+### Features
+
+* close issues [#5](https://github.com/by-openclaw/lib-synology-dsm/issues/5) [#6](https://github.com/by-openclaw/lib-synology-dsm/issues/6) [#7](https://github.com/by-openclaw/lib-synology-dsm/issues/7) — NFSManager ensure(), FileStation ensure(), Vault cleanup ([23c8a6c](https://github.com/by-openclaw/lib-synology-dsm/commit/23c8a6c4bbb3c69b591365c4451b0f57fa82afad))
+* pre-commit hooks — detect-secrets + ruff + hygiene checks ([85acf39](https://github.com/by-openclaw/lib-synology-dsm/commit/85acf39a64dda81167976c73706001af7151e46e))
+
 ## [0.7.3](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.7.2...v0.7.3) (2026-03-29)
 
 

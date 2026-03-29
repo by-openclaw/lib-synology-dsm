@@ -5,7 +5,10 @@
   // To test against min: change to mcr.microsoft.com/devcontainers/python:3.10
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
-  "postCreateCommand": "sudo pip install -e '.[dev]' && pre-commit install",
+  // pre-commit install is intentionally omitted: .git/hooks is owned by the Windows host user
+  // and cannot be written from inside the container (UID mismatch on mounted volume).
+  // Run `pre-commit install` once from Git Bash on the host — hooks apply to all git commits.
+  "postCreateCommand": "sudo pip install -e '.[dev]'",
 
   "customizations": {
     "vscode": {

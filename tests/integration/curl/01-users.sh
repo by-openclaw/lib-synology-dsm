@@ -88,6 +88,57 @@ check_success "SYNO.Core.User create" "$R"
 ok=$LAST_OK
 [[ "$ok" != "1" ]] && { echo "  Cannot continue — create failed"; exit 1; }
 
+# ── Step 2b: list (verify user appears in basic list) ────────────────────────
+echo ""
+echo "  Step 2b — list: verify ${TEST_USER} in basic user list"
+R=$(api "api=SYNO.Core.User&version=1&method=list")
+check_success "SYNO.Core.User list" "$R"
+FOUND=$(echo "$R" | python3 -c "
+import sys,json; d=json.load(sys.stdin)
+users=[u['name'] for u in d.get('data',{}).get('users',d.get('users',[]))]
+print('1' if '${TEST_USER}' in users else '0')" 2>/dev/null || echo "0")
+[[ "$FOUND" == "1" ]]     && step 1 "list — ${TEST_USER} visible in user list"     || step 0 "list — ${TEST_USER} NOT in user list"
+
+# ── Step 2d: update user (change description) ─────────────────────────────────
+echo ""
+echo "  Step 2d — update: change description for ${TEST_USER}"
+R=$(api "api=SYNO.Core.User&version=1&method=set&name=${TEST_USER}&description=updated-by-curl")
+check_success "SYNO.Core.User set (description update)" "$R"
+# Verify the change
+R=$(curl -sk "${BASE}" -H "X-SYNO-TOKEN: ${TOKEN}" \
+    --data "_sid=${SID}&api=SYNO.Core.User&version=1&method=list&limit=100&offset=0" \
+    --data-urlencode 'additional=["description"]')
+DESC=$(echo "$R" | python3 -c "
+import sys,json; d=json.load(sys.stdin)
+users=d.get('data',d).get('users',[])
+match=[u for u in users if u.get('name')=='${TEST_USER}']
+print(match[0].get('description','') if match else '')" 2>/dev/null || echo "")
+[[ "$DESC" == "updated-by-curl" ]] \
+    && step 1 "update verify — description is 'updated-by-curl'" \
+    || step 0 "update verify — expected 'updated-by-curl', got '${DESC}'"
+
+# ── Step 2e: list_detailed (verify extended fields — after update so desc is set) ──
+echo ""
+echo "  Step 2e — list_detailed: verify extended fields for ${TEST_USER}"
+R=$(curl -sk "${BASE}" -H "X-SYNO-TOKEN: ${TOKEN}" \
+    --data "_sid=${SID}&api=SYNO.Core.User&version=1&method=list&limit=100&offset=0" \
+    --data-urlencode 'additional=["description","email","expired","2fa_status"]')
+check_success "SYNO.Core.User list (additional fields)" "$R"
+USER_INFO=$(echo "$R" | python3 -c "
+import sys,json; d=json.load(sys.stdin)
+users=d.get('data',d).get('users',[])
+match=[u for u in users if u.get('name')=='${TEST_USER}']
+import json as j; print(j.dumps(match[0]) if match else '{}')" 2>/dev/null || echo "{}")
+HAS_EXPIRED=$(echo "$USER_INFO" | python3 -c "import sys,json; d=json.loads(sys.stdin.read()); print('1' if 'expired' in d else '0')" 2>/dev/null || echo "0")
+[[ "$HAS_EXPIRED" == "1" ]] \
+    && step 1 "list_detailed — extended fields present: expired, email, 2fa_status" \
+    || step 0 "list_detailed — extended fields missing: ${USER_INFO}"
+# Verify description was persisted from the update step
+DESC_CHECK=$(echo "$USER_INFO" | python3 -c "import sys,json; d=json.loads(sys.stdin.read()); print(d.get('description',''))" 2>/dev/null || echo "")
+[[ "$DESC_CHECK" == "updated-by-curl" ]] \
+    && step 1 "list_detailed — description field confirms update persisted" \
+    || step 0 "list_detailed — description mismatch: got '${DESC_CHECK}'"
+
 # ── Step 3: ensure present (verify create worked) ─────────────────────────────
 echo ""
 echo "  Step 3 — ensure present: verify ${TEST_USER} appears in list"

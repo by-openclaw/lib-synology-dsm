@@ -91,13 +91,26 @@ class TestAuth:
         assert client._synotoken is not None
         assert len(client._synotoken) > 0
 
+    def test_logout_and_relogin(self) -> None:
+        """Logout clears SID; re-login issues a fresh session."""
+        from synology_dsm import DSMClient
+
+        cli = DSMClient(NAS_HOST, port=NAS_PORT, verify_ssl=False)
+        cli.login(ADMIN_USER, ADMIN_PASS)
+        assert cli._sid is not None
+        cli.logout()
+        assert cli._sid is None
+        cli.login(ADMIN_USER, ADMIN_PASS)
+        assert cli._sid is not None
+        cli.logout()
+
 
 # ── UserManager ───────────────────────────────────────────────────────────────
 
 
 @nas_required
 class TestUserManager:
-    """Full ensure() lifecycle: create → noop → delete → noop."""
+    """Full ensure() lifecycle: create → noop → update → delete → noop + list/list_detailed."""
 
     @pytest.fixture(autouse=True)
     def setup(self, client, run_id) -> None:  # noqa: ANN001
@@ -111,6 +124,40 @@ class TestUserManager:
             self.mgr.ensure(self.username, state="absent")
         except Exception:
             pass
+
+    def test_list_includes_user_after_create(self) -> None:
+        self.mgr.ensure(self.username, password=TEST_USER_PASS, state="present")
+        users = self.mgr.list()
+        names = [u["name"] for u in users]
+        assert self.username in names
+
+    def test_list_detailed_returns_extended_fields(self) -> None:
+        self.mgr.ensure(
+            self.username,
+            password=TEST_USER_PASS,
+            state="present",
+            description="pytest integration",
+        )
+        detailed = self.mgr.list_detailed()
+        match = [u for u in detailed if u["name"] == self.username]
+        assert len(match) == 1, f"{self.username} not found in list_detailed"
+        u = match[0]
+        assert "email" in u
+        assert "enabled" in u
+        assert "2fa_enabled" in u
+
+    def test_ensure_present_updates_description(self) -> None:
+        self.mgr.ensure(
+            self.username, password=TEST_USER_PASS, state="present", description="original"
+        )
+        r = self.mgr.ensure(
+            self.username, password=TEST_USER_PASS, state="present", description="updated"
+        )
+        assert r["changed"] is True
+        assert r["action"] == "updated"
+        detailed = self.mgr.list_detailed()
+        match = [u for u in detailed if u["name"] == self.username]
+        assert match[0]["description"] == "updated"
 
     def test_ensure_present_creates(self) -> None:
         r = self.mgr.ensure(

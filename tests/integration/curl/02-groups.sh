@@ -101,14 +101,28 @@ else
     step 0 "SYNO.Core.Group.Member list" "$R"
 fi
 
-# ── Step 6: delete ────────────────────────────────────────────────────────────
-echo ""; echo "  Step 6 — delete: ${TEST_GROUP}"
+# ── Step 6: remove member ─────────────────────────────────────────────────────
+echo ""; echo "  Step 6 — remove member: ${TEST_MEMBER} from ${TEST_GROUP}"
+R=$(api "api=SYNO.Core.Group.Member&version=1&method=remove&group=${TEST_GROUP}&name=${TEST_MEMBER}")
+check "SYNO.Core.Group.Member remove (${TEST_MEMBER})" "$R"
+
+# ── Step 6b: verify member removed ────────────────────────────────────────────
+echo ""; echo "  Step 6b — ensure member absent: verify ${TEST_MEMBER} not in group"
+R=$(api "api=SYNO.Core.Group.Member&version=1&method=list&group=${TEST_GROUP}&ingroup=true")
+GONE=$(echo "$R" | python3 -c "
+import sys,json; d=json.load(sys.stdin)
+users=[u['name'] for u in d.get('data',{}).get('users',d.get('users',[]))]
+print('1' if '${TEST_MEMBER}' not in users else '0')" 2>/dev/null || echo "0")
+[[ "$GONE" == "1" ]]     && step 1 "ensure member absent — ${TEST_MEMBER} removed from group"     || step 0 "ensure member absent — ${TEST_MEMBER} still in group"
+
+# ── Step 7: delete ────────────────────────────────────────────────────────────
+echo ""; echo "  Step 7 — delete: ${TEST_GROUP}"
 NAME_JSON=$(python3 -c "import json,urllib.parse; print(urllib.parse.quote(json.dumps(['${TEST_GROUP}'])))")
 R=$(api "api=SYNO.Core.Group&version=1&method=delete&name=${NAME_JSON}")
 check "SYNO.Core.Group delete" "$R"
 
 # ── Step 7: ensure absent ─────────────────────────────────────────────────────
-echo ""; echo "  Step 7 — ensure absent: verify ${TEST_GROUP} is gone"
+echo ""; echo "  Step 8 — ensure absent: verify ${TEST_GROUP} is gone"
 R=$(api "api=SYNO.Core.Group&version=1&method=list")
 GONE=$(echo "$R" | python3 -c "
 import sys,json; d=json.load(sys.stdin)

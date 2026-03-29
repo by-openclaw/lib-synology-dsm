@@ -79,3 +79,9 @@ ignore_missing_imports = true
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+
+[tool.bandit]
+targets = ["src/"]
+severity = "medium"
+confidence = "medium"
+skips = ["B101"]  # assert — intentional in source; tests already excluded from scan

@@ -51,7 +51,7 @@ class DSMClient:
         self._synotoken: str = ""
         # SSL context — skip verification when verify_ssl=False (self-signed NAS certs)
         if https and not verify_ssl:
-            self._ssl_ctx: ssl.SSLContext | None = ssl._create_unverified_context()
+            self._ssl_ctx: ssl.SSLContext | None = ssl._create_unverified_context()  # nosec B323 — explicit user opt-in for self-signed NAS certs
         elif https:
             self._ssl_ctx = ssl.create_default_context()
         else:
@@ -66,7 +66,7 @@ class DSMClient:
             for k, v in headers.items():
                 req.add_header(k, v)
         try:
-            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=30) as resp:
+            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=30) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.URLError as exc:
             raise DSMConnectionError(f"Cannot reach DSM at {url}: {exc.reason}", code=None) from exc

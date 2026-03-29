@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.7.0...v0.7.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* post-audit hardening complete — urllib migration, credential redaction, CI green ([c48f61b](https://github.com/by-openclaw/lib-synology-dsm/commit/c48f61b23d081f217cb0cdedcb9dcc62c8f24d93))
+
 ## [0.6.1] — 2026-03-29
 
 ### Added

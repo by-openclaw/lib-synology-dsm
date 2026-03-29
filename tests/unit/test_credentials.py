@@ -1,8 +1,10 @@
 """Unit tests — credential providers."""
 
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from synology_dsm.credentials import (
     DSMCredentials,
     EnvCredentialProvider,
@@ -143,7 +145,7 @@ class TestGetCredentials:
             "SYNOLOGY_USER": "u",
             "SYNOLOGY_PASS": "p",
         }
-        clean = {k: "" for k in ["VAULT_ADDR", "VAULT_TOKEN"]}
+        clean = dict.fromkeys(["VAULT_ADDR", "VAULT_TOKEN"], "")
         with patch.dict(os.environ, {**env, **clean}, clear=False):
             os.environ.pop("VAULT_ADDR", None)
             os.environ.pop("VAULT_TOKEN", None)
@@ -158,10 +160,12 @@ class TestGetCredentials:
             "SYNOLOGY_USER": "u",
             "SYNOLOGY_PASS": "p",
         }
-        with patch.dict(os.environ, env, clear=False):
-            with patch(
+        with (
+            patch.dict(os.environ, env, clear=False),
+            patch(
                 "synology_dsm.credentials.VaultCredentialProvider.get",
                 side_effect=Exception("vault down"),
-            ):
-                creds = get_credentials(env_file=None)
+            ),
+        ):
+            creds = get_credentials(env_file=None)
         assert creds.host == "fallback-nas"

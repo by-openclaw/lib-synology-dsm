@@ -20,7 +20,7 @@ class NFSManager:
     Uses SYNO.Core.FileServ.NFS.SharePrivilege (DSM 7.x).
     """
 
-    def __init__(self, client: "DSMClient") -> None:
+    def __init__(self, client: DSMClient) -> None:
         self._c = client
 
     def get_rules(self, share_name: str) -> list[dict]:

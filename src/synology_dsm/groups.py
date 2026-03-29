@@ -21,8 +21,8 @@ Notes:
 """
 
 from __future__ import annotations
-from typing import List
 
+import builtins
 import json
 
 from .client import DSMClient
@@ -31,7 +31,12 @@ from .client import DSMClient
 class GroupManager:
     """CRUD and membership operations for Synology DSM groups."""
 
-    def __init__(self, client: DSMClient):
+    def __init__(self, client: DSMClient) -> None:
+        """Initialise the manager with an authenticated DSMClient.
+
+        Args:
+            client: An authenticated :class:`DSMClient` instance.
+        """
         self._c = client
 
     def list(self) -> list[dict]:
@@ -127,8 +132,7 @@ class GroupManager:
         current_names = [m.get("name", m) if isinstance(m, dict) else m for m in current]
         if username in current_names:
             return {"changed": False, "action": "noop"}
-        if username not in current_names:
-            current_names.append(username)
+        current_names.append(username)
         self._c.request(
             "SYNO.Core.Group",
             "set",
@@ -186,7 +190,7 @@ class GroupManager:
             )
         return result
 
-    def list_members(self, group: str) -> List[dict]:
+    def list_members(self, group: str) -> builtins.list[dict]:
         """List members of a group.
 
         Falls back to SYNO.Core.Group.get if member_list is unavailable (DSM version dependent).

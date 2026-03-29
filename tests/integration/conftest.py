@@ -3,6 +3,7 @@
 import os
 
 import pytest
+
 from synology_dsm import DSMClient
 
 NAS_HOST = os.environ.get("NAS_HOST", "")

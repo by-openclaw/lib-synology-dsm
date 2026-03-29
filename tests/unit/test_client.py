@@ -1,9 +1,10 @@
 """Tests for DSM client session management."""
 
 import urllib.error
+from unittest.mock import patch
 
 import pytest
-from unittest.mock import patch
+
 from synology_dsm import DSMClient, DSMConnectionError
 from synology_dsm.exceptions import DSMAuthError
 
@@ -55,9 +56,8 @@ def test_logout_noop_when_not_logged_in():
 def test_context_manager_calls_logout():
     client = DSMClient("your-nas-host")
     client._sid = "fake-sid"
-    with patch.object(client, "_post", return_value={}):
-        with client:
-            pass
+    with patch.object(client, "_post", return_value={}), client:
+        pass
     assert client._sid is None
 
 
@@ -117,23 +117,27 @@ def test_post_adds_headers():
 def test_post_raises_connection_error_on_url_error():
     """_post wraps urllib.error.URLError as DSMConnectionError."""
     client = DSMClient("your-nas-host", https=False)
-    with patch(
-        "urllib.request.urlopen",
-        side_effect=urllib.error.URLError("Connection refused"),
+    with (
+        patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ),
+        pytest.raises(DSMConnectionError, match="Cannot reach DSM"),
     ):
-        with pytest.raises(DSMConnectionError, match="Cannot reach DSM"):
-            client._post("http://nas/api", {"key": "val"})
+        client._post("http://nas/api", {"key": "val"})
 
 
 def test_post_raises_connection_error_on_os_error():
     """_post wraps OSError (e.g. socket timeout) as DSMConnectionError."""
     client = DSMClient("your-nas-host", https=False)
-    with patch(
-        "urllib.request.urlopen",
-        side_effect=OSError("timed out"),
+    with (
+        patch(
+            "urllib.request.urlopen",
+            side_effect=OSError("timed out"),
+        ),
+        pytest.raises(DSMConnectionError, match="Network error"),
     ):
-        with pytest.raises(DSMConnectionError, match="Network error"):
-            client._post("http://nas/api", {"key": "val"})
+        client._post("http://nas/api", {"key": "val"})
 
 
 def test_logout_suppresses_exception():

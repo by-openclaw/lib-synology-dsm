@@ -5,9 +5,11 @@ Each test here exercises a complete user-facing workflow as a single connected f
 mirroring exactly what Ansible tasks and automation scripts will do.
 """
 
-import pytest
 from unittest.mock import MagicMock
-from synology_dsm import DSMClient, ShareManager, UserManager, GroupManager, NFSManager
+
+import pytest
+
+from synology_dsm import DSMClient, GroupManager, NFSManager, ShareManager, UserManager
 from synology_dsm.filestation import FileStationManager
 
 

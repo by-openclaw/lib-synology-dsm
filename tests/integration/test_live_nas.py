@@ -98,9 +98,9 @@ def assert_ensure(result: dict, expected_changed: bool, expected_action: str, la
 
 # ── Library imports ─────────────────────────────────────────────────────────
 try:
-    from synology_dsm import DSMClient, ShareManager, UserManager, GroupManager, NFSManager
-    from synology_dsm.filestation import FileStationManager
+    from synology_dsm import DSMClient, GroupManager, NFSManager, ShareManager, UserManager
     from synology_dsm.exceptions import DSMError
+    from synology_dsm.filestation import FileStationManager
 except ImportError as e:
     print(f"❌ Cannot import synology_dsm: {e}")
     print("   Run: pip install -e '.[dev]' from the repo root")

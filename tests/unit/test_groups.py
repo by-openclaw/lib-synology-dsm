@@ -1,6 +1,7 @@
 """Unit tests — GroupManager."""
 
 import json
+
 from synology_dsm.groups import GroupManager
 
 

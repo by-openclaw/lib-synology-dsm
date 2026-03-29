@@ -11,6 +11,12 @@ class DSMError(Exception):
     """Base exception for all Synology DSM errors."""
 
     def __init__(self, message: str, code: int | None = None) -> None:
+        """Initialise the exception.
+
+        Args:
+            message: Human-readable error description.
+            code:    DSM API error code, or None for network errors.
+        """
         super().__init__(message)
         self.code = code
 

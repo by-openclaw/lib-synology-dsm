@@ -24,8 +24,8 @@ NFS Permission Notes:
 """
 
 from __future__ import annotations
-from typing import List
 
+import builtins
 import json
 
 from .client import DSMClient
@@ -34,7 +34,12 @@ from .client import DSMClient
 class ShareManager:
     """CRUD operations for Synology shared folders."""
 
-    def __init__(self, client: DSMClient):
+    def __init__(self, client: DSMClient) -> None:
+        """Initialise the manager with an authenticated DSMClient.
+
+        Args:
+            client: An authenticated :class:`DSMClient` instance.
+        """
         self._c = client
 
     def list(self, additional: list[str] | None = None) -> list[dict]:
@@ -331,7 +336,7 @@ class ShareManager:
             ),
         )
 
-    def get_nfs_rules(self, share: str) -> List[dict]:
+    def get_nfs_rules(self, share: str) -> builtins.list[dict]:
         """Get NFS rules for a share.
 
         Uses SYNO.Core.FileServ.NFS.SharePrivilege.load (correct API on DS1513+ DSM 7.x).
@@ -483,7 +488,7 @@ class ShareManager:
                         "action": "would_delete",
                         "before": existing_map[name],
                     }
-                self._c.request("SYNO.Core.Share", "delete", version=1, name=name)
+                self.delete(name)
                 return {"changed": True, "action": "deleted", "before": existing_map[name]}
             return {"changed": False, "action": "noop"}
 

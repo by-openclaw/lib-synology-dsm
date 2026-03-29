@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -50,10 +49,20 @@ class EnvCredentialProvider:
     Optionally loads a .env file if python-dotenv is installed.
     """
 
-    def __init__(self, env_file: Optional[str] = ".env"):
+    def __init__(self, env_file: str | None = ".env") -> None:
+        """Initialise the provider.
+
+        Args:
+            env_file: Path to .env file. Pass None to skip dotenv loading.
+        """
         self._env_file = env_file
 
     def _load_dotenv(self) -> None:
+        """Attempt to load the .env file if present and python-dotenv is installed.
+
+        Silently skips if the file does not exist or dotenv is not installed.
+        Uses override=False so existing environment variables take precedence.
+        """
         if self._env_file and os.path.exists(self._env_file):
             try:
                 from dotenv import load_dotenv
@@ -97,9 +106,16 @@ class VaultCredentialProvider:
     def __init__(
         self,
         vault_addr: str,
-        vault_token: Optional[str] = None,
+        vault_token: str | None = None,
         secret_path: str = "secret/data/synology/nas01",
-    ):
+    ) -> None:
+        """Initialise the provider.
+
+        Args:
+            vault_addr:   Vault server URL (e.g. ``https://vault.example.com``).
+            vault_token:  Vault token. Falls back to VAULT_TOKEN env var.
+            secret_path:  KV v2 path to the secret.
+        """
         self._vault_addr = vault_addr
         self._vault_token = vault_token or os.environ.get("VAULT_TOKEN")
         self._secret_path = secret_path
@@ -133,7 +149,7 @@ class VaultCredentialProvider:
         )
 
 
-def get_credentials(env_file: Optional[str] = ".env") -> DSMCredentials:
+def get_credentials(env_file: str | None = ".env") -> DSMCredentials:
     """Auto-detect credential source.
 
     Priority:
@@ -152,7 +168,13 @@ def get_credentials(env_file: Optional[str] = ".env") -> DSMCredentials:
                 vault_addr=vault_addr,
                 vault_token=vault_token,
             ).get()
-        except Exception:
-            pass  # fall through to env
+        except Exception as exc:
+            import warnings
+
+            warnings.warn(
+                f"Vault credential provider failed ({exc!r}), falling back to environment variables.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
     return EnvCredentialProvider(env_file=env_file).get()

@@ -11,8 +11,8 @@ Notes:
 """
 
 from __future__ import annotations
-from typing import List
 
+import builtins
 import json
 
 from .client import DSMClient
@@ -22,7 +22,12 @@ from .exceptions import DSMNotFoundError
 class UserManager:
     """User and group CRUD operations."""
 
-    def __init__(self, client: DSMClient):
+    def __init__(self, client: DSMClient) -> None:
+        """Initialise the manager with an authenticated DSMClient.
+
+        Args:
+            client: An authenticated :class:`DSMClient` instance.
+        """
         self._c = client
 
     def list(self) -> list[dict]:
@@ -34,7 +39,7 @@ class UserManager:
         data = self._c.request("SYNO.Core.User", "list", version=1)
         return data.get("users", [])
 
-    def list_detailed(self) -> List[dict]:
+    def list_detailed(self) -> builtins.list[dict]:
         """List all users with full details.
 
         Returns fields: name, description, email, expired, 2fa_status.
@@ -159,7 +164,7 @@ class UserManager:
         """
         self._c.request("SYNO.Core.User", "set", version=1, name=name, expired="true")
 
-    def list_groups(self) -> List[dict]:
+    def list_groups(self) -> builtins.list[dict]:
         """List all groups.
 
         Returns a list of dicts with at minimum: name, description.
@@ -291,7 +296,7 @@ class UserManager:
                         "action": "would_delete",
                         "before": existing,
                     }
-                self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))
+                self.delete(name)
                 return {"changed": True, "action": "deleted", "before": existing}
             return {"changed": False, "action": "noop"}
 

@@ -16,6 +16,7 @@ from .exceptions import (
     DSMAPIError,
     DSMAuthError,
     DSMConnectionError,
+    DSMError,
     DSMPermissionError,
     DSMSessionError,
 )
@@ -32,7 +33,17 @@ _ERROR_MAP = {
 class DSMClient:
     """Synology DSM API client with session lifecycle management."""
 
-    def __init__(self, host: str, port: int = 5001, https: bool = True, verify_ssl: bool = False):
+    def __init__(
+        self, host: str, port: int = 5001, https: bool = True, verify_ssl: bool = False
+    ) -> None:
+        """Initialise a DSM API client.
+
+        Args:
+            host:       NAS hostname or IP address.
+            port:       HTTPS or HTTP port (default 5001).
+            https:      Use HTTPS if True (default).
+            verify_ssl: Verify SSL certificate. Set False for self-signed NAS certs.
+        """
         scheme = "https" if https else "http"
         self.base_url = f"{scheme}://{host}:{port}/webapi"
         self._verify = verify_ssl
@@ -64,6 +75,27 @@ class DSMClient:
                 f"Network error reaching DSM at {url}: {exc}", code=None
             ) from exc
 
+    def _resolve_error(
+        self,
+        error: object,
+        fallback: type[DSMError] = DSMAPIError,
+        context: str = "API error",
+    ) -> None:
+        """Parse a DSM error dict and raise the appropriate typed exception.
+
+        Args:
+            error:    The ``error`` value from the DSM response.
+            fallback: Exception class when code not in error map.
+            context:  Human-readable prefix for the error message.
+
+        Raises:
+            DSMError subclass: Always raises.
+        """
+        raw_code = error.get("code") if isinstance(error, dict) else None  # type: ignore[union-attr]
+        code: int | None = int(raw_code) if isinstance(raw_code, int) else None
+        exc_class = _ERROR_MAP.get(code, fallback)
+        raise exc_class(f"{context}: {error}", code=code)
+
     def login(self, account: str, password: str, session: str = "DSM") -> str:
         """Login and return session ID."""
         data = self._post(
@@ -80,11 +112,9 @@ class DSMClient:
             },
         )
         if not data.get("success"):
-            error = data.get("error", {})
-            raw_code = error.get("code") if isinstance(error, dict) else None
-            code: int | None = int(raw_code) if isinstance(raw_code, int) else None
-            exc_class = _ERROR_MAP[code] if code in _ERROR_MAP else DSMAuthError
-            raise exc_class(f"Login failed: {error}", code=code)
+            self._resolve_error(
+                data.get("error", {}), fallback=DSMAuthError, context="Login failed"
+            )
         self._sid = data["data"]["sid"]
         self._synotoken = data["data"].get("synotoken", "")
         return self._sid
@@ -126,15 +156,14 @@ class DSMClient:
         headers = {"X-SYNO-TOKEN": self._synotoken} if self._synotoken else None
         data = self._post(f"{self.base_url}/entry.cgi", payload, headers=headers)
         if not data.get("success"):
-            error = data.get("error", {})
-            raw_code = error.get("code") if isinstance(error, dict) else None
-            code: int | None = int(raw_code) if isinstance(raw_code, int) else None
-            exc_class = _ERROR_MAP[code] if code in _ERROR_MAP else DSMAPIError
-            raise exc_class(f"API error [{api}.{method}]: {error}", code=code)
+            self._resolve_error(
+                data.get("error", {}), fallback=DSMAPIError, context=f"API error [{api}.{method}]"
+            )
         return data.get("data", {})
 
-    def __enter__(self) -> "DSMClient":
+    def __enter__(self) -> DSMClient:
         return self
 
     def __exit__(self, *_: Any) -> None:
+        """Exit the context manager — call :meth:`logout` unconditionally."""
         self.logout()

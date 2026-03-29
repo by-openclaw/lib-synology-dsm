@@ -2,10 +2,10 @@
 
 import json
 import urllib.error
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, mock_open, patch
+
+from synology_dsm import DSMClient, DSMConnectionError
 from synology_dsm.filestation import FileStationManager
-from synology_dsm import DSMConnectionError
-from synology_dsm import DSMClient
 
 
 def _real_client() -> DSMClient:
@@ -112,13 +112,15 @@ class TestConnectionErrors:
         client._sid = "SID"
         client._synotoken = "TOK"
         mgr = FileStationManager(client)
-        with patch(
-            "urllib.request.urlopen",
-            side_effect=urllib.error.URLError("Connection refused"),
+        with (
+            patch(
+                "urllib.request.urlopen",
+                side_effect=urllib.error.URLError("Connection refused"),
+            ),
+            patch("builtins.open", mock_open(read_data=b"data")),
         ):
-            with patch("builtins.open", mock_open(read_data=b"data")):
-                with __import__("pytest").raises(DSMConnectionError, match="cannot reach NAS"):
-                    mgr.upload("/tmp/f.txt", "/share")
+            with __import__("pytest").raises(DSMConnectionError, match="cannot reach NAS"):
+                mgr.upload("/tmp/f.txt", "/share")
 
     def test_download_raises_dsm_connection_error_on_network_failure(self, tmp_path):
         """download() raises DSMConnectionError when NAS is unreachable."""
@@ -128,12 +130,14 @@ class TestConnectionErrors:
         client._sid = "SID"
         client._synotoken = "TOK"
         mgr = FileStationManager(client)
-        with patch(
-            "urllib.request.urlopen",
-            side_effect=urllib.error.URLError("Connection refused"),
+        with (
+            patch(
+                "urllib.request.urlopen",
+                side_effect=urllib.error.URLError("Connection refused"),
+            ),
+            __import__("pytest").raises(DSMConnectionError, match="cannot reach NAS"),
         ):
-            with __import__("pytest").raises(DSMConnectionError, match="cannot reach NAS"):
-                mgr.download("/share/f.txt", str(tmp_path / "out.txt"))
+            mgr.download("/share/f.txt", str(tmp_path / "out.txt"))
 
     def test_upload_raises_dsm_connection_error_on_os_error(self):
         """upload() wraps OSError as DSMConnectionError."""

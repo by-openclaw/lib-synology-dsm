@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json as _json
+import json
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -37,7 +37,7 @@ def _build_multipart(fields: dict[str, str], file_name: str, file_content: bytes
 class FileStationManager:
     """SYNO.FileStation operations: upload, download, list, mkdir, delete."""
 
-    def __init__(self, client: "DSMClient") -> None:
+    def __init__(self, client: DSMClient) -> None:
         self._c = client
 
     # ── Folder ops ──────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ class FileStationManager:
 
         params: dict = dict(folder_path=folder_path, offset=offset, limit=limit)
         if additional:
-            params["additional"] = _json.dumps(additional)
+            params["additional"] = json.dumps(additional)
 
         resp = self._c.request("SYNO.FileStation.List", "list", version=2, **params)
         return resp.get("files", [])
@@ -98,8 +98,8 @@ class FileStationManager:
             "SYNO.FileStation.CreateFolder",
             "create",
             version=2,
-            folder_path=_json.dumps([parent]),
-            name=_json.dumps([name]),
+            folder_path=json.dumps([parent]),
+            name=json.dumps([name]),
             force_parent="true" if force_parent else "false",
         )
         folders = resp.get("folders", [])
@@ -108,7 +108,15 @@ class FileStationManager:
     # ── File ops ─────────────────────────────────────────────────────────────
 
     def _file_exists(self, dest_folder: str, filename: str) -> bool:
-        """Check if a file exists in dest_folder on the NAS."""
+        """Check whether *filename* exists inside *dest_folder* on the NAS.
+
+        Args:
+            dest_folder: Absolute NAS path of the parent folder.
+            filename:    Bare filename to check (not a full path).
+
+        Returns:
+            True if the file is found, False otherwise (including on API error).
+        """
         try:
             files = self.list(dest_folder)
             names = [f.get("name", "") for f in files]
@@ -192,7 +200,7 @@ class FileStationManager:
 
         try:
             with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
-                data = _json.loads(resp.read().decode("utf-8"))
+                data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.URLError as exc:
             raise DSMConnectionError(
                 f"FileStation upload failed — cannot reach NAS: {exc.reason}", code=None
@@ -301,7 +309,6 @@ class FileStationManager:
             raise ValueError(f"Invalid state '{state}'. Use 'present' or 'absent'.")
 
         # Derive parent + name from the path
-        from pathlib import PurePosixPath
 
         p = PurePosixPath(folder_path)
         parent = str(p.parent)

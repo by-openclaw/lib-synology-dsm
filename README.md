@@ -36,11 +36,11 @@ pip install git+https://github.com/by-openclaw/lib-synology-dsm.git
 ```
 
 ```python
-import os
-from synology_dsm import DSMClient, ShareManager, UserManager, GroupManager
+from synology_dsm import DSMClient, ShareManager, UserManager, GroupManager, get_credentials
 
-with DSMClient(os.environ["NAS_HOST"], port=5001, verify_ssl=False) as client:
-    client.login(os.environ["DSM_USER"], os.environ["DSM_PASS"])
+creds = get_credentials()  # reads from .env file or Vault automatically
+with DSMClient(creds.host, port=creds.port, verify_ssl=False) as client:
+    client.login(creds.user, creds.password)
 
     # Idempotent share creation
     shares = ShareManager(client)
@@ -78,7 +78,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full instructions.
 ```bash
 # Unit tests (offline, no NAS)
 pytest tests/unit/ -v
-# 141 passing | 100% coverage | htmlcov/index.html generated
+# 170 passing | 100% coverage | htmlcov/index.html generated
 
 # Integration tests (live NAS)
 NAS_HOST=your-nas-host API_USER=your-user API_PASS=your-pass \
@@ -122,7 +122,7 @@ No Python install on your machine. No WSL. No "works on my machine."
 
 ```bash
 pytest tests/unit/ -v
-# Expected: 161 passed, 0 failed, 100% coverage
+# Expected: 170 passed, 0 failed, 100% coverage
 ```
 
 ### Run integration tests (requires NAS reachable on your network)

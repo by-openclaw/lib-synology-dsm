@@ -271,3 +271,67 @@ class FileStationManager:
             accurate_progress="false",
         )
         return resp
+
+    def ensure(
+        self,
+        folder_path: str,
+        state: str = "present",
+        dry_run: bool = False,
+    ) -> dict:
+        """Ensure a folder exists or does not exist on the NAS.
+
+        Idempotent — checks current state before acting. For files,
+        use ``upload()`` with ``overwrite=False`` (already idempotent).
+
+        Args:
+            folder_path: Absolute NAS path (e.g. ``"/my-share/subfolder"``).
+                         Parent share must already exist.
+            state:       ``"present"`` to create if missing,
+                         ``"absent"`` to delete if present.
+            dry_run:     If True, return what would happen without any API call.
+
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str),
+            optionally ``dry_run`` (bool).
+
+        Raises:
+            ValueError: If ``state`` is not ``"present"`` or ``"absent"``.
+        """
+        if state not in ("present", "absent"):
+            raise ValueError(f"Invalid state '{state}'. Use 'present' or 'absent'.")
+
+        # Derive parent + name from the path
+        from pathlib import PurePosixPath
+
+        p = PurePosixPath(folder_path)
+        parent = str(p.parent)
+        name = p.name
+
+        # Check existence by listing the parent folder
+        exists = self._file_exists(parent, name)
+
+        if state == "present":
+            if exists:
+                return {"changed": False, "action": "noop"}
+            if dry_run:
+                return {
+                    "changed": True,
+                    "dry_run": True,
+                    "action": "would_create",
+                    "path": folder_path,
+                }
+            self.mkdir(parent, name)
+            return {"changed": True, "action": "created", "path": folder_path}
+
+        else:  # absent
+            if not exists:
+                return {"changed": False, "action": "noop"}
+            if dry_run:
+                return {
+                    "changed": True,
+                    "dry_run": True,
+                    "action": "would_delete",
+                    "path": folder_path,
+                }
+            self.delete(folder_path)
+            return {"changed": True, "action": "deleted", "path": folder_path}

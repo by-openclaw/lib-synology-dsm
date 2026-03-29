@@ -269,6 +269,66 @@ class TestMkdir:
         assert call.kwargs.get("force_parent") == "false"
 
 
+class TestEnsure:
+    def test_ensure_present_creates_when_missing(self, mock_client):
+        """ensure(present) calls mkdir when folder does not exist."""
+        mock_client.request.return_value = {"files": []}  # list returns empty
+        mgr = FileStationManager(mock_client)
+        result = mgr.ensure("/my-share/new-folder", state="present")
+        assert result["changed"] is True
+        assert result["action"] == "created"
+        create_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "create"]
+        assert len(create_calls) == 1
+
+    def test_ensure_present_noop_when_exists(self, mock_client):
+        """ensure(present) returns noop when folder already exists."""
+        mock_client.request.return_value = {"files": [{"name": "new-folder"}]}
+        mgr = FileStationManager(mock_client)
+        result = mgr.ensure("/my-share/new-folder", state="present")
+        assert result["changed"] is False
+        assert result["action"] == "noop"
+
+    def test_ensure_absent_deletes_when_exists(self, mock_client):
+        """ensure(absent) calls delete when folder exists."""
+        mock_client.request.return_value = {"files": [{"name": "old-folder"}]}
+        mgr = FileStationManager(mock_client)
+        result = mgr.ensure("/my-share/old-folder", state="absent")
+        assert result["changed"] is True
+        assert result["action"] == "deleted"
+        delete_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "start"]
+        assert len(delete_calls) == 1
+
+    def test_ensure_absent_noop_when_missing(self, mock_client):
+        """ensure(absent) returns noop when folder already gone."""
+        mock_client.request.return_value = {"files": []}
+        mgr = FileStationManager(mock_client)
+        result = mgr.ensure("/my-share/gone", state="absent")
+        assert result["changed"] is False
+        assert result["action"] == "noop"
+
+    def test_ensure_dry_run_would_create(self, mock_client):
+        mock_client.request.return_value = {"files": []}
+        mgr = FileStationManager(mock_client)
+        result = mgr.ensure("/my-share/new", state="present", dry_run=True)
+        assert result["dry_run"] is True
+        assert result["action"] == "would_create"
+        create_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "create"]
+        assert len(create_calls) == 0
+
+    def test_ensure_dry_run_would_delete(self, mock_client):
+        mock_client.request.return_value = {"files": [{"name": "old"}]}
+        mgr = FileStationManager(mock_client)
+        result = mgr.ensure("/my-share/old", state="absent", dry_run=True)
+        assert result["dry_run"] is True
+        assert result["action"] == "would_delete"
+
+    def test_ensure_invalid_state_raises(self, mock_client):
+        mock_client.request.return_value = {"files": []}
+        mgr = FileStationManager(mock_client)
+        with __import__("pytest").raises(ValueError, match="Invalid state"):
+            mgr.ensure("/my-share/x", state="broken")
+
+
 class TestDownload:
     def test_download_writes_file(self, tmp_path):
         """download() fetches URL and writes bytes to local file."""

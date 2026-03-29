@@ -18,6 +18,7 @@ from .exceptions import (
 )
 from .filestation import FileStationManager
 from .groups import GroupManager
+from .nfs import NFSManager
 from .shares import ShareManager
 from .users import UserManager
 
@@ -34,6 +35,7 @@ __all__ = [
     "EnvCredentialProvider",
     "FileStationManager",
     "GroupManager",
+    "NFSManager",
     "ShareManager",
     "UserManager",
     "VaultCredentialProvider",

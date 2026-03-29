@@ -26,6 +26,15 @@ Before touching anything in this repo:
 - **All new managers** must implement `ensure(state=present|absent)` idempotent pattern
 - **No httpx** — integration tests use `urllib` only (httpx not available on Rune's host)
 
+## Project Health Rules (mandatory)
+
+- **Test fails → open issue immediately.** Never fix silently. Issue first → fix → close with comment + commit ref.
+- **Issue closed = CI green + specific test covers the fix.** No exceptions.
+- **CI failure on main** that isn't already tracked → create a GitHub issue before anything else.
+- **Every open issue** has a label, is on the Project board, has a linked commit or PR when closed.
+- README reflects actual state — not aspirational. Update after every release.
+- AGENTS.md + CLAUDE.md updated after every non-trivial change.
+
 ## What NOT To Do
 
 - ❌ Do NOT use `httpx` — use `urllib` for all HTTP calls

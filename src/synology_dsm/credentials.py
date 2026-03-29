@@ -79,12 +79,19 @@ class EnvCredentialProvider:
 
 
 class VaultCredentialProvider:
-    """Load credentials from HashiCorp Vault (KV v2).
+    """Load credentials from HashiCorp Vault (KV v2) using token authentication.
 
-    Requires: pip install hvac
+    Requires: pip install hvac  (or: pip install 'lib-synology-dsm[vault]')
     Secret must contain keys: host, port (optional), user, password
 
     Example Vault secret path: secret/data/synology/nas01
+
+    Authentication:
+        Token auth only — pass ``vault_token`` or set ``VAULT_TOKEN`` env var.
+
+    Not yet implemented:
+        AppRole authentication — tracked in GitHub issue #7.
+        Use token auth until Vault is deployed (Phase 2).
     """
 
     def __init__(
@@ -92,12 +99,10 @@ class VaultCredentialProvider:
         vault_addr: str,
         vault_token: Optional[str] = None,
         secret_path: str = "secret/data/synology/nas01",
-        vault_role: Optional[str] = None,
     ):
         self._vault_addr = vault_addr
         self._vault_token = vault_token or os.environ.get("VAULT_TOKEN")
         self._secret_path = secret_path
-        self._vault_role = vault_role
 
     def get(self) -> DSMCredentials:
         """Fetch credentials from Vault and return."""

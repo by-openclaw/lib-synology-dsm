@@ -109,7 +109,57 @@ See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json).
 
 ---
 
-## Exception hierarchy
+## Error handling
+
+All errors raise typed exceptions that inherit from `DSMError`. Catch what you need:
+
+```python
+from synology_dsm import (
+    DSMClient,
+    ShareManager,
+    DSMAuthError,
+    DSMConnectionError,
+    DSMPermissionError,
+    DSMNotFoundError,
+    DSMAPIError,
+    DSMError,
+)
+import os
+
+try:
+    with DSMClient(os.environ["NAS_HOST"], verify_ssl=False) as client:
+        client.login(os.environ["DSM_USER"], os.environ["DSM_PASS"])
+        shares = ShareManager(client)
+        result = shares.ensure("my-share", state="present")
+
+except DSMConnectionError as e:
+    # NAS unreachable: connection refused, timeout, DNS failure
+    print(f"Cannot reach NAS: {e}")
+
+except DSMAuthError as e:
+    # Wrong credentials (400) or account disabled (402)
+    print(f"Auth failed (code {e.code}): {e}")
+
+except DSMPermissionError as e:
+    # Account lacks permission for this operation (403)
+    print(f"Permission denied (code {e.code}): {e}")
+
+except DSMNotFoundError as e:
+    # Resource does not exist (408)
+    print(f"Not found (code {e.code}): {e}")
+
+except DSMAPIError as e:
+    # Any other DSM error code
+    print(f"DSM API error (code {e.code}): {e}")
+
+except DSMError as e:
+    # Catch-all for any library error
+    print(f"DSM error: {e}")
+```
+
+All exceptions expose `.code: int | None` (the raw DSM error code, or `None` for network errors).
+
+### Exception hierarchy
 
 ```
 DSMError
@@ -120,8 +170,6 @@ DSMError
 ├── DSMConnectionError    — network failure (connection refused, timeout, DNS)
 └── DSMAPIError           — any other DSM error code
 ```
-
-All exceptions expose `.code: int | None`.
 
 ---
 

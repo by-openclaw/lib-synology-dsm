@@ -134,6 +134,120 @@ class TestShareUpdate:
         assert call.kwargs.get("desc") == "new description"
 
 
+class TestShareSetPermission:
+    def test_set_permission_calls_correct_api(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.set_permission("my-share", "alice")
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.Core.Share.Permission"
+        assert call.args[1] == "set"
+        assert call.kwargs.get("name") == "my-share"
+        assert call.kwargs.get("user_group_type") == "local_user"
+
+    def test_set_permission_writable(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.set_permission("my-share", "alice", writable=True, readonly=False)
+        call = mock_client.request.call_args
+        perms = json.loads(call.kwargs.get("permissions", "[]"))
+        assert perms[0]["is_writable"] is True
+        assert perms[0]["is_readonly"] is False
+
+    def test_set_permission_readonly(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.set_permission("my-share", "alice", writable=False, readonly=True)
+        call = mock_client.request.call_args
+        perms = json.loads(call.kwargs.get("permissions", "[]"))
+        assert perms[0]["is_readonly"] is True
+        assert perms[0]["is_writable"] is False
+
+    def test_set_permission_deny(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.set_permission("my-share", "baduser", deny=True)
+        call = mock_client.request.call_args
+        perms = json.loads(call.kwargs.get("permissions", "[]"))
+        assert perms[0]["is_deny"] is True
+
+
+class TestShareGetNfsRules:
+    def test_get_nfs_rules_returns_list(self, mock_client):
+        mock_client.request.return_value = {
+            "rule": [{"client": "192.168.1.0/24", "privilege": "rw"}]
+        }
+        mgr = _mgr(mock_client)
+        rules = mgr.get_nfs_rules("my-share")
+        assert len(rules) == 1
+        assert rules[0]["privilege"] == "rw"
+
+    def test_get_nfs_rules_empty(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        assert mgr.get_nfs_rules("my-share") == []
+
+    def test_get_nfs_rules_calls_correct_api(self, mock_client):
+        mock_client.request.return_value = {"rule": []}
+        mgr = _mgr(mock_client)
+        mgr.get_nfs_rules("my-share")
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.Core.FileServ.NFS.SharePrivilege"
+        assert call.args[1] == "load"
+        assert call.kwargs.get("share_name") == "my-share"
+
+
+class TestShareSetNfsPermission:
+    def test_set_nfs_permission_calls_save(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.set_nfs_permission("my-share", "192.168.1.0/24", rw=True)
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.Core.FileServ.NFS.SharePrivilege"
+        assert call.args[1] == "save"
+        assert call.kwargs.get("share_name") == "my-share"
+
+    def test_set_nfs_permission_ro(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.set_nfs_permission("my-share", "192.168.1.100", rw=False)
+        call = mock_client.request.call_args
+        rule = json.loads(call.kwargs.get("rule", "[]"))
+        assert rule[0]["privilege"] == "ro"
+
+    def test_set_nfs_permission_rw(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.set_nfs_permission("my-share", "192.168.1.100", rw=True)
+        call = mock_client.request.call_args
+        rule = json.loads(call.kwargs.get("rule", "[]"))
+        assert rule[0]["privilege"] == "rw"
+
+
+class TestShareEnsureDryRunUpdate:
+    def test_ensure_dry_run_would_update(self, mock_client):
+        mock_client.request.return_value = {"shares": [{"name": "data", "desc": "old"}]}
+        mgr = _mgr(mock_client)
+        result = mgr.ensure("data", state="present", description="new", dry_run=True)
+        assert result["dry_run"] is True
+        assert result["action"] == "would_update"
+
+    def test_ensure_dry_run_would_delete(self, mock_client):
+        mock_client.request.return_value = {"shares": [{"name": "old", "desc": ""}]}
+        mgr = _mgr(mock_client)
+        result = mgr.ensure("old", state="absent", dry_run=True)
+        assert result["dry_run"] is True
+        assert result["action"] == "would_delete"
+
+    def test_ensure_invalid_state_raises(self, mock_client):
+        import pytest
+
+        mock_client.request.return_value = {"shares": []}
+        mgr = _mgr(mock_client)
+        with pytest.raises(ValueError, match="Invalid state"):
+            mgr.ensure("data", state="broken")
+
+
 class TestShareCreateWithPermissions:
     def test_create_no_optional_permissions(self, mock_client):
         mock_client.request.return_value = {}

@@ -553,7 +553,7 @@ def cleanup(sid: str) -> None:
         record(WARN, f"cleanup: deleted leftover share {TEST_SHARE}")
 
 
-def summary() -> None:
+def summary(report_path: str | None = None) -> None:
     section("Summary")
     passed = sum(1 for s, _, _ in _results if s == PASS)
     warned = sum(1 for s, _, _ in _results if s == WARN)
@@ -565,11 +565,64 @@ def summary() -> None:
         for s, name, detail in _results:
             if s == FAIL:
                 print(f"    {FAIL}  {name}: {detail}")
+
+    if report_path:
+        _write_report(report_path, passed, warned, failed, total)
+
     sys.exit(1 if failed else 0)
+
+
+def _write_report(path: str, passed: int, warned: int, failed: int, total: int) -> None:
+    """Write JSON + text integration test report to *path* (without extension)."""
+    import datetime
+
+    now = datetime.datetime.utcnow().isoformat() + "Z"
+    data = {
+        "timestamp": now,
+        "target": BASE_URL,
+        "summary": {"total": total, "passed": passed, "warned": warned, "failed": failed},
+        "results": [{"status": s, "name": name, "detail": detail} for s, name, detail in _results],
+    }
+
+    # JSON report
+    json_path = path if path.endswith(".json") else path + ".json"
+    with open(json_path, "w") as fh:
+        json.dump(data, fh, indent=2)
+    print(f"\n  📄 JSON report: {json_path}")
+
+    # Text report
+    txt_path = (path[: -len(".json")] if path.endswith(".json") else path) + ".txt"
+    lines = [
+        "lib-synology-dsm — Integration Test Report",
+        f"Timestamp : {now}",
+        f"Target    : {BASE_URL}",
+        f"Summary   : {total} total | ✅ {passed} | ⚠️ {warned} | ❌ {failed}",
+        "",
+        "Results:",
+    ]
+    for s, name, detail in _results:
+        line = f"  {s}  {name}"
+        if detail:
+            line += f" — {detail}"
+        lines.append(line)
+    with open(txt_path, "w") as fh:
+        fh.write("\n".join(lines) + "\n")
+    print(f"  📄 Text report : {txt_path}")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="lib-synology-dsm live NAS integration test")
+    parser.add_argument(
+        "--report",
+        metavar="PATH",
+        help="Write JSON + text report to PATH (e.g. /tmp/nas-test-report)",
+        default=None,
+    )
+    args = parser.parse_args()
+
     print("=" * 60)
     print("  lib-synology-dsm — Live NAS Integration Test")
     print(f"  Target: {BASE_URL}")
@@ -589,4 +642,4 @@ if __name__ == "__main__":
     else:
         record(FAIL, "All subsequent tests", "no admin SID available")
 
-    summary()
+    summary(report_path=args.report)

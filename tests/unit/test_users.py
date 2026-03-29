@@ -161,3 +161,95 @@ class TestUserDelete:
         delete_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "delete"]
         assert len(delete_calls) == 1
         assert delete_calls[0].kwargs["name"] == json.dumps(["alice"])
+
+    def test_delete_dry_run(self, mock_client):
+        mgr = _mgr(mock_client)
+        mock_client.request.return_value = {"users": [{"name": "alice"}]}
+        result = mgr.delete("alice", dry_run=True)
+        assert result["dry_run"] is True
+        assert result["action"] == "would_delete"
+        assert result["target"] == "alice"
+        delete_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "delete"]
+        assert len(delete_calls) == 0
+
+
+class TestUserDisable:
+    def test_disable_calls_set_expired(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        mgr.disable("alice")
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.Core.User"
+        assert call.args[1] == "set"
+        assert call.kwargs.get("name") == "alice"
+        assert call.kwargs.get("expired") == "true"
+
+
+class TestUserListGroups:
+    def test_list_groups_returns_groups(self, mock_client):
+        mock_client.request.return_value = {
+            "groups": [{"name": "administrators"}, {"name": "users"}]
+        }
+        mgr = _mgr(mock_client)
+        groups = mgr.list_groups()
+        assert len(groups) == 2
+        assert groups[0]["name"] == "administrators"
+
+    def test_list_groups_calls_correct_api(self, mock_client):
+        mock_client.request.return_value = {"groups": []}
+        mgr = _mgr(mock_client)
+        mgr.list_groups()
+        call = mock_client.request.call_args
+        assert call.args[0] == "SYNO.Core.Group"
+        assert call.args[1] == "list"
+
+
+class TestUserAddToGroup:
+    def test_add_to_group_delegates_to_group_manager(self, mock_client):
+        mock_client.request.side_effect = lambda api, method, **kw: (
+            {"users": [{"name": "alice"}]} if method == "member_list" else {}
+        )
+        mgr = _mgr(mock_client)
+        mgr.add_to_group("alice", "devops")
+        set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
+        assert len(set_calls) == 1
+
+
+class TestUserRemoveFromGroup:
+    def test_remove_from_group_delegates_to_group_manager(self, mock_client):
+        mock_client.request.side_effect = lambda api, method, **kw: (
+            {"users": [{"name": "alice"}, {"name": "bob"}]} if method == "member_list" else {}
+        )
+        mgr = _mgr(mock_client)
+        mgr.remove_from_group("alice", "devops")
+        set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
+        assert len(set_calls) == 1
+        import json
+
+        members = json.loads(set_calls[0].kwargs["members"])
+        assert "alice" not in members
+
+
+class TestUserEnsureDryRunEdgeCases:
+    def test_ensure_dry_run_would_update(self, mock_client):
+        existing = [
+            {
+                "name": "alice",
+                "email": "old@b.com",
+                "description": "",
+                "expired": "normal",
+                "2fa_enabled": False,
+                "enabled": True,
+            }
+        ]
+        mock_client.request.return_value = {"users": existing}
+        mgr = _mgr(mock_client)
+        result = mgr.ensure("alice", state="present", email="new@b.com", dry_run=True)
+        assert result["dry_run"] is True
+        assert result["action"] == "would_update"
+
+    def test_ensure_invalid_state_raises(self, mock_client):
+        mock_client.request.return_value = {"users": []}
+        mgr = _mgr(mock_client)
+        with pytest.raises(ValueError, match="Invalid state"):
+            mgr.ensure("alice", state="broken")

@@ -75,3 +75,49 @@ def test_https_verify_ssl_true():
 def test_custom_port():
     client = DSMClient("your-nas-host", port=5002)
     assert ":5002" in client.base_url
+
+
+def test_post_adds_headers():
+    """_post adds Content-Type and optional extra headers to the request."""
+    import json as _j
+
+    client = DSMClient("your-nas-host", https=False)
+    captured_req = {}
+
+    class FakeResp:
+        def read(self):
+            return _j.dumps({"ok": True}).encode()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            pass
+
+    def fake_urlopen(req, context=None, timeout=None):
+        captured_req["url"] = req.full_url
+        captured_req["ct"] = req.get_header("Content-type")
+        captured_req["xsyn"] = req.get_header("X-syno-token")
+        return FakeResp()
+
+    with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        result = client._post(
+            "http://nas/api",
+            {"key": "val"},
+            headers={"X-SYNO-TOKEN": "tok"},
+        )
+
+    assert result == {"ok": True}
+    assert captured_req["ct"] == "application/x-www-form-urlencoded"
+    assert captured_req["xsyn"] == "tok"
+
+
+def test_logout_suppresses_exception():
+    """logout() must not raise even if _post throws."""
+    client = DSMClient("your-nas-host")
+    client._sid = "fake-sid"
+
+    with patch.object(client, "_post", side_effect=Exception("network error")):
+        client.logout()  # should not raise
+
+    assert client._sid is None

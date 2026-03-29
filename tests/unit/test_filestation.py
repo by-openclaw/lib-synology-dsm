@@ -101,6 +101,29 @@ class TestDelete:
         assert call_args.args[1] == "start"
 
 
+class TestUploadFailure:
+    def test_upload_raises_on_api_error(self):
+        """upload() raises RuntimeError when API returns success=False."""
+        mgr = _mgr()
+        mock_resp = _mock_urlopen({"success": False, "error": {"code": 403}})
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with patch("builtins.open", mock_open(read_data=b"data")):
+                with __import__("pytest").raises(RuntimeError, match="Upload failed"):
+                    mgr.upload("/tmp/test.txt", "/share")
+
+    def test_file_exists_returns_true_when_found(self, mock_client):
+        """_file_exists returns True when filename in listing."""
+        mock_client.request.return_value = {"files": [{"name": "existing.txt"}]}
+        mgr = FileStationManager(mock_client)
+        assert mgr._file_exists("/share", "existing.txt") is True
+
+    def test_file_exists_returns_false_on_exception(self, mock_client):
+        """_file_exists returns False if list raises (e.g. folder does not exist)."""
+        mock_client.request.side_effect = RuntimeError("not found")
+        mgr = FileStationManager(mock_client)
+        assert mgr._file_exists("/share", "file.txt") is False
+
+
 class TestListShares:
     def test_list_shares_returns_list(self, mock_client):
         mock_client.request.return_value = {"shares": [{"name": "data"}, {"name": "backup"}]}

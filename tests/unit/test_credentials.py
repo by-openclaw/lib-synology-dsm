@@ -67,6 +67,18 @@ class TestEnvCredentialProvider:
             creds = EnvCredentialProvider(env_file="/nonexistent/.env").get()
         assert creds.host == "nas.local"
 
+    def test_dotenv_import_error_falls_through(self, tmp_path):
+        """If dotenv is installed but load raises ImportError somehow, falls through."""
+        env_file = tmp_path / ".env"
+        env_file.write_text("SYNOLOGY_HOST=fallback\nSYNOLOGY_USER=u\nSYNOLOGY_PASS=p\n")
+        env = {"SYNOLOGY_HOST": "env-host", "SYNOLOGY_USER": "u", "SYNOLOGY_PASS": "p"}
+        with patch.dict(os.environ, env, clear=False):
+            # Simulate dotenv not importable — provider must still work via raw env
+            with patch.dict(__import__("sys").modules, {"dotenv": None}):
+                creds = EnvCredentialProvider(env_file=str(env_file)).get()
+        # Falls through to raw env — SYNOLOGY_HOST from os.environ
+        assert creds.host == "env-host"
+
 
 class TestVaultCredentialProvider:
     def test_raises_import_error_without_hvac(self):

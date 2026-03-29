@@ -38,3 +38,19 @@ jobs:
 
       - name: Type check
         run: mypy src/synology_dsm/ --ignore-missing-imports
+
+      - name: Upload coverage report (HTML)
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12'
+        with:
+          name: coverage-report-html
+          path: htmlcov/
+          retention-days: 30
+
+      - name: Upload coverage report (XML for badge)
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12'
+        with:
+          name: coverage-report-xml
+          path: coverage.xml
+          retention-days: 30

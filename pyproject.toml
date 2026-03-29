@@ -20,7 +20,7 @@ vault = ["hvac", "python-dotenv"]
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
 markers = ["integration: live NAS required (deselect with -m 'not integration')"]
-addopts = "--cov=src/synology_dsm --cov-report=term-missing --cov-report=html:htmlcov --cov-fail-under=80"
+addopts = "--cov=src/synology_dsm --cov-report=term-missing --cov-report=html:htmlcov --cov-report=xml --cov-fail-under=80"
 
 [tool.coverage.run]
 source = ["src/synology_dsm"]

@@ -162,6 +162,7 @@ class DSMClient:
         return data.get("data", {})
 
     def __enter__(self) -> DSMClient:
+        """Enter the context manager — return self for use in ``with`` blocks."""
         return self
 
     def __exit__(self, *_: Any) -> None:

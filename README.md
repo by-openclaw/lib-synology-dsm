@@ -281,7 +281,7 @@ import os
 
 try:
     with DSMClient(creds.host, port=creds.port, verify_ssl=False) as client:
-        client.login(os.environ["DSM_USER"], os.environ["DSM_PASS"])
+        client.login(creds.user, creds.password)
         shares = ShareManager(client)
         result = shares.ensure("my-share", state="present")
 

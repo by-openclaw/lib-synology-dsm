@@ -3,6 +3,10 @@
 Python library for [Synology DSM](https://www.synology.com/en-global/dsm) API automation — shares, users, groups, NFS, and FileStation operations.
 
 [![CI](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml/badge.svg)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/by-openclaw/lib-synology-dsm/branch/main/graph/badge.svg)](https://codecov.io/gh/by-openclaw/lib-synology-dsm)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Dev Container](https://img.shields.io/badge/dev%20container-ready-blue?logo=docker)](https://containers.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Internal use — BY-SYSTEMS DevOps platform.**
@@ -93,11 +97,11 @@ No Python install on your machine. No WSL. No "works on my machine."
 
 ### What you need (one-time install)
 
-| Tool | Download | Notes |
-|---|---|---|
-| **Docker Desktop** | https://www.docker.com/products/docker-desktop/ | Required. Free for personal/small team use. On Windows it uses a minimal background VM — you never interact with it. |
-| **VS Code** | https://code.visualstudio.com/ | Free. |
-| **Dev Containers extension** | https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers | Install inside VS Code: `Ctrl+Shift+X` → search "Dev Containers" → Install. |
+| # | Tool | Download | How to install |
+|---|---|---|---|
+| 1 | **Docker Desktop** | https://www.docker.com/products/docker-desktop/ | Download installer → run → reboot if prompted. Free for personal/small team. On Windows: uses a background VM (WSL2 kernel) — you never open or manage it. |
+| 2 | **VS Code** | https://code.visualstudio.com/ | Download installer → run. Free. |
+| 3 | **Dev Containers extension** | https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers | In VS Code: press `Ctrl+Shift+X` (Extensions panel) → search **"Dev Containers"** → click **Install**. Publisher must be **Microsoft**. Or click the marketplace link → "Install". |
 
 ### How to open the project
 
@@ -159,30 +163,55 @@ pre-commit install   # one-time — hooks run automatically on every commit from
 | `ruff` | Python linting (auto-fixes what it can) | ✅ Yes |
 | `ruff-format` | Python formatting | ✅ Yes (auto-formats) |
 
-### If detect-secrets flags a false positive
+### If detect-secrets blocks your commit (false positive)
 
-A false positive is when detect-secrets blocks a commit because it thinks something
-looks like a secret but it isn't (e.g. a test placeholder `"secret"` or a Vault path).
+**What is a false positive?**
+detect-secrets blocked your commit because a line *looks* like a secret but isn't — for example
+a test placeholder (`"secret"`, `"YOUR_PASSWORD"`), a Vault path, or a high-entropy string in a comment.
 
-**What to do:**
+**Step 1 — Run the interactive audit tool**
 
 ```bash
-# 1. Run the audit tool — it shows each flagged item and asks: real secret or not?
 detect-secrets audit .secrets.baseline
-# For each finding: press 'y' if it IS a real secret, 'n' if it is NOT
-
-# 2. Commit the updated baseline (this tells detect-secrets to accept it in future)
-git add .secrets.baseline
-git commit -m "chore: update secrets baseline — mark false positives"
 ```
 
-**What happens in CI:** CI does NOT run detect-secrets — that is a local pre-commit hook only.
-CI runs `ruff`, `mypy`, and `pytest`. A false positive baseline update commit goes through CI
-exactly like any other commit — green if tests pass, no special treatment.
+This opens an interactive session in your terminal. For each flagged item it shows:
 
-**What happens with release-please / version bumps:** A `chore:` commit does not trigger
-a version bump (neither minor nor patch). It appears in the CHANGELOG under a "chores" section
-but does not change the version number. Safe to commit.
+```
+Secret:      1 of 3
+Filename:    tests/unit/test_credentials.py
+Secret Type: Secret Keyword
+----------
+20:    assert creds.password == "secret"
+----------
+Is this a valid secret? [y/n/s/q]:
+```
+
+- Press **`n`** — not a real secret (false positive) → moves to next
+- Press **`y`** — it IS a real secret → **stop, remove it from your code first**
+- Press **`s`** — skip for now (stays unresolved)
+- Press **`q`** — quit
+
+Work through all findings pressing `n` for each false positive.
+
+**Step 2 — Commit the updated baseline**
+
+```bash
+git add .secrets.baseline
+git commit -m "chore: update secrets baseline — mark false positives"
+git push
+```
+
+Your original commit will now go through on your next `git commit`.
+
+**Does this affect CI?**
+No. CI does not run detect-secrets. CI only runs `ruff`, `mypy`, and `pytest`.
+The baseline commit is a normal commit — CI runs green as long as tests pass.
+
+**Does this trigger a version bump?**
+No. A `chore:` commit type is ignored by release-please.
+It does not create a new version tag or release. It may appear in the CHANGELOG but will not
+change `v0.8.0` → `v0.8.1` or anything else. Completely safe.
 
 ---
 

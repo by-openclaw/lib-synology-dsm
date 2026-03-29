@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.2](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.8.1...v0.8.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* __enter__ docstring + remove last os.environ from README ([19fb6bf](https://github.com/by-openclaw/lib-synology-dsm/commit/19fb6bf130c26b74c3076725dbc3ab8ffd4ed265))
+* sync __version__ to 0.8.1 after release-please merge ([af54471](https://github.com/by-openclaw/lib-synology-dsm/commit/af544718004eb63a27ffad6efeb0eed8f269d862))
+* third audit pass — all remaining findings resolved ([6760021](https://github.com/by-openclaw/lib-synology-dsm/commit/67600215a7a5572c85ed199fd25d5346a4964a85))
+* update 02-groups.sh to use SYNO.Core.Group.Member add/list APIs ([f1edda1](https://github.com/by-openclaw/lib-synology-dsm/commit/f1edda14b09351f38b3678e0f52d68db913bbdc0))
+* use correct DSM Group.Member API — discovered via DevTools F12 ([149b713](https://github.com/by-openclaw/lib-synology-dsm/commit/149b713ba536efc651cc7e1ace54210d70722583))
+
 ## [0.8.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.8.0...v0.8.1) (2026-03-29)
 
 

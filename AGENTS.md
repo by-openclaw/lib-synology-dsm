@@ -49,3 +49,34 @@ Before touching anything in this repo:
 
 Maintained by Rune (DevOps familiar) for the BY-SYSTEMS PoC platform.
 Owner: @yboujraf
+
+## Doc Maintenance — After Every Successful Build
+
+After each successful CI build (all jobs green), update these files to reflect current state:
+- **AGENTS.md** — Update "Project Stats", version, checklist, roadmap progress
+- **CLAUDE.md** — Update build commands, file table, current state if anything changed
+- **README.md** — Update badges, feature lists, version numbers
+
+Commit separately: `docs: update project docs to v{version}`
+
+This ensures any AI agent (or human) picking up the project always has accurate, current documentation.
+
+---
+
+## Project Stats
+
+> Auto-updated on every release. Last updated: 2026-03-29
+
+| Metric | Value |
+|---|---|
+| Version | v0.7.0 |
+| Tagged releases | 3 |
+| Total commits | 41 |
+| Total files | 636 |
+| Python source files | 20 |
+| Test files | 24 |
+| Terraform files | 0 |
+| YAML/Ansible files | 2 |
+| ADR decisions | 0 |
+| CI workflows | 2 |
+

@@ -3,8 +3,8 @@
 Live NAS integration test — lib-synology-dsm API validation
 Run manually: python3 tests/integration/test_live_nas.py
 
-Requires: NAS reachable at 10.6.224.6:5001
-Credentials: rune-api (admin) / rune-audit (read-only)
+Requires: NAS reachable at NAS_HOST:5001 (set env vars)
+Credentials: API_USER (admin) / AUDIT_USER (read-only) — set via env
 
 Uses urllib only — no httpx dependency.
 """
@@ -19,11 +19,11 @@ import urllib.request
 from typing import Any
 
 # ── Config ─────────────────────────────────────────────────────────────────
-NAS_HOST = "10.6.224.6"
+NAS_HOST = os.environ.get("NAS_HOST", "")
 NAS_PORT = 5001
 BASE_URL = f"https://{NAS_HOST}:{NAS_PORT}/webapi/entry.cgi"
 
-ADMIN_USER = "rune-api"
+ADMIN_USER = os.environ.get("API_USER", "")
 ADMIN_PASS = "YOUR_PASSWORD"
 AUDIT_USER = "rune-audit"
 AUDIT_PASS = "YOUR_PASSWORD"
@@ -124,22 +124,22 @@ def section(title: str) -> None:
 
 
 def test_auth_admin() -> str | None:
-    section("1. Auth v7 — rune-api (admin)")
+    section(f"1. Auth v7 — {ADMIN_USER} (admin)")
     sid = login(ADMIN_USER, ADMIN_PASS)
     if sid:
-        record(PASS, "rune-api login", f"sid={sid[:12]}…")
+        record(PASS, "{ADMIN_USER} login", f"sid={sid[:12]}…")
         ok = logout(sid)
         if ok:
-            record(PASS, "rune-api logout")
+            record(PASS, "{ADMIN_USER} logout")
         else:
-            record(WARN, "rune-api logout", "success=false (session may have auto-expired)")
+            record(WARN, "{ADMIN_USER} logout", "success=false (session may have auto-expired)")
         # Re-login for continued use
         sid = login(ADMIN_USER, ADMIN_PASS)
         if sid:
-            record(PASS, "rune-api re-login (for subsequent tests)", f"sid={sid[:12]}…")
+            record(PASS, "{ADMIN_USER} re-login (for subsequent tests)", f"sid={sid[:12]}…")
         return sid
     else:
-        record(FAIL, "rune-api login", "Authentication failed")
+        record(FAIL, "{ADMIN_USER} login", "Authentication failed")
         return None
 
 
@@ -365,7 +365,7 @@ def test_shares(sid: str) -> None:
         nfs_rule = json.dumps(
             [
                 {
-                    "client": "10.6.224.0/20",
+                    "client": os.environ.get("NFS_CLIENT", "your-nfs-subnet"),
                     "privilege": "rw",
                     "root_squash": "root",
                     "async": True,
@@ -389,7 +389,7 @@ def test_shares(sid: str) -> None:
             rule=nfs_rule,
         )
         if resp_nfs.get("success"):
-            record(PASS, f"NFS SharePrivilege save ({TEST_SHARE} → 10.6.224.0/20 rw)")
+            record(PASS, f"NFS SharePrivilege save ({TEST_SHARE} → {os.environ.get('NFS_CLIENT', 'your-nfs-subnet')} rw)")
         else:
             record(WARN, "NFS SharePrivilege save", str(resp_nfs.get("error", ""))[:80])
 
@@ -407,7 +407,7 @@ def test_shares(sid: str) -> None:
             record(
                 WARN,
                 f"SYNO.Core.Share create ({TEST_SHARE})",
-                "HTTP 403 — rune-api lacks administrator privilege for share creation",
+                "HTTP 403 — {ADMIN_USER} lacks administrator privilege for share creation",
             )
         else:
             record(

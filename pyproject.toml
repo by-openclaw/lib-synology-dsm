@@ -10,17 +10,26 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
-    "httpx>=0.27",
     "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "mypy", "python-dotenv", "commitizen"]
+dev = ["pytest", "pytest-cov", "ruff", "mypy", "python-dotenv", "commitizen"]
 vault = ["hvac", "python-dotenv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
 markers = ["integration: live NAS required (deselect with -m 'not integration')"]
+addopts = "--cov=src/synology_dsm --cov-report=term-missing --cov-report=html:htmlcov --cov-fail-under=80"
+
+[tool.coverage.run]
+source = ["src/synology_dsm"]
+omit = ["tests/*", ".venv/*"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
 
 [tool.commitizen]
 name = "cz_conventional_commits"

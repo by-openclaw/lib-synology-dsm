@@ -7,13 +7,13 @@
 
 set -uo pipefail
 
-HOST="https://10.6.224.6:5001"
-ACCOUNT="rune-api"
+HOST="https://${NAS_HOST:-your-nas-host}:5001"
+ACCOUNT="${API_USER:-}"
 PASSWD="YOUR_PASSWORD"
 TEST_USER="rune-test-user"
 TEST_GROUP="rune-test-group"
 TEST_SHARE="rune-test-share"
-NFS_CLIENT="10.6.224.105"
+NFS_CLIENT="${NFS_CLIENT:-your-nfs-client}"
 PASS_COUNT=0
 FAIL_COUNT=0
 

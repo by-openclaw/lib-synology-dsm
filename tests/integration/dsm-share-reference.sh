@@ -14,16 +14,16 @@
 # ==============================================================================
 
 # ─── CONFIG ───────────────────────────────────────────
-SHARE="rune-api-test3"
-USER="rune-api"
+SHARE="${TEST_SHARE:-your-test-share}"
+USER="${API_USER:-}"
 GROUP="svc-automation"
-NFS_CLIENT="10.6.224.105"
-HOST="https://10.6.224.6:5001"
+NFS_CLIENT="${NFS_CLIENT:-your-nfs-client}"
+HOST="https://${NAS_HOST:-your-nas-host}:5001"
 
 # ─── 1. LOGIN ─────────────────────────────────────────
 RESPONSE=$(curl -sk "${HOST}/webapi/entry.cgi" \
   --data "api=SYNO.API.Auth&version=6&method=login\
-&account=rune-api&passwd=YOUR_PASSWORD\
+&account=${API_USER:-your-dsm-user}&passwd=${API_PASS:-YOUR_PASSWORD}\
 &session=DSM&format=sid&enable_syno_token=yes")
 
 SID=$(echo $RESPONSE | grep -o '"sid":"[^"]*"' | cut -d'"' -f4)

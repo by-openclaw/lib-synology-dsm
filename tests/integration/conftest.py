@@ -1,11 +1,12 @@
-"""Integration test configuration — requires live NAS at 10.6.224.6."""
+import os
+"""Integration test configuration — requires live NAS (set NAS_HOST env var)."""
 
 import pytest
 from synology_dsm import DSMClient
 
-NAS_HOST = "10.6.224.6"
+NAS_HOST = os.environ.get("NAS_HOST", "")
 NAS_PORT = 5001
-ADMIN_USER = "rune-api"
+ADMIN_USER = os.environ.get("API_USER", "")
 ADMIN_PASS = "YOUR_PASSWORD"
 
 

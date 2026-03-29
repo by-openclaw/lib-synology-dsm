@@ -10,19 +10,19 @@
 #
 # Requirements:
 #   - curl, jq
-#   - rune-api in administrators group + DSM app = Allow
+#   - API_USER in administrators group + DSM app = Allow
 #
 # Env overrides:
-#   NAS_HOST      default: 10.6.224.6
+#   NAS_HOST      default: (required — set via env)
 #   NAS_PORT      default: 5001
-#   API_USER      default: rune-api
+#   API_USER      default: (required — set via env)
 #   API_PASS      default: YOUR_PASSWORD
 # ==============================================================================
 set -euo pipefail
 
-NAS_HOST="${NAS_HOST:-10.6.224.6}"
+NAS_HOST="${NAS_HOST:-}"
 NAS_PORT="${NAS_PORT:-5001}"
-API_USER="${API_USER:-rune-api}"
+API_USER="${API_USER:-}"
 API_PASS="${API_PASS:-YOUR_PASSWORD}"
 BASE_URL="https://${NAS_HOST}:${NAS_PORT}/webapi/entry.cgi"
 
@@ -185,7 +185,7 @@ if is_ok "$resp"; then
 
   # Set NFS rule
   NFS_RULE=$(jq -nc '{
-    "client":"10.6.224.0/20",
+    "client":"${NFS_CLIENT:-your-nfs-subnet}",
     "privilege":"rw",
     "root_squash":"root",
     "async":true,
@@ -196,7 +196,7 @@ if is_ok "$resp"; then
   resp=$(dsm "api=SYNO.Core.FileServ.NFS.SharePrivilege" "version=1" "method=save" \
              "share_name=${TEST_SHARE}" "rule=${NFS_RULE}")
   is_ok "$resp" \
-    && ok "Share NFS rule set (10.6.224.0/20 rw → ${TEST_SHARE})" \
+    && ok "Share NFS rule set (${NFS_CLIENT:-your-nfs-subnet} rw → ${TEST_SHARE})" \
     || warn "Share NFS set — err=$(err_code "$resp")"
 
   # Read NFS rules back
@@ -216,8 +216,8 @@ if is_ok "$resp"; then
 else
   EC=$(err_code "$resp")
   if [[ "$EC" == "403" ]]; then
-    fail "Share create — 403: rune-api missing administrators group in DSM"
-    warn "Fix: DSM → Control Panel → User & Group → rune-api → Groups → add administrators"
+    fail "Share create — 403: ${API_USER} missing administrators group in DSM"
+    warn "Fix: DSM → Control Panel → User & Group → ${API_USER} → Groups → add administrators"
   else
     fail "Share create — err=${EC}"
   fi

@@ -1,7 +1,14 @@
-"""DSM API client — session management."""
+"""DSM API client — session management.
+
+Uses stdlib urllib only — no external HTTP dependencies.
+"""
 
 from __future__ import annotations
-import httpx
+
+import json
+import ssl
+import urllib.parse
+import urllib.request
 from typing import Any
 
 from .exceptions import (
@@ -29,25 +36,40 @@ class DSMClient:
         self._verify = verify_ssl
         self._sid: str | None = None
         self._synotoken: str = ""
-        self._client = httpx.Client(verify=verify_ssl, timeout=30)
+        # SSL context — skip verification when verify_ssl=False (self-signed NAS certs)
+        if https and not verify_ssl:
+            self._ssl_ctx: ssl.SSLContext | None = ssl._create_unverified_context()
+        elif https:
+            self._ssl_ctx = ssl.create_default_context()
+        else:
+            self._ssl_ctx = None
+
+    def _post(self, url: str, data: dict[str, str], headers: dict[str, str] | None = None) -> dict:
+        """POST form-encoded data, return parsed JSON dict."""
+        encoded = urllib.parse.urlencode(data).encode("utf-8")
+        req = urllib.request.Request(url, data=encoded, method="POST")
+        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+        if headers:
+            for k, v in headers.items():
+                req.add_header(k, v)
+        with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=30) as resp:
+            return json.loads(resp.read().decode("utf-8"))
 
     def login(self, account: str, password: str, session: str = "DSM") -> str:
         """Login and return session ID."""
-        resp = self._client.post(
+        data = self._post(
             f"{self.base_url}/entry.cgi",
-            data={
+            {
                 "api": "SYNO.API.Auth",
                 "version": "6",
                 "method": "login",
                 "account": account,
                 "passwd": password,
-                "session": session,  # "DSM" for admin ops, "FileStation" for file ops
+                "session": session,
                 "format": "sid",
-                "enable_syno_token": "yes",  # required to get real SynoToken for write ops
+                "enable_syno_token": "yes",
             },
         )
-        resp.raise_for_status()
-        data = resp.json()
         if not data.get("success"):
             error = data.get("error", {})
             code = error.get("code") if isinstance(error, dict) else None
@@ -61,19 +83,20 @@ class DSMClient:
         """Logout and invalidate session."""
         if not self._sid:
             return
-        self._client.post(
-            f"{self.base_url}/auth.cgi",
-            data={"api": "SYNO.API.Auth", "version": "1", "method": "logout", "_sid": self._sid},
-        )
+        try:
+            self._post(
+                f"{self.base_url}/auth.cgi",
+                {"api": "SYNO.API.Auth", "version": "1", "method": "logout", "_sid": self._sid},
+            )
+        except Exception:
+            pass  # Best-effort logout — don't raise on cleanup
         self._sid = None
 
     def request(self, api: str, method: str, version: int = 1, **params: Any) -> dict:
         """Make an authenticated API request.
 
         Automatically includes _sid and X-SYNO-TOKEN header (required for
-        ALL write operations on DSM 7.x — share create/delete, group set, etc.).
-        Without X-SYNO-TOKEN, write ops return 403 even with valid SID.
-        Token is obtained during login() via enable_syno_token=yes.
+        ALL write operations on DSM 7.x).
 
         Raises:
             DSMAuthError: On error codes 400 or 402.
@@ -83,19 +106,15 @@ class DSMClient:
         """
         if not self._sid:
             raise RuntimeError("Not logged in. Call login() first.")
-        payload = {
+        payload: dict[str, str] = {
             "api": api,
             "version": str(version),
             "method": method,
             "_sid": self._sid,
-            **params,
+            **{k: str(v) for k, v in params.items()},
         }
-        # X-SYNO-TOKEN is mandatory for all write operations on DSM 7.x
-        # It is returned by login() when enable_syno_token=yes is set
-        headers = {"X-SYNO-TOKEN": self._synotoken} if self._synotoken else {}
-        resp = self._client.post(f"{self.base_url}/entry.cgi", data=payload, headers=headers)
-        resp.raise_for_status()
-        data = resp.json()
+        headers = {"X-SYNO-TOKEN": self._synotoken} if self._synotoken else None
+        data = self._post(f"{self.base_url}/entry.cgi", payload, headers=headers)
         if not data.get("success"):
             error = data.get("error", {})
             code = error.get("code") if isinstance(error, dict) else None
@@ -108,4 +127,3 @@ class DSMClient:
 
     def __exit__(self, *_: Any) -> None:
         self.logout()
-        self._client.close()

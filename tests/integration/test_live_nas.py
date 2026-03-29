@@ -59,7 +59,13 @@ def post(payload: dict[str, Any], token: str = "") -> dict:
         return json.loads(resp.read())
 
 
-_synotoken: str = ""  # module-level token set on admin login
+_synotoken = ""  # module-level token set on admin login (no annotation — needed for global reassign)
+
+
+def _restore_synotoken(token: str) -> None:
+    """Restore the admin synotoken after audit login overwrites it."""
+    global _synotoken
+    _synotoken = token
 
 
 def login(account: str, password: str, session: str = "DSM") -> str | None:
@@ -208,7 +214,8 @@ def test_users(sid: str) -> None:
 
     # Verify user now exists (ensure present)
     resp_check = api(sid, "SYNO.Core.User", "list", version=1)
-    users_after = resp_check.get("users", []) if isinstance(resp_check, dict) else []
+    # Response shape: {"data": {"users": [...], "total": N}, "success": true}
+    users_after = resp_check.get("data", {}).get("users", resp_check.get("users", []))
     if any(u.get("name") == TEST_USER for u in users_after):
         record(PASS, f"SYNO.Core.User ensure present — verified ({TEST_USER} in list)")
     else:
@@ -223,7 +230,7 @@ def test_users(sid: str) -> None:
 
     # Verify user is gone (ensure absent)
     resp_check2 = api(sid, "SYNO.Core.User", "list", version=1)
-    users_final = resp_check2.get("users", []) if isinstance(resp_check2, dict) else []
+    users_final = resp_check2.get("data", {}).get("users", resp_check2.get("users", []))
     if not any(u.get("name") == TEST_USER for u in users_final):
         record(PASS, f"SYNO.Core.User ensure absent — verified ({TEST_USER} gone)")
     else:
@@ -488,8 +495,10 @@ def test_filestation(sid: str) -> None:
     from synology_dsm import DSMClient
     from synology_dsm.filestation import FileStationManager
 
+    # Use an existing share — NOT TEST_SHARE which is deleted by test_shares() above
+    FS_BASE_SHARE = "by-terraform-state"
     TEST_FS_FOLDER = "rune-test-fs-tmp"
-    TEST_FS_PATH = f"/{TEST_SHARE}/{TEST_FS_FOLDER}"
+    TEST_FS_PATH = f"/{FS_BASE_SHARE}/{TEST_FS_FOLDER}"
 
     client = DSMClient(NAS_HOST, port=NAS_PORT, verify_ssl=False)
     # Inject the existing session — no new login needed
@@ -519,7 +528,7 @@ def test_filestation(sid: str) -> None:
 
     # 7c. mkdir — create dedicated test folder (will be cleaned up)
     try:
-        result = fs.mkdir(f"/{TEST_SHARE}", TEST_FS_FOLDER)
+        result = fs.mkdir(f"/{FS_BASE_SHARE}", TEST_FS_FOLDER)
         record(PASS, f"FileStation.mkdir {TEST_FS_PATH}", f"created: {result.get('name')}")
     except Exception as e:
         record(FAIL, "FileStation.mkdir", str(e)[:120])
@@ -557,11 +566,14 @@ def test_filestation(sid: str) -> None:
     except Exception as e:
         record(WARN, f"FileStation.list {TEST_FS_PATH}", str(e)[:80])
 
-    # 7f. download — fetch the file back
+    # 7f. download — fetch the uploaded file back (use actual name from list)
     try:
+        listed_files = fs.list(TEST_FS_PATH)
+        test_files = [f["name"] for f in listed_files if "rune-test" in f.get("name", "")]
+        actual_filename = test_files[0] if test_files else "rune-test-upload.txt"
         with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as dl:
             dl_path = dl.name
-        fs.download(f"{TEST_FS_PATH}/rune-test-upload.txt", dl_path)
+        fs.download(f"{TEST_FS_PATH}/{actual_filename}", dl_path)
         with open(dl_path, "rb") as fh:
             content = fh.read()
         if b"lib-synology-dsm" in content:
@@ -683,7 +695,10 @@ if __name__ == "__main__":
     print("=" * 60)
 
     admin_sid = test_auth_admin()
+    admin_token = _synotoken  # save admin token before audit login overwrites it
     test_auth_audit()
+    # Restore admin token — test_auth_audit() overwrites _synotoken with audit user token
+    _restore_synotoken(admin_token)
 
     if admin_sid:
         test_users(admin_sid)

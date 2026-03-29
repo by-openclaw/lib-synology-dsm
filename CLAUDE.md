@@ -28,29 +28,35 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 
 ---
 
-## Current State (v0.7.0 — 2026-03-29)
+## Current State (v0.8.0 — 2026-03-29)
 
 | Component | Status |
 |---|---|
 | DSM auth (v7 + SynoToken) | ✅ working |
-| User CRUD | ✅ working |
-| Group CRUD + membership | ✅ working |
-| Share CRUD | ✅ working |
-| NFS permissions | ✅ working (DSM 7.x API fixed) |
-| FileStation: list/upload/download/mkdir/delete | ✅ working |
-| Exception hierarchy (DSMError → typed) | ✅ v0.7.0 |
-| ensure() idempotency + noop detection | ✅ v0.7.0 |
-| dry_run support (all managers + FileStation) | ✅ v0.7.0 |
-| Unit tests (45 tests, 100%) | ✅ v0.7.0 |
-| Commitizen + Conventional Commits | ✅ v0.7.0 |
-| Bash CRUD smoke test | ✅ `tests/integration/dsm-crud-test.sh` |
-| Python integration test | ✅ 17/19 (2 non-blocking warnings) |
-| CI tests | ⏸ blocked pending GitLab CE |
-| Published to registry | ⏸ blocked pending GitLab CE |
+| User CRUD + ensure() | ✅ v0.7.0 |
+| Group CRUD + membership + ensure() | ✅ v0.7.0 |
+| Share CRUD + NFS permissions + ensure() | ✅ v0.7.0 |
+| NFS ensure() per-client rule | ✅ v0.8.0 |
+| FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 |
+| DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
+| Exception hierarchy (DSMError → 6 typed exceptions) | ✅ v0.7.3 |
+| dry_run support (all managers) | ✅ v0.7.0 |
+| Unit tests (161 tests, 100% coverage) | ✅ v0.8.0 |
+| CI: ruff + mypy + pytest on Python 3.10/3.11/3.12 | ✅ v0.7.1 |
+| Coverage artifacts (htmlcov + coverage.xml, 30-day) | ✅ v0.7.2 |
+| Pre-commit hooks (detect-secrets + ruff) | ✅ v0.7.3 |
+| Dev container (.devcontainer/) | ✅ v0.7.3 |
+| ADR: 3 decisions recorded | ✅ v0.7.3 |
+| LICENSE (MIT) + disclaimer | ✅ v0.7.3 |
+| Bash CRUD smoke test | ✅ tests/integration/dsm-crud-test.sh |
+| Python integration test + --report flag | ✅ v0.7.2 |
+| Ansible collection | ⏸ Phase 2 — see docs/ansible-roadmap.md |
+| Vault AppRole auth | ⏸ Phase 2 — blocked until Vault deployed |
+| Published to GitLab registry | ⏸ Phase 5 — blocked until GitLab CE deployed |
 
-## Remaining warnings (non-blocking)
+## Open issues
 
-- `rune-audit` account: error 402 (disabled in DSM) — re-enable in Control Panel → User & Group
+None. Zero open issues as of v0.8.0.
 
 ## API gotchas (read before touching any FileStation or Core code)
 

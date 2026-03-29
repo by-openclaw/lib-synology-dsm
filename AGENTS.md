@@ -87,14 +87,12 @@ This ensures any AI agent (or human) picking up the project always has accurate,
 
 | Metric | Value |
 |---|---|
-| Version | v0.7.0 |
-| Tagged releases | 3 |
-| Total commits | 41 |
-| Total files | 636 |
-| Python source files | 20 |
-| Test files | 24 |
-| Terraform files | 0 |
-| YAML/Ansible files | 2 |
-| ADR decisions | 0 |
-| CI workflows | 2 |
+| Version | v0.8.0 |
+| Tagged releases | 6 |
+| Unit tests | 161 passing, 100% coverage |
+| Open issues | 0 |
+| ADR decisions | 3 |
+| CI workflows | 2 (ci.yml, release-please.yml) |
+| Pre-commit hooks | detect-secrets, ruff, ruff-format |
+| Dev container | ✅ .devcontainer/ |
 

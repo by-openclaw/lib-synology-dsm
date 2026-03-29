@@ -103,21 +103,25 @@ class GroupManager:
         groups = data.get("groups", [])
         return groups[0] if groups else {}
 
-    def add_member(self, group: str, username: str) -> None:
-        """Add a user to a group.
+    def add_member(self, group: str, username: str) -> dict:
+        """Add a user to a group (idempotent).
 
         Fetches current members first to avoid overwriting the existing list.
+        Returns noop if user is already a member.
         Uses SYNO.Core.Group.set with members= (NOT member_set — error 103 on DS1513+).
-        Requires X-SYNO-TOKEN header (handled by client.request) + admin session.
 
         Args:
-            group: Group name.
+            group:    Group name.
             username: Username to add.
+
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str).
         """
         current = self.list_members(group)
         current_names = [m.get("name", m) if isinstance(m, dict) else m for m in current]
-        if username not in current_names:
-            current_names.append(username)
+        if username in current_names:
+            return {"changed": False, "action": "noop"}
+        current_names.append(username)
         self._c.request(
             "SYNO.Core.Group",
             "set",
@@ -126,20 +130,26 @@ class GroupManager:
             members=json.dumps(current_names),
             description="",
         )
+        return {"changed": True, "action": "added", "user": username, "group": group}
 
-    def remove_member(self, group: str, username: str) -> None:
-        """Remove a user from a group.
+    def remove_member(self, group: str, username: str) -> dict:
+        """Remove a user from a group (idempotent).
 
         Fetches current members first and removes the specified user.
+        Returns noop if user is not a member.
         Uses SYNO.Core.Group.set with members= (NOT member_set — error 103 on DS1513+).
-        Requires X-SYNO-TOKEN header (handled by client.request) + admin session.
 
         Args:
-            group: Group name.
+            group:    Group name.
             username: Username to remove.
+
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str).
         """
         current = self.list_members(group)
         current_names = [m.get("name", m) if isinstance(m, dict) else m for m in current]
+        if username not in current_names:
+            return {"changed": False, "action": "noop"}
         updated = [n for n in current_names if n != username]
         self._c.request(
             "SYNO.Core.Group",
@@ -149,6 +159,7 @@ class GroupManager:
             members=json.dumps(updated),
             description="",
         )
+        return {"changed": True, "action": "removed", "user": username, "group": group}
 
     def list_members(self, group: str) -> List[dict]:
         """List members of a group.

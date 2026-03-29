@@ -168,33 +168,41 @@ class UserManager:
         data = self._c.request("SYNO.Core.Group", "list", version=1)
         return data.get("groups", [])
 
-    def add_to_group(self, username: str, group: str) -> None:
-        """Add a user to a group.
+    def add_to_group(self, username: str, group: str) -> dict:
+        """Add a user to a group (idempotent).
 
         Fetches current group members first to avoid overwriting existing membership.
+        Returns noop if user is already a member.
         Requires admin session (session=DSM).
 
         Args:
             username: Username to add.
-            group: Target group name.
+            group:    Target group name.
+
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str).
         """
         from .groups import GroupManager
 
-        GroupManager(self._c).add_member(group, username)
+        return GroupManager(self._c).add_member(group, username)
 
-    def remove_from_group(self, username: str, group: str) -> None:
-        """Remove a user from a group.
+    def remove_from_group(self, username: str, group: str) -> dict:
+        """Remove a user from a group (idempotent).
 
         Fetches current group members first and removes the specified user.
+        Returns noop if user is not a member.
         Requires admin session (session=DSM).
 
         Args:
             username: Username to remove.
-            group: Group name to remove from.
+            group:    Group name to remove from.
+
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str).
         """
         from .groups import GroupManager
 
-        GroupManager(self._c).remove_member(group, username)
+        return GroupManager(self._c).remove_member(group, username)
 
     def ensure(
         self,

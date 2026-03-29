@@ -123,7 +123,9 @@ class TestRemoveMember:
             {"users": [{"name": "alice"}, {"name": "bob"}]} if method == "member_list" else {}
         )
         mgr = _mgr(mock_client)
-        mgr.remove_member("devops", "alice")
+        result = mgr.remove_member("devops", "alice")
+        assert result["changed"] is True
+        assert result["action"] == "removed"
         set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
         assert len(set_calls) == 1
         members_arg = json.loads(set_calls[0].kwargs["members"])
@@ -131,16 +133,16 @@ class TestRemoveMember:
         assert "bob" in members_arg
 
     def test_remove_member_noop_when_not_in_group(self, mock_client):
-        """remove_member still calls set even if user not present (idempotent filter)."""
+        """remove_member returns noop without calling set when user not in group."""
         mock_client.request.side_effect = lambda api, method, **kw: (
             {"users": [{"name": "bob"}]} if method == "member_list" else {}
         )
         mgr = _mgr(mock_client)
-        mgr.remove_member("devops", "alice")  # alice not in group
+        result = mgr.remove_member("devops", "alice")
+        assert result["changed"] is False
+        assert result["action"] == "noop"
         set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
-        assert len(set_calls) == 1
-        members_arg = json.loads(set_calls[0].kwargs["members"])
-        assert "alice" not in members_arg
+        assert len(set_calls) == 0  # no write when user not present
 
 
 class TestGroupEnsureDryRunUpdate:
@@ -171,7 +173,6 @@ class TestAddMember:
     def test_add_member_fetches_and_appends(self, mock_client):
         """add_member fetches current members then calls set with merged list."""
 
-        # list_members falls back to member_list — mock it to return empty
         def side_effect(api, method, **kw):
             if method == "member_list":
                 return {"users": [{"name": "existing"}]}
@@ -179,7 +180,9 @@ class TestAddMember:
 
         mock_client.request.side_effect = side_effect
         mgr = _mgr(mock_client)
-        mgr.add_member("devops", "newuser")
+        result = mgr.add_member("devops", "newuser")
+        assert result["changed"] is True
+        assert result["action"] == "added"
 
         set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
         assert len(set_calls) == 1
@@ -188,12 +191,13 @@ class TestAddMember:
         assert "newuser" in members_arg
 
     def test_add_member_idempotent(self, mock_client):
-        """add_member does not duplicate if user already in group."""
+        """add_member returns noop without calling set when user already in group."""
         mock_client.request.side_effect = lambda api, method, **kw: (
             {"users": [{"name": "alice"}]} if method == "member_list" else {}
         )
         mgr = _mgr(mock_client)
-        mgr.add_member("devops", "alice")
+        result = mgr.add_member("devops", "alice")
+        assert result["changed"] is False
+        assert result["action"] == "noop"
         set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
-        members_arg = json.loads(set_calls[0].kwargs["members"])
-        assert members_arg.count("alice") == 1
+        assert len(set_calls) == 0  # no write when already member

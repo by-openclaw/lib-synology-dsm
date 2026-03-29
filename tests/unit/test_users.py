@@ -206,11 +206,13 @@ class TestUserListGroups:
 
 class TestUserAddToGroup:
     def test_add_to_group_delegates_to_group_manager(self, mock_client):
+        # alice is NOT yet in the group — add_member should call set
         mock_client.request.side_effect = lambda api, method, **kw: (
-            {"users": [{"name": "alice"}]} if method == "member_list" else {}
+            {"users": [{"name": "other"}]} if method == "member_list" else {}
         )
         mgr = _mgr(mock_client)
-        mgr.add_to_group("alice", "devops")
+        result = mgr.add_to_group("alice", "devops")
+        assert result["changed"] is True
         set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
         assert len(set_calls) == 1
 
@@ -221,7 +223,8 @@ class TestUserRemoveFromGroup:
             {"users": [{"name": "alice"}, {"name": "bob"}]} if method == "member_list" else {}
         )
         mgr = _mgr(mock_client)
-        mgr.remove_from_group("alice", "devops")
+        result = mgr.remove_from_group("alice", "devops")
+        assert result["changed"] is True
         set_calls = [c for c in mock_client.request.call_args_list if c.args[1] == "set"]
         assert len(set_calls) == 1
         import json

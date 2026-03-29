@@ -59,7 +59,9 @@ def post(payload: dict[str, Any], token: str = "") -> dict:
         return json.loads(resp.read())
 
 
-_synotoken = ""  # module-level token set on admin login (no annotation — needed for global reassign)
+_synotoken = (
+    ""  # module-level token set on admin login (no annotation — needed for global reassign)
+)
 
 
 def _restore_synotoken(token: str) -> None:
@@ -541,14 +543,15 @@ def test_filestation(sid: str) -> None:
     # 7d. upload — write a small test file into the temp folder only
     import tempfile
 
+    TEST_UPLOAD_FILENAME = "rune-test-upload.txt"
     try:
-        with tempfile.NamedTemporaryFile(suffix=".txt", prefix="rune-test-", delete=False) as tmp:
+        # Write to a temp path with a FIXED upload filename — what lands on NAS is TEST_UPLOAD_FILENAME
+        tmp_path = os.path.join(tempfile.gettempdir(), TEST_UPLOAD_FILENAME)
+        with open(tmp_path, "wb") as tmp:
             tmp.write(b"lib-synology-dsm integration test file\n")
-            tmp_path = tmp.name
-        test_filename = "rune-test-upload.txt"
         result = fs.upload(tmp_path, TEST_FS_PATH, overwrite=True)
         if result.get("success"):
-            record(PASS, f"FileStation.upload → {TEST_FS_PATH}/{test_filename}")
+            record(PASS, f"FileStation.upload → {TEST_FS_PATH}/{TEST_UPLOAD_FILENAME}")
         else:
             record(FAIL, "FileStation.upload", str(result))
         os.unlink(tmp_path)
@@ -568,12 +571,9 @@ def test_filestation(sid: str) -> None:
 
     # 7f. download — fetch the uploaded file back (use actual name from list)
     try:
-        listed_files = fs.list(TEST_FS_PATH)
-        test_files = [f["name"] for f in listed_files if "rune-test" in f.get("name", "")]
-        actual_filename = test_files[0] if test_files else "rune-test-upload.txt"
         with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as dl:
             dl_path = dl.name
-        fs.download(f"{TEST_FS_PATH}/{actual_filename}", dl_path)
+        fs.download(f"{TEST_FS_PATH}/{TEST_UPLOAD_FILENAME}", dl_path)
         with open(dl_path, "rb") as fh:
             content = fh.read()
         if b"lib-synology-dsm" in content:

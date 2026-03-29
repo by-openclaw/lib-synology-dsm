@@ -31,7 +31,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pre-commit", "detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen"]
+dev = ["pre-commit", "detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen", "build", "pygments>=2.20.0"]
 vault = ["hvac", "python-dotenv"]
 
 [project.urls]

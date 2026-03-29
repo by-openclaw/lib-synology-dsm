@@ -4,7 +4,7 @@ Python library for [Synology DSM](https://www.synology.com/en-global/dsm) API au
 
 [![CI](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml/badge.svg)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/by-openclaw/lib-synology-dsm/branch/main/graph/badge.svg)](https://codecov.io/gh/by-openclaw/lib-synology-dsm)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Dev Container](https://img.shields.io/badge/dev%20container-ready-blue?logo=docker)](https://containers.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -122,7 +122,7 @@ No Python install on your machine. No WSL. No "works on my machine."
 
 ```bash
 pytest tests/unit/ -v
-# Expected: 175 passed, 0 failed, 100% coverage
+# Expected: 223 passed, 0 failed, 100% coverage
 ```
 
 ### Run integration tests (requires NAS reachable on your network)

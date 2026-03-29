@@ -1,0 +1,11 @@
+{
+  "release-type": "python",
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "extra-files": [
+        "src/synology_dsm/__init__.py"
+      ]
+    }
+  }
+}

@@ -147,11 +147,14 @@ No Python install on your machine. No WSL. No "works on my machine."
 2. Open the folder in VS Code: `File → Open Folder` → select `lib-synology-dsm`
 3. VS Code shows a popup: **"Reopen in Container"** — click it
    - If you miss it: press `Ctrl+Shift+P` → type `Dev Containers: Reopen in Container`
-4. Wait ~2 minutes for the first build (downloads Python 3.12 image, installs all deps)
-5. You now have a terminal inside the container with everything ready:
-   - Python 3.12, pip, venv
+4. Wait ~2 minutes for the first build (downloads Python 3.13 image, installs all deps)
+5. Open a terminal: `` Ctrl+` `` or **Terminal → New Terminal**
+   - If the terminal panel is unresponsive after build, wait for the status bar spinner to stop, then try again
+   - Fallback: **Terminal → New Terminal → bash** always opens a raw bash session
+6. You now have a terminal inside the container with everything ready:
+   - Python 3.13, pip
    - ruff, mypy, pytest, pytest-cov
-   - pre-commit hooks already installed (automatic — no manual step)
+   - pre-commit is **not** installed inside the container (`.git/hooks` is host-owned — not writable from Linux container)
 
 ### Run unit tests inside the container
 
@@ -159,6 +162,19 @@ No Python install on your machine. No WSL. No "works on my machine."
 pytest tests/unit/ -v
 # Expected: 223 passed, 0 failed, 100% coverage
 ```
+
+### Troubleshooting — permission errors or stale build
+
+If you see a `PermissionError` at startup or the setup looks wrong (e.g. running an old `postCreateCommand`):
+
+```bash
+# Step 1 — pull latest
+git reset --hard origin/main && git pull origin main
+
+# Step 2 — Ctrl+Shift+P → Dev Containers: Rebuild Container Without Cache
+```
+
+"Without Cache" is required — a normal rebuild reuses the old config.
 
 ### Run integration tests (requires NAS reachable on your network)
 
@@ -177,10 +193,10 @@ python tests/integration/test_live_nas.py --report /tmp/nas-report
 
 Pre-commit hooks run **automatically on every `git commit`** — no manual step needed.
 
-Inside the dev container they are installed automatically when the container starts
-(`postCreateCommand` in `.devcontainer/devcontainer.json`).
+Pre-commit hooks run on the **host only** — they are not installed inside the dev container
+(`.git/hooks` is owned by the Windows host and is not writable from inside the Linux container).
 
-If working **outside the container** (native Python setup), install once:
+If working **outside the container** (native Python / Git Bash), install once:
 ```bash
 pip install -e ".[dev]"
 pre-commit install   # one-time — hooks run automatically on every commit from now on

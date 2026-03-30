@@ -146,16 +146,26 @@ Or: `Ctrl+Shift+P` → `Dev Containers: Reopen in Container`
 
 First time: ~2 min to pull Python 3.13 image and install all deps automatically.
 
-### Step 3 — Run unit tests
+### Step 3 — Open a terminal inside the container
 
-Open the VS Code terminal (inside the container) and run:
+After the container starts, open a terminal:
+- `Ctrl+\`` ` (backtick) — open a new terminal
+- Or: **Terminal → New Terminal** from the menu bar
+
+> ⚠️ VS Code may take a few seconds to become responsive after the build finishes.
+> If the terminal panel does not appear immediately, wait for the status bar (bottom-left) to stop showing a spinner, then try again.
+> If VS Code's built-in terminal is still not accessible, use **Terminal → New Terminal → bash** — this opens a raw bash session that always works.
+
+### Step 4 — Run unit tests
+
+In the container terminal:
 
 ```bash
 pytest tests/unit/ -v
 # Expected: 223 passed, 3 warnings, 0 failed
 ```
 
-### Step 4 — Run integration tests (live NAS)
+### Step 5 — Run integration tests (live NAS)
 
 ```bash
 cp .env.example .env
@@ -170,6 +180,27 @@ pytest tests/integration/ -v
 > ⚠️ The container terminal is a Linux bash shell. `source .venv/Scripts/activate` does NOT apply here — Python is already active system-wide inside the container.
 
 See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) for full config.
+
+### Troubleshooting — permission errors or stale build
+
+If you see a `PermissionError` during container startup, or the `postCreateCommand` looks wrong
+(e.g. still shows `pre-commit install` from an old cached build):
+
+```bash
+# Step 1 — pull latest devcontainer config
+git reset --hard origin/main && git pull origin main
+
+# Step 2 — full rebuild without cache
+# Ctrl+Shift+P → Dev Containers: Rebuild Container Without Cache
+```
+
+The **"Without Cache"** option is critical — a normal rebuild reuses the old config.
+
+> **Note on pre-commit in the container:**
+> `pre-commit` is intentionally not installed inside the container. `.git/hooks/` is owned by the
+> Windows host user and is not writable from inside the Linux container. Git hooks (pre-commit,
+> detect-secrets, ruff, etc.) run on the **host** only — via Path A or Git Bash.
+> To install hooks on the host: `pip install -e ".[dev]" && pre-commit install` (run once in Git Bash).
 
 ---
 

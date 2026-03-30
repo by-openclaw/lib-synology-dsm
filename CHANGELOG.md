@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.10.0...v0.10.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* correct pull_request trigger in project-board-sync workflow ([49ca818](https://github.com/by-openclaw/lib-synology-dsm/commit/49ca81847184812cbdc74c5afec14711051396b0))
+
+
+### Documentation
+
+* add ADR-0004/0005/0007, fix ADR-0001/0002/0003, add RAID.md, update SECURITY.md ([62c0749](https://github.com/by-openclaw/lib-synology-dsm/commit/62c074925ef9cd60bb34c3933de5ae4d9ef151ef))
+* add agent audit files (00-16) and update CONTRIBUTING.md ([f0bc69b](https://github.com/by-openclaw/lib-synology-dsm/commit/f0bc69bbbaaa29376cd1f1674c506b345806c3dc))
+* apply agent-file audit fixes to CLAUDE.md and AGENTS.md ([45971d9](https://github.com/by-openclaw/lib-synology-dsm/commit/45971d9d7cdc149d716db37cd60120fa041fb7fc))
+* apply full Tier 1 audit remediation — CLAUDE.md, AGENTS.md, CONTRIBUTING.md, ADRs ([20e143f](https://github.com/by-openclaw/lib-synology-dsm/commit/20e143f65891721d07f4a4424054b31ad0adf711))
+
 ## [0.10.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.3...v0.10.0) (2026-03-30)
 
 

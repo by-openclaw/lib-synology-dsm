@@ -31,10 +31,10 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pre-commit", "detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen", "build", "pygments>=2.20.0"]
+dev = ["pre-commit", "detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "build", "pygments>=2.20.0"]
 # container: same as dev minus pre-commit (pre-commit tries to install .git/hooks which is
 # owned by the Windows host — not writable from inside the container)
-container = ["detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen", "build", "pygments>=2.20.0"]
+container = ["detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "build", "pygments>=2.20.0"]
 vault = ["hvac", "python-dotenv"]
 
 [project.urls]
@@ -55,17 +55,6 @@ omit = ["tests/*", ".venv/*"]
 fail_under = 80
 show_missing = true
 skip_covered = false
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-version = "0.9.0"
-version_files = [
-    "pyproject.toml:^version",
-    "src/synology_dsm/__init__.py:^__version__"
-]
-tag_format = "v$version"
-update_changelog_on_bump = true
-changelog_file = "CHANGELOG.md"
 
 [tool.ruff]
 line-length = 100

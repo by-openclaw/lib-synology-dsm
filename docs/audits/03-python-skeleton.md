@@ -1,68 +1,52 @@
-# Python Skeleton Project Audit
+# Python Skeleton Project Re-Audit
 
-## 1. Healthy Points
+## 1. Progress Confirmed
 
-1. The repository follows the `src/` layout correctly.
-   Evidence: package code lives under `src/synology_dsm`.
-2. Packaging metadata is modern and mostly complete.
+1. The project still follows a clean `src/` library layout.
+2. Modern metadata is still present in `pyproject.toml`.
+3. `py.typed` is still present.
+4. The developer extra now includes packaging support.
    Evidence:
-   `pyproject.toml` uses PEP 517/518 build settings and PEP 621 project metadata.
-3. Typed package signaling exists.
-   Evidence: `src/synology_dsm/py.typed`.
-4. The library is intentionally lightweight.
-   Evidence: no runtime dependencies are declared.
-5. Multi-version execution intent exists.
+   `build` and `pygments` were added to `project.optional-dependencies.dev`.
+5. Packaging smoke build now works.
    Evidence:
-   `requires-python = ">=3.10"`,
-   CI matrix includes `3.10`, `3.11`, `3.12`, `3.13`,
-   `noxfile.py` also targets those versions.
-
-## 2. Findings
-
-1. High: packaging/build verification is not first-class in the developer environment.
+   `python -m build --sdist --wheel` succeeded and produced:
+   `synology_dsm-0.9.0.tar.gz`
+   `synology_dsm-0.9.0-py3-none-any.whl`.
+6. Devcontainer alignment improved.
    Evidence:
-   `.venv/bin/python -m build --sdist --wheel` failed because `build` is not installed.
-   `.[dev]` does not include `build` or a packaging smoke test.
+   `.devcontainer/devcontainer.json` now uses Python `3.13`.
+
+## 2. Remaining Findings
+
+1. Medium: version/tag consistency is still unresolved.
+   Evidence:
+   package metadata says `0.9.0`, but local tags stop at `v0.7.0`.
+2. Medium: developer docs still partially describe the old container/runtime state.
+   Evidence:
+   README still says the first build downloads Python `3.12`.
+   CONTRIBUTING still says the dev container is Python `3.12`.
    Impact:
-   the repository is structured like a distributable library, but buildability is not continuously exercised in the standard dev toolchain.
-2. Medium: version signaling is inconsistent across repository layers.
+   the skeleton is healthier than the docs currently admit.
+3. Low: pytest still defaults to unit-only discovery.
    Evidence:
-   project metadata says `0.9.0`, but local tags stop at `v0.7.0`.
+   `testpaths = ["tests/unit"]`.
    Impact:
-   package consumers and maintainers may disagree on what has actually been released.
-3. Medium: developer environment is pinned to Python 3.12 while support starts at 3.10 and CI already tests 3.13.
-   Evidence:
-   `.devcontainer/devcontainer.json` uses `mcr.microsoft.com/devcontainers/python:3.12`.
-   Impact:
-   the default local environment does not match either the minimum supported version or the newest tested version.
-4. Medium: pytest default discovery excludes integration tests by design.
-   Evidence:
-   `pyproject.toml` sets `testpaths = ["tests/unit"]`.
-   Impact:
-   this is acceptable for safety, but it means integration confidence depends on explicit human action and documentation accuracy.
-5. Low: the README Python support badge is stale.
-   Evidence:
-   README badge shows `3.10 | 3.11 | 3.12` while CI includes `3.13`.
-   Impact:
-   public compatibility signaling is behind actual CI claims.
+   acceptable for safety, but still worth documenting clearly as an intentional choice.
 
-## 3. Recommendations
+## 3. Resolved Findings From Prior Audit
 
-1. Add `build` to `dev` dependencies or create a dedicated `nox`/CI packaging session.
-2. Add a wheel/sdist smoke build to CI.
-3. Decide whether the dev container should target:
-   minimum supported Python,
-   current default development Python,
-   or a multi-version workflow via `nox`.
-4. Keep the README compatibility badge synchronized with CI and classifiers.
-5. Treat tag/version consistency as part of packaging health, not only git process health.
+1. Resolved:
+   build verification was not first-class.
+   It is now first-class enough to validate locally via `.[dev]`.
+2. Resolved:
+   devcontainer mismatch with current upper bound.
+   Container now matches Python `3.13`.
+3. Resolved:
+   stale Python support badge in README.
 
-## 4. Suggested Definition Of Done
+## 4. Next Skeleton Tasks
 
-1. `pip install -e ".[dev]"` gives all core contributor tools, including packaging validation.
-2. CI proves:
-   lint,
-   types,
-   tests,
-   build.
-3. README, classifiers, CI matrix, and devcontainer tell the same Python support story.
+1. Sync README and CONTRIBUTING text with the new Python `3.13` devcontainer.
+2. Repair release tag history so packaging metadata and git history tell the same story.
+3. Consider adding a dedicated build session to CI if not already proven in remote runs.

@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.9.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.0...v0.9.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* **ci:** remove release-type from workflow — use manifest mode only ([7383e96](https://github.com/by-openclaw/lib-synology-dsm/commit/7383e96c05903cec661a38d53517a18150c76665))
+* **devcontainer:** add container extras group, exclude pre-commit ([94da4f6](https://github.com/by-openclaw/lib-synology-dsm/commit/94da4f68cec85e7fc33f25a3cc15e87fc2ae3190))
+* **devcontainer:** auto-create .env.local from example if missing ([a4fd302](https://github.com/by-openclaw/lib-synology-dsm/commit/a4fd3025bb18a8ff4ac501f0ea6c45e351afee51))
+* **devcontainer:** drop --network=host (no-op on Docker Desktop), fix \r line endings ([1116516](https://github.com/by-openclaw/lib-synology-dsm/commit/11165162e81bbd51e6802e536a98e6da72711eb4))
+* **devcontainer:** load credentials via dotenv in conftest, not --env-file ([aa09dbb](https://github.com/by-openclaw/lib-synology-dsm/commit/aa09dbb0575320f075c270ec9db8d07e31fade92))
+* **devcontainer:** pip install --user instead of sudo pip ([0837f2c](https://github.com/by-openclaw/lib-synology-dsm/commit/0837f2c46abc7afaee25ee8e810b87aa87ac5fb1))
+* **devcontainer:** remove pre-commit install from postCreateCommand ([33f760e](https://github.com/by-openclaw/lib-synology-dsm/commit/33f760e6fbcd57bd0a78d45f811df191f5551551))
+* **devcontainer:** remove remoteEnv, clarify integration tests run outside container ([baea464](https://github.com/by-openclaw/lib-synology-dsm/commit/baea464f985bed27d523d509a9ac0f3dc364479d))
+* **devcontainer:** remove trailing comma (invalid JSON) ([7d35b12](https://github.com/by-openclaw/lib-synology-dsm/commit/7d35b1222cd8d014faa726ac47c85be59f484bc2))
+* **devcontainer:** replace Windows env vars with gitignored .env.local file ([8d31d5b](https://github.com/by-openclaw/lib-synology-dsm/commit/8d31d5bce7028d559e03e843fe0bc064411e252f))
+* **devcontainer:** set remoteUser=root to resolve pip permission errors ([d0713ff](https://github.com/by-openclaw/lib-synology-dsm/commit/d0713ff6b1df012ee7c16f674b3907d5f43f9aed))
+* **devcontainer:** single .env file for native and container ([4cb037d](https://github.com/by-openclaw/lib-synology-dsm/commit/4cb037dc7c46a21d0ab0e0cb0bfd65046a80ff4c))
+* **devcontainer:** sudo pip to fix site-packages not writable warning ([8acfc72](https://github.com/by-openclaw/lib-synology-dsm/commit/8acfc72d2a33bcfe28e4d856c9879243e8f3a69d))
+* **devcontainer:** WSL2 mirrored networking for LAN access on Windows ([b90e701](https://github.com/by-openclaw/lib-synology-dsm/commit/b90e701736392a23a0d7dceab2396cb5dea042d5)), closes [#24](https://github.com/by-openclaw/lib-synology-dsm/issues/24)
+* **docs:** robust .env loader — strip inline comments before xargs ([03d0fe2](https://github.com/by-openclaw/lib-synology-dsm/commit/03d0fe2be4cc82b1feb3bec4047f309d720885a6))
+* **env:** remove duplicate and unused vars from .env.example ([7438d94](https://github.com/by-openclaw/lib-synology-dsm/commit/7438d94a8cb43db9583f3cab52350e10a46387a6))
+* **integration:** handle empty NAS_PORT env var gracefully ([6a5ae98](https://github.com/by-openclaw/lib-synology-dsm/commit/6a5ae98cac27dd2e44e631784c61538bcb563728))
+* **types:** resolve all 27 mypy errors across 7 files ([46e7dfe](https://github.com/by-openclaw/lib-synology-dsm/commit/46e7dfe5d1bb50f5aad2a64d19850c8770a3d67a))
+
+
+### Documentation
+
+* add architecture diagram + fix .env.example inline comments ([69b4fb4](https://github.com/by-openclaw/lib-synology-dsm/commit/69b4fb4540b3860c2a80f88c145d85827417d046))
+* add docs/audits/ folder (00-05) — audit evidence committed to repo ([34e3348](https://github.com/by-openclaw/lib-synology-dsm/commit/34e33485ccde84512fd0297f95b6b1da6a87b720))
+* add HARD RULES block to CLAUDE.md + AGENTS.md, sync current state to v0.9.0 ([c507d1f](https://github.com/by-openclaw/lib-synology-dsm/commit/c507d1f7032b883b29f37f2b0029e8d4e95ab35f))
+* add version badge + fix Windows native setup instructions ([95d92c0](https://github.com/by-openclaw/lib-synology-dsm/commit/95d92c0c9d79af41439b3fc0f93ce0b91642a09f))
+* **contributing:** clarify Path A vs B, unit vs integration tests, .env context ([cf35c07](https://github.com/by-openclaw/lib-synology-dsm/commit/cf35c07f6b3cda6f731846f359ba911f502828bb))
+* **contributing:** expand dev container setup — Docker Desktop settings table + screenshot ([401e4ff](https://github.com/by-openclaw/lib-synology-dsm/commit/401e4ff502f683c2382392283fa898add86dcacb))
+* **contributing:** fix Windows Git Bash Python setup ([4cc213c](https://github.com/by-openclaw/lib-synology-dsm/commit/4cc213c657ad9a53d24ae37ef51b626d4336970a))
+* **contributing:** rewrite Path A/B with exact validated steps ([4cccd56](https://github.com/by-openclaw/lib-synology-dsm/commit/4cccd56585ea61a1879d277d3e0ef7b40d6bf886))
+* **contributing:** rewrite Windows setup — clean 5-step guide for Git Bash ([6bf2f23](https://github.com/by-openclaw/lib-synology-dsm/commit/6bf2f236127006396d951c96ff5c9d6a4b551bf7))
+* replace Codecov badge with static 100% badge, expand Testing section ([f5a4a94](https://github.com/by-openclaw/lib-synology-dsm/commit/f5a4a94646af3ce3099697313ece35b312353624))
+* update dev container setup — terminal access, rebuild steps, pre-commit clarification ([8c529b6](https://github.com/by-openclaw/lib-synology-dsm/commit/8c529b610e0ef64b5b450443c1c95aa083a636d1))
+
 ## [0.9.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.8.2...v0.9.0) (2026-03-29)
 
 

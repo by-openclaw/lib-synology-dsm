@@ -183,7 +183,7 @@ class TestSet:
         call = mock_client.request.call_args
         assert call.args[0] == "SYNO.Core.BandwidthControl"
         assert call.args[1] == "set"
-        assert call.kwargs["version"] == 2
+        assert call.kwargs["version"] == 1
         assert json.loads(call.kwargs["bandwidths"]) == bw_list
 
     def test_returns_changed_true(self, mock_client):

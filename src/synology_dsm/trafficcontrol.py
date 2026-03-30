@@ -102,7 +102,13 @@ class TrafficControlManager:
             version=1,
             adapter=adapter,
         )
-        return data.get("rules", [])  # type: ignore[no-any-return]
+        rules: list[dict] = data.get("rules", [])
+        # DSM strips the ``id`` field on save/load — add synthetic IDs
+        # so callers can reference rules by position.
+        for i, r in enumerate(rules):
+            if "id" not in r:
+                r["id"] = i
+        return rules
 
     # ------------------------------------------------------------------
     # Write

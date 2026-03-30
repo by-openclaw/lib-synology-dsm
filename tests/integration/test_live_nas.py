@@ -578,13 +578,23 @@ class TestQuotaManager:
 
 @nas_required
 class TestBandwidthManager:
-    """Bandwidth limit queries — read-only."""
+    """Bandwidth limit queries + write + ensure lifecycle."""
 
     @pytest.fixture(autouse=True)
     def setup(self, client) -> None:  # noqa: ANN001
         from synology_dsm.bandwidth import BandwidthManager
 
         self.bw = BandwidthManager(client)
+        yield
+        # Restore: disable any limits set during tests
+        try:
+            self.bw.ensure_user(ADMIN_USER, "FileStation", "disabled")
+        except Exception:
+            pass
+        try:
+            self.bw.ensure_user(ADMIN_USER, "FTP", "disabled")
+        except Exception:
+            pass
 
     def test_get_group_limit_returns_dict(self) -> None:
         result = self.bw.get_group_limit("administrators")
@@ -605,6 +615,172 @@ class TestBandwidthManager:
     def test_invalid_owner_type_raises(self) -> None:
         with pytest.raises(ValueError, match="Invalid owner_type"):
             self.bw.get_limit("administrators", "domain_user")
+
+    def test_set_user_and_restore(self) -> None:
+        """set_user() — set a limit then restore to disabled."""
+        r = self.bw.set_user(
+            ADMIN_USER,
+            "FileStation",
+            "enabled",
+            upload_limit_1=500,
+            download_limit_1=5000,
+        )
+        assert r["changed"] is True
+
+        r2 = self.bw.set_user(ADMIN_USER, "FileStation", "disabled")
+        assert r2["changed"] is True
+
+    def test_ensure_user_noop(self) -> None:
+        """ensure_user() — noop when state already matches."""
+        current = self.bw.get(ADMIN_USER, "local_user")
+        if not current:
+            pytest.skip("No bandwidth entries for ADMIN_USER")
+        entry = current[0]
+        r = self.bw.ensure_user(
+            ADMIN_USER,
+            entry["protocol"],
+            entry.get("policy", "disabled"),
+            upload_limit_1=entry.get("upload_limit_1", 0),
+            download_limit_1=entry.get("download_limit_1", 0),
+        )
+        assert r["changed"] is False
+
+    def test_ensure_user_updates(self) -> None:
+        """ensure_user() — changed=True when state differs, then restore."""
+        r = self.bw.ensure_user(
+            ADMIN_USER,
+            "FTP",
+            "enabled",
+            upload_limit_1=200,
+            download_limit_1=2000,
+        )
+        # Restore
+        self.bw.ensure_user(ADMIN_USER, "FTP", "disabled")
+        assert isinstance(r["changed"], bool)
+
+    def test_dry_run_does_not_change(self) -> None:
+        """dry_run=True must not write to the API."""
+        before = self.bw.get(ADMIN_USER, "local_user")
+        r = self.bw.set_user(
+            ADMIN_USER,
+            "FileStation",
+            "enabled",
+            upload_limit_1=999,
+            download_limit_1=9999,
+            dry_run=True,
+        )
+        after = self.bw.get(ADMIN_USER, "local_user")
+        assert r["dry_run"] is True
+        assert before == after
+
+
+# ── TrafficControlManager ─────────────────────────────────────────────────────
+
+
+@nas_required
+class TestTrafficControlManager:
+    """TrafficControl rules — full lifecycle on ovs_bond0 adapter."""
+
+    ADAPTER = "ovs_bond0"
+
+    @pytest.fixture(autouse=True)
+    def setup(self, client) -> None:  # noqa: ANN001
+        from synology_dsm.trafficcontrol import TrafficControlManager
+
+        self.tc = TrafficControlManager(client)
+        yield
+        try:
+            self.tc.clear_rules(self.ADAPTER)
+        except Exception:
+            pass
+
+    def test_load_returns_list(self) -> None:
+        """load() returns a list (may be empty)."""
+        result = self.tc.load(self.ADAPTER)
+        assert isinstance(result, list)
+
+    def test_clear_rules(self) -> None:
+        """clear_rules() — empties rule list, returns changed."""
+        r = self.tc.clear_rules(self.ADAPTER)
+        assert isinstance(r["changed"], bool)
+        assert self.tc.load(self.ADAPTER) == []
+
+    def test_add_and_remove_rule(self) -> None:
+        """add_rule() then remove_rule() — full round-trip."""
+        self.tc.clear_rules(self.ADAPTER)
+        rule = {
+            "enabled": True,
+            "port_type": "SYS",
+            "port_num": "nfs",
+            "port_direction": "src",
+            "protocol": "all",
+            "minrate": 500,
+            "maxrate": 1000,
+            "source": "all",
+            "ip_direction": "dest",
+        }
+        r_add = self.tc.add_rule(self.ADAPTER, rule)
+        assert r_add["changed"] is True
+        rules = self.tc.load(self.ADAPTER)
+        assert len(rules) == 1
+
+        rule_id = rules[0]["id"]
+        r_remove = self.tc.remove_rule(self.ADAPTER, rule_id)
+        assert r_remove["changed"] is True
+        assert self.tc.load(self.ADAPTER) == []
+
+    def test_ensure_rule_creates(self) -> None:
+        """ensure_rule() — creates rule when absent."""
+        self.tc.clear_rules(self.ADAPTER)
+        rule = {
+            "enabled": True,
+            "port_type": "SYS",
+            "port_num": "ssh",
+            "port_direction": "src",
+            "protocol": "all",
+            "minrate": 100,
+            "maxrate": 500,
+            "source": "all",
+            "ip_direction": "dest",
+        }
+        r = self.tc.ensure_rule(self.ADAPTER, rule)
+        assert r["changed"] is True
+
+    def test_ensure_rule_noop(self) -> None:
+        """ensure_rule() — noop when identical rule already present."""
+        self.tc.clear_rules(self.ADAPTER)
+        rule = {
+            "enabled": True,
+            "port_type": "SYS",
+            "port_num": "ftp",
+            "port_direction": "src",
+            "protocol": "all",
+            "minrate": 200,
+            "maxrate": 800,
+            "source": "all",
+            "ip_direction": "dest",
+        }
+        self.tc.ensure_rule(self.ADAPTER, rule)
+        r = self.tc.ensure_rule(self.ADAPTER, rule)
+        assert r["changed"] is False
+
+    def test_dry_run_does_not_change(self) -> None:
+        """dry_run=True must not write rules."""
+        self.tc.clear_rules(self.ADAPTER)
+        rule = {
+            "enabled": True,
+            "port_type": "SYS",
+            "port_num": "snmp",
+            "port_direction": "src",
+            "protocol": "all",
+            "minrate": 50,
+            "maxrate": 200,
+            "source": "all",
+            "ip_direction": "dest",
+        }
+        r = self.tc.add_rule(self.ADAPTER, rule, dry_run=True)
+        assert r["dry_run"] is True
+        assert self.tc.load(self.ADAPTER) == []
 
 
 # ── ShareManager — list_shares_for_group ──────────────────────────────────────

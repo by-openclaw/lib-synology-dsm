@@ -15,7 +15,7 @@ version=2 is required — version=1 returns error 102 on DSM 7.x.
 Write (set bandwidth) — verified via curl on DSM 7.1.1:
     api=SYNO.Core.BandwidthControl
     method=set
-    version=2
+    version=1       (version=2 returns error 103 on DSM 7.1.1)
     bandwidths=<JSON-stringified array of bandwidth objects>
 
 Transport is form-encoded POST — NOT JSON body.
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 _OWNER_TYPES = frozenset({"local_user", "local_group"})
 
 #: Valid bandwidth policy values.
-_POLICIES = frozenset({"disabled", "enabled", "scheduled", "group"})
+_POLICIES = frozenset({"disabled", "enabled", "scheduled", "group", "notexist"})
 
 #: Default schedule plan — all hours use Speed limit 1.
 _DEFAULT_SCHEDULE = "1" * 168
@@ -195,7 +195,7 @@ class BandwidthManager:
         self._c.request(
             "SYNO.Core.BandwidthControl",
             "set",
-            version=2,
+            version=1,
             bandwidths=json.dumps(bandwidths),
         )
         return result

@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* **bandwidth:** full read+write+ensure+dry_run — set_user, set_group, ensure_user, ensure_group, disable_user, disable_group
+* **trafficcontrol:** new TrafficControlManager — load, save, add_rule, remove_rule, clear_rules, ensure_rule with idempotent pattern
+
 ## [0.9.3](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.2...v0.9.3) (2026-03-30)
 
 

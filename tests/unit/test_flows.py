@@ -8,7 +8,6 @@ mirroring exactly what Ansible tasks and automation scripts will do.
 from unittest.mock import MagicMock
 
 import pytest
-
 from synology_dsm import DSMClient, GroupManager, NFSManager, ShareManager, UserManager
 from synology_dsm.filestation import FileStationManager
 

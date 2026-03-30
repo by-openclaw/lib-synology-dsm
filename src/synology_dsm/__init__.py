@@ -24,6 +24,7 @@ from .nfs import NFSManager
 from .quota import QuotaManager
 from .shares import ShareManager
 from .storage import StorageManager
+from .trafficcontrol import TrafficControlManager
 from .users import UserManager
 
 __all__ = [
@@ -45,6 +46,7 @@ __all__ = [
     "QuotaManager",
     "ShareManager",
     "StorageManager",
+    "TrafficControlManager",
     "UserManager",
     "VaultCredentialProvider",
     "get_credentials",

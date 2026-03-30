@@ -91,11 +91,10 @@ This ensures any AI agent (or human) picking up the project always has accurate,
 |---|---|
 | Version | v0.9.0 |
 | Tagged releases | 8 (v0.7.0–v0.9.0) |
-| Unit tests | 223 passing, 100% coverage |
+| Unit tests | 283 passing, 100% coverage |
 | Open issues | 3 HIGH (mypy, release path, verify_ssl) |
 | ADR decisions | 3 |
 | CI workflows | 2 (ci.yml + security job, release-please.yml) |
 | Pre-commit hooks | detect-secrets, ruff, ruff-format |
 | Dev container | ✅ .devcontainer/ |
 | mypy | ❌ 27 errors — fix in progress |
-

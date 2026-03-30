@@ -18,11 +18,13 @@ def tests(session: nox.Session) -> None:
     """Run unit tests on all supported Python versions."""
     session.install("-e", ".[dev]")
     session.run(
-        "pytest", "tests/unit/",
+        "pytest",
+        "tests/unit/",
         "--cov=src/synology_dsm",
         "--cov-report=term-missing",
         "--cov-fail-under=80",
-        "-v", "--tb=short",
+        "-v",
+        "--tb=short",
     )
 
 
@@ -40,7 +42,10 @@ def integration(session: nox.Session) -> None:
     """Run integration tests — requires NAS_HOST / API_USER / API_PASS env vars."""
     session.install("-e", ".[dev]")
     session.run(
-        "pytest", "tests/integration/",
-        "-m", "integration",
-        "-v", "--tb=short",
+        "pytest",
+        "tests/integration/",
+        "-m",
+        "integration",
+        "-v",
+        "--tb=short",
     )

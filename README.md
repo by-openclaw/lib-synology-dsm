@@ -80,7 +80,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full instructions.
 
 ```bash
 pytest tests/unit/ -v
-# 223 passing | 100% coverage
+# 283 passing | 100% coverage
 # HTML report generated at: htmlcov/index.html
 ```
 
@@ -305,7 +305,61 @@ change `v0.8.0` → `v0.8.1` or anything else. Completely safe.
 | `synology_dsm.filestation` | `FileStationManager` | Upload, download, list, mkdir, delete |
 | `synology_dsm.nfs` | `NFSManager` | NFS rule management (per share) |
 | `synology_dsm.credentials` | `EnvCredentialProvider`, `VaultCredentialProvider`, `get_credentials` | Credential resolution |
+| `synology_dsm.quota` | `QuotaManager` | Storage quota get/set per user/group |
+| `synology_dsm.bandwidth` | `BandwidthManager` | Bandwidth control — read/write/ensure per user/group/protocol |
+| `synology_dsm.storage` | `StorageManager` | Volume listing, read-assert ensure |
+| `synology_dsm.trafficcontrol` | `TrafficControlManager` | Network traffic control rules — load/save/ensure per adapter |
 | `synology_dsm.exceptions` | `DSMError` hierarchy | Typed exceptions — auth, permission, connection, API |
+
+---
+
+## Bandwidth control
+
+```python
+from synology_dsm import DSMClient, BandwidthManager, get_credentials
+
+creds = get_credentials()
+with DSMClient(creds.host, port=creds.port, verify_ssl=False) as client:
+    client.login(creds.user, creds.password)
+    bw = BandwidthManager(client)
+
+    # Idempotent — set FileStation limit for a user (1000 KB/s up, 5000 KB/s down)
+    result = bw.ensure_user("alice", "FileStation", policy="enabled",
+                            upload_limit_1=1000, download_limit_1=5000)
+    print(result)  # {"changed": True, "action": "updated"}
+    # Second run: {"changed": False, "action": "none"}
+
+    # Disable bandwidth limit
+    bw.disable_user("alice", "FileStation")
+```
+
+## Traffic control
+
+```python
+from synology_dsm import DSMClient, TrafficControlManager, get_credentials
+
+creds = get_credentials()
+with DSMClient(creds.host, port=creds.port, verify_ssl=False) as client:
+    client.login(creds.user, creds.password)
+    tc = TrafficControlManager(client)
+
+    # Idempotent — ensure a traffic rule for NFS+SSH on eth0
+    result = tc.ensure_rule("eth0", {
+        "enabled": True,
+        "port_type": "SYS",
+        "port_num": "nfs,ssh",
+        "port_direction": "src",
+        "protocol": "all",
+        "minrate": 1000,
+        "maxrate": 3000,
+        "source": "all",
+        "ip_direction": "dest",
+    })
+    print(result)  # {"changed": True, "action": "added"}
+
+    # Clear all rules
+    tc.clear_rules("eth0")
+```
 
 ---
 

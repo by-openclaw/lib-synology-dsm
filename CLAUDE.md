@@ -39,12 +39,13 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 | NFS ensure() per-client rule | ✅ v0.8.0 |
 | FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 |
 | Quota manager | ✅ v0.9.0 |
-| Bandwidth manager | ✅ v0.9.0 |
+| Bandwidth manager (read+write+ensure) | ✅ v0.9.0 |
+| Traffic control manager | ✅ v0.9.0 |
 | Storage manager | ✅ v0.9.0 |
 | DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
 | Exception hierarchy (DSMError → 6 typed exceptions) | ✅ v0.7.3 |
 | dry_run support (all managers) | ✅ v0.7.0 |
-| Unit tests (223 tests, 100% coverage) | ✅ v0.9.0 |
+| Unit tests (283 tests, 100% coverage) | ✅ v0.9.0 |
 | CI: ruff + mypy + pytest on Python 3.10/3.11/3.12/3.13 | ✅ CI active |
 | CI: Bandit SAST + pip-audit CVE gate | ✅ 2026-03-29 |
 | Coverage artifacts (htmlcov + coverage.xml, 30-day) | ✅ v0.7.2 |

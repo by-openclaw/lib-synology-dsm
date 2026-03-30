@@ -3,7 +3,6 @@
 import json
 
 import pytest
-
 from synology_dsm.nfs import NFSManager
 
 

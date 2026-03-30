@@ -157,6 +157,7 @@ class QuotaManager:
             result["dry_run"] = True
             return result
         import json
+
         self._c.request(
             "SYNO.Core.Quota",
             "set",
@@ -213,6 +214,7 @@ class QuotaManager:
             result["dry_run"] = True
             return result
         import json
+
         self._c.request(
             "SYNO.Core.Quota",
             "set",
@@ -284,9 +286,7 @@ class QuotaManager:
             # {"changed": True, "action": "created", "dry_run": True}
         """
         if subject_type not in _SUBJECT_TYPES:
-            raise ValueError(
-                f"Invalid subject_type '{subject_type}'. Use 'user' or 'group'."
-            )
+            raise ValueError(f"Invalid subject_type '{subject_type}'. Use 'user' or 'group'.")
 
         if state == "present" and quota_mb is None:
             raise ValueError("quota_mb must be provided when state='present'.")

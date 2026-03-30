@@ -1,8 +1,9 @@
 # lib-synology-dsm — Refactoring Clarification & Prioritization
 
 > **Date:** 2026-03-30
-> **Last updated:** 2026-03-30 04:14 UTC
-> **Status:** All decisions confirmed — implementation in progress (subagent running)
+> **Last updated:** 2026-03-30 04:18 UTC
+> **Status:** Tasks A–E complete. Pending: F–L (see section 8).
+> **Tracking rule:** Rune updates this file immediately on any task completion or decision change. Save only — never committed unless explicitly requested by yboujraf.
 > **Context:** This library is a nano-component of the BY-SYSTEMS PoC platform.
 > It must be production-grade before the Ansible collection and orchestration layers can be built on top of it.
 > For current state, manager status, and hard rules — see `CLAUDE.md`.
@@ -148,16 +149,17 @@ Does not exist yet.
 
 | Task | Description | Status | Completed |
 |---|---|---|---|
-| A | `StorageManager.ensure()` read-assert + 5 unit tests | 🔄 In progress | — |
-| B | Architecture diagram rewrite (lib-architecture.puml + PNG) | 🔄 In progress | — |
-| C | Context diagram (lib-context.puml + PNG) — new | 🔄 In progress | — |
-| D | Repo hygiene: remove .mypy_cache/, htmlcov/, coverage.xml from git | 🔄 In progress | — |
-| E | Single commit + push | ⏳ Pending A–D | — |
+| A | `StorageManager.ensure()` read-assert + 5 unit tests | ✅ Done | 2026-03-30 04:15 UTC |
+| B | Architecture diagram rewrite (lib-architecture.puml + PNG) | ✅ Done | 2026-03-30 04:15 UTC |
+| C | Context diagram (lib-context.puml + PNG) — new | ✅ Done | 2026-03-30 04:15 UTC |
+| D | Repo hygiene: .gitignore verified clean, no tracked artifacts | ✅ Done | 2026-03-30 04:15 UTC |
+| E | Commit `3bad26d` pushed to main (228 tests passing) | ✅ Done | 2026-03-30 04:15 UTC |
 | F | GitHub issues creation for all priority matrix items | ⏳ Pending E | — |
 | G | RAID.md creation (per-repo, D-05 confirmed) | ⏳ Pending E | — |
 | H | Update AGENTS.md + CLAUDE.md to v0.9.x state | ⏳ Backlog | — |
 | I | LICENSE: add author + SPDX headers to all .py files | ⏳ Backlog | — |
-| J | `QuotaManager.ensure()` + `BandwidthManager.ensure()` | ⏳ Backlog (v1.0 blocker) | — |
+| J1 | `QuotaManager.ensure()` + `set_user/group_quota()` | ✅ Done | 2026-03-30 04:47 UTC |
+| J2 | `BandwidthManager.ensure()` | ⏳ Pending F12 capture (bandwidth set payload) | — |
 | K | Timeout: per-operation defaults + streaming upload | ⏳ Backlog (v1.0 blocker) | — |
 | L | Return dict audit — all managers consistent | ⏳ Backlog (v1.0 blocker) | — |
 

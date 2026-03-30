@@ -1,7 +1,6 @@
 """Unit tests — StorageManager."""
 
 import pytest
-
 from synology_dsm.exceptions import DSMResourceNotFoundError
 from synology_dsm.storage import StorageManager
 

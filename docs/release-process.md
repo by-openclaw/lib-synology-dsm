@@ -1,6 +1,6 @@
 # Release Process — `lib-synology-dsm`
 
-> **Date:** 2026-03-30  
+> **Date:** 2026-03-30
 > **Applies from:** v0.9.0 onwards
 
 ---

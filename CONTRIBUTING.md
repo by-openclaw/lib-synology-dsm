@@ -93,7 +93,7 @@ cp .env.example .env
 notepad .env   # fill in NAS_HOST, NAS_PORT, API_USER, API_PASS
 
 # Load env vars into shell — no inline comments in .env or this will fail
-export $(grep -v '^#' .env | xargs)
+export $(grep -v '^#' .env | grep -v '^$' | sed 's/[[:space:]]*#.*//' | xargs)
 
 pytest tests/integration/ -v
 # Expected: 51 passed, ~96s
@@ -172,7 +172,7 @@ cp .env.example .env
 # Edit .env — use VS Code editor or: nano .env
 # Fill in: NAS_HOST, NAS_PORT, API_USER, API_PASS
 
-export $(grep -v '^#' .env | xargs)
+export $(grep -v '^#' .env | grep -v '^$' | sed 's/[[:space:]]*#.*//' | xargs)
 pytest tests/integration/ -v
 # Expected: 51 passed, ~96s
 ```
@@ -297,7 +297,7 @@ notepad .env   # or your editor — fill in NAS_HOST, NAS_PORT, API_USER, API_PA
 
 ```bash
 # Export env vars from file, then run
-export $(grep -v '^#' .env | xargs)
+export $(grep -v '^#' .env | grep -v '^$' | sed 's/[[:space:]]*#.*//' | xargs)
 pytest tests/integration/ -v
 # Expected: 51 passed, ~96s
 ```

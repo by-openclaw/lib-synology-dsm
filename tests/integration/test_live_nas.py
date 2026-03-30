@@ -104,6 +104,32 @@ class TestAuth:
         assert cli._sid is not None
         cli.logout()
 
+    def test_wrong_password_raises_auth_error(self) -> None:
+        """Wrong password must raise DSMAuthError (error 400).
+
+        Synology DSM logs the failed attempt in Security → Login activity.
+        This confirms the error is surfaced correctly — not swallowed.
+        """
+        from synology_dsm import DSMClient
+        from synology_dsm.exceptions import DSMAuthError
+
+        cli = DSMClient(NAS_HOST, port=NAS_PORT, verify_ssl=False)
+        with pytest.raises(DSMAuthError, match="400|Login failed|Invalid password"):
+            cli.login(ADMIN_USER, "definitely-wrong-password-rune-test")
+
+    def test_wrong_user_raises_auth_error(self) -> None:
+        """Non-existent user must raise DSMAuthError (error 400).
+
+        Synology DSM logs the failed attempt in Security → Login activity.
+        This confirms the error is surfaced correctly — not swallowed.
+        """
+        from synology_dsm import DSMClient
+        from synology_dsm.exceptions import DSMAuthError
+
+        cli = DSMClient(NAS_HOST, port=NAS_PORT, verify_ssl=False)
+        with pytest.raises(DSMAuthError, match="400|Login failed|No such account"):
+            cli.login("rune-nonexistent-user-xyzzy", "some-password")
+
 
 # ── UserManager ───────────────────────────────────────────────────────────────
 

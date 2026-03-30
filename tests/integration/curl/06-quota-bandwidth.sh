@@ -104,6 +104,22 @@ UP=$(echo "$R" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.ge
 DN=$(echo "$R" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('download_limit','?'))" 2>/dev/null || echo "?")
 step "$OK" "SYNO.Core.BandwidthControl get (user)" "up=${UP} KB/s  down=${DN} KB/s"
 
+# ── Bandwidth write ───────────────────────────────────────────────────────────
+echo ""
+echo "  ── Bandwidth write (set + restore) ────────────────────────"
+
+# Step 5: set a limit for API_USER on FileStation
+echo ""
+echo "  Step 5 — BandwidthControl.Protocol set (user: ${API_USER}, FileStation enabled)"
+SET=$(api "api=SYNO.Core.BandwidthControl.Protocol&version=1&method=set&owner_type=local_user&owner=${API_USER}&protocol=FileStation&policy=enabled&upload_limit_1=500&download_limit_1=5000")
+check "set_user FileStation enabled" "$SET"
+
+# Step 6: restore to disabled
+echo ""
+echo "  Step 6 — BandwidthControl.Protocol set (user: ${API_USER}, FileStation restore disabled)"
+RESTORE=$(api "api=SYNO.Core.BandwidthControl.Protocol&version=1&method=set&owner_type=local_user&owner=${API_USER}&protocol=FileStation&policy=disabled&upload_limit_1=0&download_limit_1=0")
+check "set_user FileStation restore disabled" "$RESTORE"
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "  ────────────────────────────────────────"

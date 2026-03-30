@@ -1,293 +1,166 @@
 # lib-synology-dsm — Refactoring Clarification & Prioritization
 
 > **Date:** 2026-03-30
-> **Status:** Working document — decisions and priorities to be confirmed
+> **Last updated:** 2026-03-30 04:14 UTC
+> **Status:** All decisions confirmed — implementation in progress (subagent running)
 > **Context:** This library is a nano-component of the BY-SYSTEMS PoC platform.
 > It must be production-grade before the Ansible collection and orchestration layers can be built on top of it.
+> For current state, manager status, and hard rules — see `CLAUDE.md`.
 
 ---
 
-## 1. Library Layers
+## 1. Gaps & Decisions
 
-### 1.1 curl-native lib
-**Current state:** `tests/integration/curl/` — a set of shell scripts that call `curl` directly against the DSM API. These are smoke tests, not a reusable library.
+### 1.1 curl/bash scripts
+Shell scripts in `tests/integration/curl/` are smoke tests, not a reusable library.
 
-**Clarification needed:**
-- 1.1.a Is the intent to ship a standalone `curl`/bash library (importable shell functions) alongside the Python lib, or are the current scripts sufficient as reference/smoke?
-- 1.1.b If a bash lib is desired: scope = auth + CRUD operations only, no ensure/idempotent (that belongs in Python). Naming: `lib-synology-dsm-sh` or a `shell/` subfolder in this repo?
+**Decision:** Keep as smoke tests. Purpose: validate payloads against the DSM API before developing new Python commands. No standalone bash lib.
 
-**Current position:** shell scripts exist as integration smoke tests only. No standalone bash lib yet.
+### 1.2 Python lib — incomplete modules
+3 modules exist as read-only stubs with no `ensure()`:
 
----
+| Module | Status |
+|---|---|
+| `quota.py` | Read-only stub — no manager class |
+| `storage.py` | Read-only stub — no manager class |
+| `bandwidth.py` | Read-only stub — no manager class |
 
-### 1.2 Python lib
-**Current state:** `src/synology_dsm/` — managers for Share, User, Group, NFS, FileStation, Storage, Quota, Bandwidth. urllib-only, no external HTTP deps.
+**Decision:** These need `ensure()` — Ansible playbooks will CRUD quota/storage/bandwidth. The Python lib must support the ensure pattern so Ansible modules can wrap them. Gap to fill before v1.0.
 
-**Clarification needed:**
-- 1.2.a Is the scope of the Python lib frozen at DSM API v6/v7 (current), or will DSM API v8+ / QuickConnect be added?
-- 1.2.b `quota.py`, `storage.py`, `bandwidth.py` exist as modules but have no manager class — they are read-only API wrappers. No `ensure()`. Is that by design (read-only) or a gap?
+### 1.3 `FileStation.upload()` return dict inconsistency
+Returns `{"skipped": bool}` instead of `{"changed": bool, "action": str}`. All other managers use the latter. **Must be normalized for v1.0.**
 
-**Current position:** 5 managers have full ensure/dry_run. 3 modules (quota, storage, bandwidth) are read-only stubs.
+### 1.4 Return dict audit
+Some managers use `changed`, others use `action` inconsistently. All manager methods must return `{"changed": bool, "action": str}`. **Needs full audit.**
 
----
+### 1.5 Timeout & streaming
+- Single `timeout=30` hardcoded in `client.py:69` — no per-operation, no configurable, no retry.
+- `FileStationManager.upload()` reads entire file into memory before sending.
+- **This needs its own ADR/issue** — too detailed for this doc. Key point: it's a v1.0 blocker.
 
-### 1.3 Ansible collection
-**Current state:** `docs/ansible-roadmap.md` — planned only. No code exists.
-
-**Current ensure/present/absent/dry_run status:**
-
-| Manager | `ensure()` | `present`/`absent` | `dry_run` | Notes |
-|---|---|---|---|---|
-| `ShareManager` | ✅ | ✅ | ✅ | Full |
-| `UserManager` | ✅ | ✅ | ✅ | Full |
-| `GroupManager` | ✅ | ✅ | ✅ | Full |
-| `NFSManager` | ✅ | ✅ | ✅ | Full |
-| `FileStationManager` | ✅ | n/a | ✅ | File ops, no present/absent concept |
-| `StorageManager` | ❌ | ❌ | ❌ | Read-only — no write API |
-| `QuotaManager` | ❌ | ❌ | ❌ | Read-only stub |
-| `BandwidthManager` | ❌ | ❌ | ❌ | Read-only stub |
-
-**Clarification needed:**
-- 1.3.a Ansible collection belongs in a separate repo (`ansible-collection-synology-dsm`) — confirm?
-- 1.3.b Blocker: lib must reach v1.0.0 (stable API) before Ansible module wrapping makes sense. Current: v0.9.x (pre-stable). What defines v1.0.0? (see section 8 on SoC)
-- 1.3.c Molecule for Ansible testing — defer to post-v1.0.0.
+### 1.6 `DSMClient` separation of concerns
+`DSMClient` handles both auth session management AND HTTP transport. Should be split into `DSMSession` + `DSMTransport`. Not urgent pre-v1.0, but noted.
 
 ---
 
-## 2. Diagrams
+## 2. Repo Hygiene
 
-### 2.1 Architecture diagram — internal lib structure
-**Current state:** `assets/diagrams/lib-architecture.puml` exists. `assets/exports/lib-architecture.png` rendered.
+### 2.1 Committed build artifacts — remove + gitignore
+- `.mypy_cache/` (also contains stale httpx stubs from pre-v0.7.2)
+- `htmlcov/`, `coverage.xml`, `.coverage`
+- Possibly `.venv/` — verify if tracked
 
-**Gap:** Diagram was last updated at v0.7.x — `quota.py`, `storage.py`, `bandwidth.py` not reflected. `FileStationManager` partial.
+### 2.2 Scripts location
+`tests/integration/curl/` mixes reference scripts with test infra. Should reusable scripts live in `scripts/`?
 
-**Clarification needed:**
-- 2.1.a Confirm: ASCII version wanted for README, PlantUML source + PNG in `assets/`?
-- 2.1.b Should the diagram show the class hierarchy only, or also data flow (request → DSMClient → API → response → ensure())?
+### 2.3 LICENSE
+- Add individual author: `Copyright (c) 2026 BY-SYSTEMS — Youssef Boujraf`
+- Add SPDX headers (`# SPDX-License-Identifier: MIT`) to all `.py` source files
 
-**Action:** Regenerate both ASCII + PlantUML to reflect current v0.9.x state. Post PNG to `#bot-openclaw`.
+### 2.4 Documentation cleanup
+- `docs/api-reference.md` — keep as per-repo reference. Separation of concerns: each repo owns its own docs, accessible to anyone with repo access. A global doc risks access gaps.
+- `docs/audits/` — archive to `docs/archive/` before release. Do not delete — historical audit records (6 files: overview, git workflow, security, python skeleton, src/docs/tests, PEP compliance). Move when v1.0 ships.
+- `CONTRIBUTING.md` missing: how to run nox for local CI parity
+- `docs/devcontainer-platform-tests.md` — verify still relevant
 
----
-
-### 2.2 Context diagram — lib ↔ NAS Synology
-**Current state:** Does not exist.
-
-**Clarification needed:**
-- 2.2.a Scope: lib ↔ DSM API only, or also lib ↔ Ansible ↔ NAS (full orchestration context)?
-- 2.2.b Show: caller (Python script / Ansible), lib layers (DSMClient, managers), DSM API endpoints, NAS (DSM, volumes, FileStation)?
-
-**Action:** Create both — context diagram at system level (lib ↔ NAS) + a zoomed view showing the layering inside the lib.
-
----
-
-## 3. Review & Refactor
-
-### 3.1 Folder skeleton
-**Current state:**
-```
-src/synology_dsm/     ← Python lib source
-tests/unit/           ← unit tests
-tests/integration/    ← Python integration tests
-tests/integration/curl/ ← bash smoke tests
-docs/                 ← ADRs, roadmap, audits, references
-assets/               ← diagrams
-.devcontainer/        ← dev container
-.github/              ← CI/CD workflows, templates
-```
-
-**Gaps identified:**
-- 3.1.a `.venv/` is committed (should be in `.gitignore`) — check if it's tracked or just present locally.
-- 3.1.b `htmlcov/`, `coverage.xml`, `.coverage` committed — should be gitignored, generated by CI only.
-- 3.1.c `.mypy_cache/` committed — should be gitignored.
-- 3.1.d No `scripts/` folder — `tests/integration/curl/` mixes bash reference scripts with test infrastructure. Should these live in `scripts/` (reusable) vs `tests/integration/curl/` (test-only)?
-- 3.1.e Future language support (Go, etc.) — `src/synology_dsm/` is Python-specific. If multi-language is planned, top-level should be `python/`, `go/`, etc. **Clarification needed: is multi-language in scope for this repo, or will other languages be separate repos?**
+### 2.5 AI agent files
+`AGENTS.md` and `CLAUDE.md` need audit to reflect v0.9.x state. No other agent files needed at this time.
 
 ---
 
-### 3.2 Documentation
-**Current state:** `docs/` is dense — 15+ files, many overlapping (audits, references, summaries, API versions).
+## 3. Diagrams
 
-**Gaps identified:**
-- 3.2.a `README.md` is the entry point — it covers install, usage, credentials. Currently good.
-- 3.2.b `docs/api-reference.md` exists but duplicates docstrings. Rule: **no inline source doc in `docs/`** — API reference lives in code (docstrings), not duplicated in markdown.
-- 3.2.c Security doc (`docs/hardening.md`, `SECURITY.md`) — good. Keep.
-- 3.2.d `docs/audits/` — historical snapshots. Should these be archived or deleted post-refactor?
-- 3.2.e CONTRIBUTING.md covers unit + integration. Missing: how to run nox (multi-python CI parity locally).
-- 3.2.f `docs/devcontainer-platform-tests.md` — stale? Verify still relevant.
+### 3.1 Architecture diagram
+`assets/diagrams/lib-architecture.puml` is stale (v0.7.x). Missing: quota, storage, bandwidth modules. FileStation partial.
 
-**Clarification needed:**
-- 3.2.g Keep `docs/api-reference.md` or remove (rely on docstrings + auto-gen)?
-- 3.2.h Archive `docs/audits/` after refactor is done?
+**Action:** Regenerate to reflect v0.9.x. ASCII for README, PlantUML + PNG in `assets/`.
 
----
+**Decision needed:** Class hierarchy only, or also data flow (request → DSMClient → API → response → ensure())?
 
-### 3.3 License
-**Current state:** `LICENSE` — MIT, `Copyright (c) 2026 BY-SYSTEMS`. `docs/licenses.md` — dep inventory.
+### 3.2 Context diagram (new)
+Does not exist yet.
 
-**Gaps identified:**
-- 3.3.a **Author missing** — LICENSE has `BY-SYSTEMS` as entity but no individual author. Add: `Copyright (c) 2026 BY-SYSTEMS — Yassine Boujraf`.
-- 3.3.b **No link to repo in LICENSE** — standard practice to include the repo URL in the license header.
-- 3.3.c **No SPDX identifier in source files** — each `.py` file should have `# SPDX-License-Identifier: MIT` at top.
-- 3.3.d **No license conflict** — all deps (stdlib urllib, pytest, ruff, mypy) are MIT/BSD/Apache-compatible. `docs/licenses.md` confirms this. No conflict.
-- 3.3.e **README badge** — `[![License: MIT](...)](LICENSE)` links to local file, not to OSI. Acceptable for private repo.
-
-**Action:** Update LICENSE author line + add SPDX headers to all `.py` source files.
+**Decision needed:** Scope = lib ↔ DSM API only, or full orchestration context (lib ↔ Ansible ↔ NAS)?
 
 ---
 
-## 4. AI Agent Files
+## 4. Project Management
 
-### 4.1 Agent context files
-**Current state:** `AGENTS.md`, `CLAUDE.md` exist at repo root. No `SOUL.md`, no per-agent ADR.
+### 4.1 RAID
+**Decision:** Per-repo. Separation of concerns — each repo should have its own RAID visible to those with repo access. A centralized RAID in `doc-platform-core` risks access gaps (not everyone has access to that repo) and mixes concerns across components.
 
-**Gaps identified:**
-- 4.1.a `AGENTS.md` — exists, covers repo purpose for AI agents. **Review: is it current post-v0.9.x?**
-- 4.1.b `CLAUDE.md` — Claude-specific context. **Review: does it reflect current architecture (urllib, managers, ensure pattern)?**
-- 4.1.c No Codex / Gemini agent files — needed only if those agents will work on this repo. Add when relevant.
-- 4.1.d ADR for AI agent conventions — not needed at lib level. This belongs in `doc-platform-core`.
-- 4.1.e `SOUL.md` — not appropriate at repo level. That is workspace-level identity, not repo-level.
-
-**Action:** Audit + update `AGENTS.md` and `CLAUDE.md` to reflect v0.9.x state. Remove stale sections.
+### 4.2 Issue automation gaps
+- Conventional commit footers (`Closes #N`) not used consistently — enforce in CONTRIBUTING.md + PR template
+- No label enforcement on issues — add `.github/labels.yml` + labeler action
+- GitHub Projects board not auto-populated — add `actions/add-to-project` workflow
+- Issue templates missing pre-filled `label` field
 
 ---
 
-## 5. Project Management
-
-### 5.1 RAID.md
-**Current state:** No `RAID.md` in this repo. RAID is tracked in `doc-platform-core/docs/raid.md`.
-
-**Clarification needed:**
-- 5.1.a Keep RAID centralized in `doc-platform-core` (current approach) or add a `RAID.md` per repo for repo-scoped risks?
-- 5.1.b **Recommended:** keep centralized. Per-repo RAID creates drift. Reference issues with `[LIB-xxx]` prefix.
-
----
-
-### 5.2 Automated issue management
-**Current state:** Issues are created manually. No auto-close on commit. No label enforcement.
-
-**Gaps identified:**
-- 5.2.a **Closing issues via commit** — conventional commit footers: `Closes #N` or `Fixes #N` auto-close on merge. Not used consistently. **Action: enforce in CONTRIBUTING.md + PR template.**
-- 5.2.b **Label enforcement** — no label protection. Issues can be opened without labels. **Action: add `.github/labels.yml` + `labeler` action or enforce via PR template checklist.**
-- 5.2.c **Project board sync** — GitHub Projects board (`by-openclaw/projects/1`) must be auto-populated. **Action: add `actions/add-to-project` workflow triggered on issue creation.**
-- 5.2.d **Issue template** — `bug_report.md` and `feature_request.md` exist. Missing: `label` field pre-filled in templates.
-
----
-
-## 6. Naming Conventions
-
-**Current state:** Mixed — some files use kebab-case, some snake_case.
-
-**Gaps identified:**
-- 6.1 Python source files: `snake_case` — ✅ correct (PEP 8)
-- 6.2 Test files: `test_<module>.py` — ✅ correct
-- 6.3 Bash scripts: `kebab-case.sh` — ✅ correct (Unix convention)
-- 6.4 Doc files: `kebab-case.md` — ✅ correct
-- 6.5 ADR files: `0001-title.md` — ✅ correct (MADR convention)
-- 6.6 Classes: `PascalCase` — ✅ correct (PEP 8)
-- 6.7 Constants: `UPPER_SNAKE_CASE` — not consistently applied. Example: `DEFAULT_TIMEOUT` missing, magic numbers used inline.
-- 6.8 Module-level dunders: `__version__`, `__all__` — ✅ correct, no type annotations on dunders (lesson learned).
-- 6.9 Return dict keys: mixed — some use `changed`, some use `action`. **Needs audit: all manager methods must return `{"changed": bool, "action": str}` consistently.**
-
----
-
-## 7. PEP Standards
-
-**Current state:** ruff + mypy enforced in CI. Pre-commit hooks active.
-
-**Known violations / risks:**
-- 7.1 **PEP 8** — ruff clean. ✅
-- 7.2 **PEP 257** — docstrings: partially applied. Not all private methods have docstrings. Rule: public API = mandatory, private = optional.
-- 7.3 **PEP 484 / 526** — type hints: all public API has hints. ✅ Lesson: no type annotations on module-level dunders (`__version__`, `__all__`) — breaks tooling (see v0.9.2 incident).
-- 7.4 **PEP 517/518** — `pyproject.toml` as build system. ✅
-- 7.5 **PEP 561** — `py.typed` marker present. ✅
-- 7.6 **PEP 440** — version format `MAJOR.MINOR.PATCH`. ✅
-- 7.7 **Implicit string concat** — ruff catches this. ✅
-- 7.8 **Magic numbers** — timeout hardcoded as `30` in `client.py:69`. Should be `DEFAULT_TIMEOUT = 30` at module level. (**see section 9**)
-
----
-
-## 8. Separation of Concerns, Idempotency, Multi-OS, Dependencies
-
-### 8.1 Separation of concerns
-**Current state:** Reasonable. Each manager handles one DSM resource type.
-
-**Gaps:**
-- 8.1.a `DSMClient` handles both auth session management AND HTTP transport. These should be separable — `DSMSession` (auth lifecycle) + `DSMTransport` (urllib wrapper). Not urgent pre-v1.0, but noted.
-- 8.1.b `credentials.py` mixes credential storage and provider selection. Clean for now given 3 providers.
-
-### 8.2 Idempotency
-**Current state:** `ensure()` pattern on all 5 write managers. All return `{"changed": bool, "action": str}`.
-
-**Gaps:**
-- 8.2.a `FileStationManager.upload()` returns `{"skipped": bool}` — inconsistent with `{"changed": bool, "action": str}`. **Must be normalized.**
-- 8.2.b `ensure()` methods do not validate that the post-operation state matches intent (no read-back verify). Acceptable for now.
-
-### 8.3 Multi-OS
-**Current state:** stdlib urllib only. No OS-specific code. Dev container tested on Win11 + macOS + Linux.
-
-**No gaps** — stdlib is inherently multi-OS.
-
-### 8.4 Dependencies — minimal
-**Current state:** Zero runtime deps. Only stdlib. ✅ (httpx removed in v0.7.2)
-
-**Dev deps:** pytest, ruff, mypy, python-dotenv, pytest-cov, bandit, nox. All necessary.
-
-**Risk:** `.mypy_cache/` contains httpx/anyio/h11 stubs — leftover from before httpx removal. These are cached type data, not runtime deps, but indicate the cache was not cleared post-migration. **Action: add `.mypy_cache/` to `.gitignore` and remove tracked files.**
-
----
-
-## 9. Performance & Timeout Management
-
-**Current state:** Single `timeout=30` hardcoded in `client.py:69`. All requests share this value.
-
-**Gaps:**
-- 9.1 **No per-operation timeout** — a `list_shares()` and an `upload_1GB_file()` both use `timeout=30`. Upload will always time out on large files.
-- 9.2 **No configurable timeout at DSMClient init** — caller cannot tune.
-- 9.3 **No retry logic** — transient 503s from DSM (common under load) cause immediate exception. No exponential backoff.
-- 9.4 **No connection timeout vs read timeout distinction** — urllib allows `socket.setdefaulttimeout()` or per-request via `timeout` param (total only). Fine-grained control requires custom opener.
-- 9.5 **upload/download streaming** — `FileStationManager.upload()` reads file into memory before sending (`f.read()`). For large files in automation/orchestration this is a memory killer.
-
-**Recommended fix for v1.0.0:**
-```python
-DEFAULT_CONNECT_TIMEOUT = 10   # seconds — connection establishment
-DEFAULT_READ_TIMEOUT = 30      # seconds — response read
-DEFAULT_UPLOAD_TIMEOUT = 300   # seconds — file upload operations
-```
-Pass timeout as kwarg to each manager method, with per-operation defaults.
-Streaming upload via chunked multipart (no full file read into memory).
-
----
-
-## Priority Matrix
+## 5. Priority Matrix
 
 | # | Topic | Priority | Effort | Blocker for v1.0? |
 |---|---|---|---|---|
-| 9 | Timeout + streaming upload | 🔴 HIGH | Medium | YES |
-| 8.2a | `FileStation.upload()` return dict normalization | 🔴 HIGH | Low | YES |
-| 3.1.b/c | Remove committed build artifacts (htmlcov, .mypy_cache, coverage.xml) | 🔴 HIGH | Low | YES |
-| 3.3 | LICENSE author + SPDX headers | 🟠 MEDIUM | Low | NO |
-| 6.9 | Return dict audit — all managers consistent | 🔴 HIGH | Low | YES |
-| 2.1 | Regenerate architecture diagram | 🟠 MEDIUM | Low | NO |
-| 2.2 | Context diagram (new) | 🟠 MEDIUM | Low | NO |
-| 5.2 | Auto-close issues on commit + label enforcement | 🟠 MEDIUM | Medium | NO |
-| 4.1 | Update AGENTS.md + CLAUDE.md | 🟡 LOW | Low | NO |
-| 1.3 | Ansible collection | 🟡 LOW | HIGH | NO (post v1.0) |
-| 1.1 | curl/bash library | 🟡 LOW | Medium | NO |
-| 3.2g | Remove/archive docs/api-reference.md | 🟡 LOW | Low | NO |
+| 1.5 | Timeout + streaming upload | HIGH | Medium | YES |
+| 1.3 | `FileStation.upload()` return dict | HIGH | Low | YES |
+| 2.1 | Remove committed build artifacts | HIGH | Low | YES |
+| 1.4 | Return dict audit — all managers consistent | HIGH | Low | YES |
+| 2.3 | LICENSE author + SPDX headers | MEDIUM | Low | NO |
+| 3.1 | Regenerate architecture diagram | MEDIUM | Low | NO |
+| 3.2 | Context diagram (new) | MEDIUM | Low | NO |
+| 4.2 | Issue automation | MEDIUM | Medium | NO |
+| 1.2 | Quota/storage/bandwidth ensure() | HIGH | Medium | YES |
+| 2.5 | Update AGENTS.md + CLAUDE.md | LOW | Low | NO |
+| — | Ansible collection | LOW | High | NO (post v1.0) |
 
 ---
 
-## Open Questions — Requires My Lord's Decision
+## 6. Decisions Log (confirmed 2026-03-30)
 
-| # | Question | Options |
+| # | Question | Decision |
 |---|---|---|
-| Q1 | Multi-language in this repo or separate repos? | A: separate repos (recommended) / B: monorepo with `python/`, `go/` |
-| Q2 | curl/bash lib: standalone lib or smoke-test-only scripts? | A: standalone (new subfolder) / B: keep as tests only |
-| Q3 | RAID: centralized in doc-platform-core or per-repo? | A: centralized (recommended) / B: per-repo |
-| Q4 | docs/api-reference.md: keep or remove? | A: remove (rely on docstrings) / B: keep as human-readable summary |
-| Q5 | docs/audits/: archive or delete after refactor? | A: archive (move to docs/archive/) / B: delete |
-| Q6 | v1.0.0 definition: what must be true to call this stable? | List of conditions |
+| Q1 | Multi-language in this repo or separate repos? | **Separate repos.** Each lib is language-specific. Python for Ansible/file processing. Go/C++ for real-time. No same lib in multiple languages. |
+| Q2 | curl/bash: standalone lib or smoke tests only? | **Smoke tests only.** Used to validate payloads before developing new Python commands. |
+| Q3 | `docs/api-reference.md`: keep or remove? | **Keep, per-repo.** Separation of concerns — repo-scoped docs accessible to anyone with repo access. |
+| Q4 | `docs/audits/`: archive or delete? | **Archive to `docs/archive/` at release.** Never delete — move when v1.0 ships. |
+| Q5 | What defines v1.0.0? | All priority matrix blockers resolved + audits archived at release. |
+| Q6 | Quota/storage/bandwidth: read-only or needs ensure()? | **Needs ensure().** Ansible playbooks will CRUD these — Python lib must support the pattern. |
 
 ---
 
-*Next step: review this doc, answer open questions, then create GitHub issues for each prioritized item.*
+---
+
+## 7. Decision Log — Clarification Round 2 (2026-03-30 04:00–04:14 UTC)
+
+| # | Topic | Decision | Decided by | Time |
+|---|---|---|---|---|
+| D-01 | storage.py ensure() semantics | Read-assert pattern. `state=present` → volume found = return info, not found = raise `DSMResourceNotFoundError`. `state=absent` → reports state, no write (API limitation). `dry_run` param kept for API consistency. | yboujraf | 04:11 UTC |
+| D-02 | curl/bash scripts location | Keep in `tests/integration/curl/` — smoke tests only, not a reusable lib | yboujraf | 04:11 UTC |
+| D-03 | Architecture diagram scope (3.1) | Full: class hierarchy + data flow + exception tree. PlantUML → Kroki → PNG in `assets/exports/` | yboujraf | 04:11 UTC |
+| D-04 | Context diagram scope (3.2) | Full context: lib ↔ NAS ↔ Vault ↔ callers. Ansible collection shown as future/dashed. Same render pipeline. | yboujraf | 04:11 UTC |
+| D-05 | storage.py — quota/bandwidth ensure() | `QuotaManager.ensure()` + `BandwidthManager.ensure()` = v1.0 blocker. `StorageManager` = read-only by design (no DSM write API for volumes). | yboujraf | 04:06 UTC |
+
+---
+
+## 8. Implementation Progress (live tracking)
+
+> Updated by Rune as work completes. Team: check this section for current status.
+
+| Task | Description | Status | Completed |
+|---|---|---|---|
+| A | `StorageManager.ensure()` read-assert + 5 unit tests | 🔄 In progress | — |
+| B | Architecture diagram rewrite (lib-architecture.puml + PNG) | 🔄 In progress | — |
+| C | Context diagram (lib-context.puml + PNG) — new | 🔄 In progress | — |
+| D | Repo hygiene: remove .mypy_cache/, htmlcov/, coverage.xml from git | 🔄 In progress | — |
+| E | Single commit + push | ⏳ Pending A–D | — |
+| F | GitHub issues creation for all priority matrix items | ⏳ Pending E | — |
+| G | RAID.md creation (per-repo, D-05 confirmed) | ⏳ Pending E | — |
+| H | Update AGENTS.md + CLAUDE.md to v0.9.x state | ⏳ Backlog | — |
+| I | LICENSE: add author + SPDX headers to all .py files | ⏳ Backlog | — |
+| J | `QuotaManager.ensure()` + `BandwidthManager.ensure()` | ⏳ Backlog (v1.0 blocker) | — |
+| K | Timeout: per-operation defaults + streaming upload | ⏳ Backlog (v1.0 blocker) | — |
+| L | Return dict audit — all managers consistent | ⏳ Backlog (v1.0 blocker) | — |
+
+---
+
+*This file is the team's live working doc. Rune updates section 8 as tasks complete. Do not commit until explicitly requested.*

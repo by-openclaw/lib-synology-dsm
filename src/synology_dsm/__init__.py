@@ -15,6 +15,7 @@ from .exceptions import (
     DSMError,
     DSMNotFoundError,
     DSMPermissionError,
+    DSMResourceNotFoundError,
     DSMSessionError,
 )
 from .filestation import FileStationManager
@@ -34,6 +35,7 @@ __all__ = [
     "DSMError",
     "DSMNotFoundError",
     "DSMPermissionError",
+    "DSMResourceNotFoundError",
     "DSMSessionError",
     "EnvCredentialProvider",
     "BandwidthManager",

@@ -1,5 +1,8 @@
 """Unit tests — StorageManager."""
 
+import pytest
+
+from synology_dsm.exceptions import DSMResourceNotFoundError
 from synology_dsm.storage import StorageManager
 
 
@@ -110,3 +113,50 @@ class TestGetVolume:
         vol = mgr.get_volume("/volume2")
         assert vol is not None
         assert vol["device_type"] == "shr"
+
+
+class TestEnsure:
+    def test_ensure_present_volume_found(self, mock_client):
+        """state=present + volume exists → returns result dict with volume."""
+        mock_client.request.return_value = {"volumes": [_VOLUME_1]}
+        mgr = _mgr(mock_client)
+        result = mgr.ensure("/volume1", state="present")
+        assert result["changed"] is False
+        assert result["action"] == "none"
+        assert result["volume"] is not None
+        assert result["volume"]["id"] == "/volume1"
+
+    def test_ensure_present_volume_not_found(self, mock_client):
+        """state=present + volume missing → raises DSMResourceNotFoundError."""
+        mock_client.request.return_value = {"volumes": []}
+        mgr = _mgr(mock_client)
+        with pytest.raises(DSMResourceNotFoundError, match=r"/volume99"):
+            mgr.ensure("/volume99", state="present")
+
+    def test_ensure_absent_volume_found(self, mock_client):
+        """state=absent + volume exists → returns result dict (no removal — API limitation)."""
+        mock_client.request.return_value = {"volumes": [_VOLUME_1]}
+        mgr = _mgr(mock_client)
+        result = mgr.ensure("/volume1", state="absent")
+        assert result["changed"] is False
+        assert result["action"] == "none"
+        assert result["volume"] is not None
+        assert result["volume"]["id"] == "/volume1"
+
+    def test_ensure_absent_volume_not_found(self, mock_client):
+        """state=absent + volume missing → returns result dict with volume=None."""
+        mock_client.request.return_value = {"volumes": []}
+        mgr = _mgr(mock_client)
+        result = mgr.ensure("/volume99", state="absent")
+        assert result == {"changed": False, "action": "none", "volume": None}
+
+    def test_ensure_dry_run(self, mock_client):
+        """dry_run=True behaves identically — no writes to stub."""
+        mock_client.request.return_value = {"volumes": [_VOLUME_1]}
+        mgr = _mgr(mock_client)
+        result = mgr.ensure("/volume1", state="present", dry_run=True)
+        assert result["changed"] is False
+        assert result["action"] == "none"
+        assert result["volume"]["id"] == "/volume1"
+        # Only one API call made (list_volumes) — no mutation calls
+        mock_client.request.assert_called_once()

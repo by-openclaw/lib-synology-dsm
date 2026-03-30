@@ -1,0 +1,100 @@
+@startuml lib-synology-dsm Context
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
+skinparam componentBackgroundColor #DDEEFF
+skinparam databaseBackgroundColor #E8FFE8
+skinparam actorBackgroundColor #FFF8DC
+skinparam noteBackgroundColor #FFFFF0
+skinparam noteBorderColor #AAAAAA
+skinparam arrowColor #444444
+skinparam packageBackgroundColor #F8F8FF
+skinparam packageBorderColor #AAAAAA
+
+title lib-synology-dsm — System Context (C4-style)
+
+' ─────────────────────────────────────────────
+' EXTERNAL ACTORS
+' ─────────────────────────────────────────────
+actor "DevOps Engineer" as devops
+actor "Python Script" as script
+actor "Ansible Playbook" as ansible
+actor "CI/CD Pipeline" as cicd
+
+' ─────────────────────────────────────────────
+' SYSTEM IN FOCUS
+' ─────────────────────────────────────────────
+package "lib-synology-dsm" as lib #E8EEFF {
+  component [DSMClient\n+ Managers\n+ ensure() pattern] as core
+  component [get_credentials()\nEnvCredentialProvider\nVaultCredentialProvider] as creds
+  core --> creds : uses
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+database "Synology NAS\nDSM 7.x" as nas {
+  component [DSM REST API\nHTTPS :5001\n/webapi/entry.cgi] as dsm_api
+}
+
+database "HashiCorp Vault\n(optional)" as vault {
+  component [KV-v2 Secret Engine\nkv/synology/*] as vault_kv
+}
+
+component [".env file\n(local)" ] as dotenv
+
+' ─────────────────────────────────────────────
+' FUTURE CONSUMER (dashed)
+' ─────────────────────────────────────────────
+package "Future" as future #FFF8F0 {
+  component [Ansible Collection\nby_systems.synology\n(planned)] as ans_coll
+}
+
+' ─────────────────────────────────────────────
+' FLOWS — ACTORS TO LIB
+' ─────────────────────────────────────────────
+devops --> core : Python API\nmanager.ensure(...)\nreturns {changed, action}
+script --> core : import synology_dsm\nDSMClient + Managers
+ansible --> core : Python import\nvia Ansible module
+cicd --> core : pytest / smoke tests\nsource .venv/bin/activate
+
+' ─────────────────────────────────────────────
+' FLOWS — LIB TO EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+core --> dsm_api : HTTPS POST\napi=SYNO.*\nmethod=list|create|delete\nreturns JSON {success, data}
+
+creds --> vault_kv : HTTPS\nvault read kv/synology/*\nreturns host/port/user/pass
+creds --> dotenv : reads SYNOLOGY_*\nenv vars from .env file
+
+' ─────────────────────────────────────────────
+' FUTURE FLOW (dashed)
+' ─────────────────────────────────────────────
+ans_coll ..> core : depends on lib-synology-dsm\n(pip install)
+ansible ..> ans_coll : uses collection\n(future)
+
+' ─────────────────────────────────────────────
+' NOTES
+' ─────────────────────────────────────────────
+note right of vault_kv
+  Optional: only used when
+  VAULT_ADDR is set.
+  Falls back to .env if Vault
+  is unreachable.
+end note
+
+note right of dsm_api
+  All API calls use:
+  SID (session token)
+  SynoToken (CSRF)
+  Obtained via login()
+  at DSMClient init.
+end note
+
+note bottom of ans_coll
+  Not yet implemented.
+  Planned as separate repo:
+  by-systems/ansible-collection-synology
+end note
+
+@enduml

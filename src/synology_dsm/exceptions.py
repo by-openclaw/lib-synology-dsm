@@ -51,6 +51,19 @@ class DSMAPIError(DSMError):
     pass
 
 
+class DSMResourceNotFoundError(DSMError):
+    """A requested resource was not found.
+
+    Raised by ``ensure()`` methods when ``state="present"`` and the resource
+    does not exist on the NAS (e.g. a volume path that is not provisioned).
+
+    Attributes:
+        code: Always None (logical not-found, not a DSM API error code).
+    """
+
+    pass
+
+
 class DSMConnectionError(DSMError):
     """Network-level failure — cannot reach the NAS (connection refused, timeout, DNS failure).
 

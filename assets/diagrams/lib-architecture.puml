@@ -1,84 +1,199 @@
 @startuml lib-synology-dsm Architecture
 !theme plain
 skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
-skinparam defaultFontSize 12
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam classFontStyle bold
+skinparam noteBackgroundColor #FFFFF0
+skinparam noteBorderColor #AAAAAA
+skinparam packageBackgroundColor #F8F8FF
+skinparam packageBorderColor #AAAAAA
 
-title lib-synology-dsm — Component Overview
+title lib-synology-dsm — Full Architecture (Class Hierarchy + Data Flow)
 
-package "Your Code (Ansible / Script)" as consumer {
-  component [Ansible Module\nor Python Script] as script
-}
-
-package "lib-synology-dsm" as lib {
-
-  package "Credentials" {
-    component [get_credentials()] as gc
-    component [EnvCredentialProvider\n(reads SYNOLOGY_* from .env)] as env_prov
-    component [VaultCredentialProvider\n(reads from HashiCorp Vault)] as vault_prov
-    gc --> env_prov : default
-    gc --> vault_prov : if VAULT_ADDR set
+' ─────────────────────────────────────────────
+' EXCEPTION HIERARCHY
+' ─────────────────────────────────────────────
+package "Exception Hierarchy" {
+  class DSMError {
+    +message: str
+    +code: int | None
+  }
+  class DSMAuthError
+  class DSMAPIError
+  class DSMConnectionError
+  class DSMResourceNotFoundError {
+    note: raised by ensure()\nwhen state="present"\nand resource not found
   }
 
-  component [DSMClient\n(HTTP session, login/logout,\nSID + SynoToken)] as client
+  DSMError <|-- DSMAuthError
+  DSMError <|-- DSMAPIError
+  DSMError <|-- DSMConnectionError
+  DSMError <|-- DSMResourceNotFoundError
+}
 
-  package "Managers" {
-    component [UserManager] as users
-    component [GroupManager] as groups
-    component [ShareManager] as shares
-    component [NFSManager] as nfs
-    component [FileStationManager] as fs
-    component [StorageManager] as storage
-    component [QuotaManager] as quota
-    component [BandwidthManager] as bw
-    component [SharePermissionsManager] as perms
+' ─────────────────────────────────────────────
+' CREDENTIALS
+' ─────────────────────────────────────────────
+package "Credentials" {
+  class DSMCredentials {
+    +host: str
+    +port: int
+    +username: str
+    +password: str
+  }
+  class EnvCredentialProvider {
+    +get() : DSMCredentials
+    note: reads SYNOLOGY_HOST\nSYNOLOGY_PORT\nSYNOLOGY_USER\nSYNOLOGY_PASS
+  }
+  class VaultCredentialProvider {
+    +vault_addr: str
+    +secret_path: str
+    +get() : DSMCredentials
+    note: reads from HashiCorp Vault\nKV-v2 secret engine
+  }
+  note "get_credentials(env_file, vault_path)\nReturns DSMCredentials\nFalls back to Env if Vault fails" as N_GC
+
+  EnvCredentialProvider --> DSMCredentials : produces
+  VaultCredentialProvider --> DSMCredentials : produces
+}
+
+' ─────────────────────────────────────────────
+' DSM CLIENT
+' ─────────────────────────────────────────────
+class DSMClient {
+  +host: str
+  +port: int
+  +login() : None
+  +logout() : None
+  +request(api, method, **params) : dict
+  --
+  -_sid: str
+  -_syno_token: str
+}
+
+DSMCredentials --> DSMClient : passed to constructor
+
+' ─────────────────────────────────────────────
+' MANAGERS
+' ─────────────────────────────────────────────
+package "Managers" {
+  class UserManager {
+    +list() : list[dict]
+    +get(username) : dict | None
+    +create(username, password, **kw) : dict
+    +update(username, **kw) : dict
+    +delete(username, dry_run) : dict
+    +ensure(username, state, dry_run) : dict
+  }
+  class GroupManager {
+    +list() : list[dict]
+    +get(name) : dict | None
+    +create(name, **kw) : dict
+    +delete(name, dry_run) : dict
+    +add_member(group, username) : dict
+    +remove_member(group, username) : dict
+    +ensure(name, state, dry_run) : dict
+  }
+  class ShareManager {
+    +list() : list[dict]
+    +get(name) : dict | None
+    +create(name, vol_path, **kw) : dict
+    +update(name, **kw) : dict
+    +delete(name, dry_run) : dict
+    +ensure(name, state, dry_run) : dict
+  }
+  class NFSManager {
+    +list_rules(share) : list[dict]
+    +create_rule(share, client, **kw) : dict
+    +delete_rule(share, rule_id, dry_run) : dict
+    +ensure_rule(share, client, state, dry_run) : dict
+  }
+  class FileStationManager {
+    +list_shares() : list[dict]
+    +list_folder(path) : list[dict]
+    +get_info(path) : dict
+    +create_folder(path, dry_run) : dict
+    +delete(path, dry_run) : dict
+    +ensure_folder(path, state, dry_run) : dict
+  }
+  class StorageManager {
+    +list_volumes(include_cold_storage, location) : list[dict]
+    +get_volume(volume_path) : dict | None
+    +ensure(volume_path, state, dry_run) : dict
+    note: Read-only — volumes are\nhardware-managed.\nensure() is read-assert only.
+  }
+  class QuotaManager {
+    +list(share) : list[dict]
+    +set(share, user, quota_gb, dry_run) : dict
+    +remove(share, user, dry_run) : dict
+    +ensure(share, user, quota_gb, state, dry_run) : dict
+  }
+  class BandwidthManager {
+    +list_rules() : list[dict]
+    +create_rule(**kw) : dict
+    +delete_rule(rule_id, dry_run) : dict
+    +ensure_rule(state, dry_run, **kw) : dict
+  }
+  class SharePermissionsManager {
+    +list(share) : list[dict]
+    +set(share, user, perm, dry_run) : dict
+    +ensure(share, user, perm, state, dry_run) : dict
+  }
+}
+
+DSMClient --> UserManager : injected
+DSMClient --> GroupManager : injected
+DSMClient --> ShareManager : injected
+DSMClient --> NFSManager : injected
+DSMClient --> FileStationManager : injected
+DSMClient --> StorageManager : injected
+DSMClient --> QuotaManager : injected
+DSMClient --> BandwidthManager : injected
+DSMClient --> SharePermissionsManager : injected
+
+' ─────────────────────────────────────────────
+' DATA FLOW NOTE
+' ─────────────────────────────────────────────
+note as N_FLOW
+  **Data Flow**
+  caller
+    → get_credentials()
+    → DSMClient(host, port)
+    → client.login()
+    → Manager(client)
+    → manager.ensure(resource, state, dry_run)
+    → DSM API (HTTPS :5001)
+    ← {"changed": bool, "action": str, ...}
+end note
+
+note as N_DRY
+  **ensure() return pattern**
+  All managers return:
+  {
+    "changed": bool,
+    "action": "none"|"created"|"updated"|"deleted",
+    ...resource-specific fields...
   }
 
-  gc ..> client : returns DSMCredentials\n(host, port, user, pass)
-  client --> users
-  client --> groups
-  client --> shares
-  client --> nfs
-  client --> fs
-  client --> storage
-  client --> quota
-  client --> bw
-  client --> perms
-}
-
-package "Integration Tests\n(tests/integration/)" as itests {
-  component [test_live_nas.py\nreads NAS_HOST / API_USER / API_PASS\nfrom shell environment] as live
-}
-
-package "Unit Tests\n(tests/unit/)" as utests {
-  component [223 tests\nfully mocked — no NAS\nno .env needed] as unit
-}
-
-database "Synology NAS\nDSM API (HTTPS :5001)" as nas
-
-script --> gc : get_credentials()
-script --> client : DSMClient(host, port)
-client --> nas : HTTPS POST /webapi/
-
-live --> client : direct DSMClient(NAS_HOST)
-live --> nas : live calls
-
-utests --> client : mocked urllib
-
-note right of env_prov
-  Used by scripts/Ansible
-  SYNOLOGY_HOST
-  SYNOLOGY_PORT
-  SYNOLOGY_USER
-  SYNOLOGY_PASS
+  dry_run=True → no writes,
+  returns what would change
 end note
 
-note right of live
-  Used by integration tests
-  NAS_HOST
-  NAS_PORT
-  API_USER
-  API_PASS
-end note
+' ─────────────────────────────────────────────
+' TESTS LAYER
+' ─────────────────────────────────────────────
+package "Tests" {
+  class "Unit Tests\n(tests/unit/)" as UnitTests {
+    note: 228 tests\nfully mocked\nno NAS required
+  }
+  class "Integration Tests\n(tests/integration/)" as IntTests {
+    note: live NAS\nreads NAS_HOST / API_USER / API_PASS\nfrom environment
+  }
+}
+
+UnitTests ..> DSMClient : mocked urllib
+IntTests --> DSMClient : live DSMClient(NAS_HOST)
 
 @enduml

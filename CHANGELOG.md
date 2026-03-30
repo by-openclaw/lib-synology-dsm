@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.10.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.3...v0.10.0) (2026-03-30)
+
+
+### Features
+
+* BandwidthManager write ops + TrafficControlManager ([a46908e](https://github.com/by-openclaw/lib-synology-dsm/commit/a46908e0e75ade1ebfa02c181e2b25ee09ecd5ad))
+* **quota:** ensure() + set_user/group_quota with MB-native interface ([7cb58f2](https://github.com/by-openclaw/lib-synology-dsm/commit/7cb58f2b852ab12db046e0dda996d69e8aa70e2b))
+* storage ensure() read-assert pattern + diagrams + repo hygiene ([3bad26d](https://github.com/by-openclaw/lib-synology-dsm/commit/3bad26d13d5a5cba183b6c5b06b87e7f2b8a5dbd))
+
+
+### Bug Fixes
+
+* auto-update version badge in README via release-please extra-files ([2dc0395](https://github.com/by-openclaw/lib-synology-dsm/commit/2dc03958267901b1cd861b5dbde6bffb08df8cf8))
+* ruff import order in test files ([41b0360](https://github.com/by-openclaw/lib-synology-dsm/commit/41b036054c27f0bf2b5f88363bede149fb838288))
+
+
+### Documentation
+
+* add refactoring clarification and prioritization doc (2026-03-30) ([82a843a](https://github.com/by-openclaw/lib-synology-dsm/commit/82a843a985b47ab7538c2312a13ec7f8dd752984))
+* fix version badge — static badge for private repo (shields.io can't read private tags) ([0e6f0f5](https://github.com/by-openclaw/lib-synology-dsm/commit/0e6f0f5161296274dab66d066fca191f52af7e6c))
+
 ## [Unreleased]
 
 ### Features

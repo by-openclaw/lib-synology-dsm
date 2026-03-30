@@ -5,9 +5,11 @@
   // To test against min: change to mcr.microsoft.com/devcontainers/python:3.10
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
+  // remoteUser root: dev container only — avoids all pip permission issues on site-packages.
   // pre-commit install intentionally omitted: .git/hooks is owned by Windows host user,
   // cannot be written from inside the container. Run once from Git Bash on the host.
-  "postCreateCommand": "pip install --user -e '.[dev]'",
+  "remoteUser": "root",
+  "postCreateCommand": "pip install -e '.[dev]'",
 
   "customizations": {
     "vscode": {

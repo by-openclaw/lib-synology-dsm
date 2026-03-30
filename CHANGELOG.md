@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.1...v0.9.2) (2026-03-30)
+
+
+### Bug Fixes
+
+* **devcontainer:** drop root user — use vscode + venv ([187f18d](https://github.com/by-openclaw/lib-synology-dsm/commit/187f18d1cd5569bbda7de10f0a79da96e62a10d3))
+
 ## [0.9.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.0...v0.9.1) (2026-03-30)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.2...v0.9.3) (2026-03-30)
+
+
+### Bug Fixes
+
+* remove type annotation from __version__ so release-please can update it ([c5b9812](https://github.com/by-openclaw/lib-synology-dsm/commit/c5b981207e8034816bdfdb5ad2c4058b50667810))
+
 ## [0.9.2](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.1...v0.9.2) (2026-03-30)
 
 

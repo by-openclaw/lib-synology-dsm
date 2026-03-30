@@ -47,4 +47,4 @@ __all__ = [
     "VaultCredentialProvider",
     "get_credentials",
 ]
-__version__ = "0.9.2"
+__version__ = "0.9.3"

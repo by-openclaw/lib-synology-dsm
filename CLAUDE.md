@@ -17,79 +17,6 @@ Published as a versioned package; consumed as a dependency by platform-setup and
 
 ---
 
-## Key Files
-
-| File | Why |
-|---|---|
-| `README.md` | Install, quickstart, API reference |
-| `synology_dsm/` | Library source |
-| `tests/` | Unit + integration tests |
-| `CHANGELOG.md` | Semantic versioning history |
-
----
-
-## Current State (v0.9.0 — 2026-03-29)
-
-| Component | Status |
-|---|---|
-| DSM auth (v7 + SynoToken) | ✅ working |
-| User CRUD + ensure() | ✅ v0.7.0 |
-| Group CRUD + membership + ensure() | ✅ v0.7.0 |
-| Share CRUD + NFS permissions + ensure() | ✅ v0.7.0 |
-| NFS ensure() per-client rule | ✅ v0.8.0 |
-| FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 |
-| Quota manager | ✅ v0.9.0 |
-| Bandwidth manager (read+write+ensure) | ✅ v0.9.0 |
-| Traffic control manager | ✅ v0.9.0 |
-| Storage manager | ✅ v0.9.0 |
-| DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
-| Exception hierarchy (DSMError → 6 typed exceptions) | ✅ v0.7.3 |
-| dry_run support (all managers) | ✅ v0.7.0 |
-| Unit tests (283 tests, 100% coverage) | ✅ v0.9.0 |
-| CI: ruff + mypy + pytest on Python 3.10/3.11/3.12/3.13 | ✅ CI active |
-| CI: Bandit SAST + pip-audit CVE gate | ✅ 2026-03-29 |
-| Coverage artifacts (htmlcov + coverage.xml, 30-day) | ✅ v0.7.2 |
-| Pre-commit hooks (detect-secrets + ruff) | ✅ v0.7.3 |
-| Dev container (.devcontainer/) | ✅ v0.7.3 |
-| ADR: 3 decisions recorded | ✅ v0.7.3 |
-| LICENSE (MIT) + disclaimer | ✅ v0.7.3 |
-| mypy — 27 open errors (7 files) | ❌ BLOCKING — fix in progress |
-| Ansible collection | ⏸ Phase 2 — see docs/ansible-roadmap.md |
-| Vault AppRole auth | ⏸ Phase 2 — blocked until Vault deployed |
-| Published to GitLab registry | ⏸ Phase 5 — blocked until GitLab CE deployed |
-
-## Open issues (as of 2026-03-29 audit)
-
-| Priority | Issue | Tracking |
-|---|---|---|
-| HIGH | mypy 27 errors — CI red on type check | Fix in progress |
-| HIGH | Two release paths — Release Please + scripts/release.sh | Decision: Release Please canonical, release.sh to be removed |
-| HIGH | verify_ssl=False default — pending TLS strategy decision | Blocked on platform cert/DNS decision |
-| MEDIUM | API reference lags code — missing list_detailed, add/remove_member | Backlog |
-| MEDIUM | README stale — test count + Python 3.13 badge missing | Backlog |
-| MEDIUM | build not in dev deps — wheel/sdist not CI-validated | Backlog |
-
-## Known DSM version bugs
-
-### DSM 7.1.1-42962 Update 9 (DS1513+) — SYNO.Core.Group member_list broken
-- `SYNO.Core.Group member_list` returns error 103 (invalid parameter) for ALL inputs
-- This is a DSM 7.1.x regression — **fixed in DSM 7.2.x**
-- Tracked in: GitHub issue #54 ("Upgrade DSM from 7.1.1 to 7.2.x")
-- Impact: `add_member` / `remove_member` cannot verify idempotency — they apply unconditionally and return `warning` key
-- Write operations (set with members=[]) work correctly — only read is broken
-- Workaround: upgrade DSM to 7.2.x. Until then, operations are correct but not fully idempotent.
-
-## API gotchas (read before touching any FileStation or Core code)
-
-- ALL write ops require `X-SYNO-TOKEN` header — missing it returns 403
-- Share create: must use `shareinfo` JSON object, not flat params
-- Group members: use `SYNO.Core.Group.set` with `members=[]`, NOT `member_set` (error 103)
-- NFS rules: use `SYNO.Core.FileServ.NFS.SharePrivilege.save`, NOT `SYNO.Core.Share.NFS` (error 102)
-- **FileStation upload**: `SynoToken` in URL query string only; session as cookie `id=`; field `path` not `dest_folder_path` — do NOT bypass `FileStationManager`
-- User/Group delete: name must be a JSON array string: `'["name"]'`
-
----
-
 ## ⛔ HARD RULES — Non-negotiable. Read before touching any file.
 
 These are architectural decisions. They are NOT suggestions. Do not override them.
@@ -122,6 +49,9 @@ These are architectural decisions. They are NOT suggestions. Do not override the
 - Never manually edit version strings. Never run `cz bump` if Release Please is active.
 
 ### Definition of Done — nothing ships at 60%
+
+See SOUL.md for the canonical DoD principle. Checklist:
+
 - [ ] All public methods have docstrings
 - [ ] ensure() / idempotent pattern implemented
 - [ ] dry_run=True on all destructive methods
@@ -130,6 +60,94 @@ These are architectural decisions. They are NOT suggestions. Do not override the
 - [ ] ruff clean (zero warnings)
 - [ ] CHANGELOG entry
 - [ ] CLAUDE.md current state table updated
+
+---
+
+## v1.0 Blockers
+
+| Priority | Blocker | Notes |
+|---|---|---|
+| HIGH | FileStation.upload() returns {"skipped": bool} — violates ensure return dict standard | Fix: return {"changed": bool, "action": str} |
+| HIGH | client.py timeout hardcoded at 30s — no per-operation timeout, no streaming upload | Fix: per-op timeout param |
+| HIGH | mypy 27 errors — CI type check failing | Fix in progress |
+| MEDIUM | verify_ssl=False default — pending platform TLS strategy | Blocked on platform cert decision |
+
+See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
+
+---
+
+## Key Files
+
+| File | Why |
+|---|---|
+| `README.md` | Install, quickstart, API reference |
+| `synology_dsm/` | Library source |
+| `tests/` | Unit + integration tests |
+| `CHANGELOG.md` | Semantic versioning history |
+
+---
+
+## Current State (v0.10.0 — 2026-03-30)
+
+| Component | Status |
+|---|---|
+| DSM auth (v7 + SynoToken) | ✅ working |
+| User CRUD + ensure() | ✅ v0.7.0 |
+| Group CRUD + membership + ensure() | ✅ v0.7.0 |
+| Share CRUD + NFS permissions + ensure() | ✅ v0.7.0 |
+| NFS ensure() per-client rule | ✅ v0.8.0 |
+| FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 |
+| Quota manager | ✅ v0.9.0 |
+| Bandwidth manager (read + write + ensure_user/ensure_group) | ✅ v0.9.0 |
+| Traffic control manager | ✅ v0.9.0 |
+| TrafficControlManager (CRUD + ensure_rule) | ✅ v0.9.0 |
+| Storage manager | ✅ v0.9.0 |
+| DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
+| Exception hierarchy (DSMError → 6 typed exceptions) | ✅ v0.7.3 |
+| dry_run support (all managers) | ✅ v0.7.0 |
+| Unit tests (283 passing, 100% coverage) | ✅ v0.9.0 |
+| CI: ruff + mypy + pytest on Python 3.10/3.11/3.12/3.13 | ✅ CI active |
+| CI: Bandit SAST + pip-audit CVE gate | ✅ 2026-03-29 |
+| Coverage artifacts (htmlcov + coverage.xml, 30-day) | ✅ v0.7.2 |
+| Pre-commit hooks (detect-secrets + ruff) | ✅ v0.7.3 |
+| Dev container (.devcontainer/) | ✅ v0.7.3 |
+| ADR: 3 decisions recorded | ✅ v0.7.3 |
+| LICENSE (MIT) + disclaimer | ✅ v0.7.3 |
+| mypy — 27 open errors (7 files) | ❌ BLOCKING — fix in progress |
+| Ansible collection | ⏸ Phase 2 — see docs/ansible-roadmap.md |
+| Vault AppRole auth | ⏸ Phase 2 — blocked until Vault deployed |
+| Published to GitLab registry | ⏸ Phase 5 — blocked until GitLab CE deployed |
+
+## Open issues (as of 2026-03-29 audit)
+
+| Priority | Issue | Tracking |
+|---|---|---|
+| HIGH | mypy 27 errors — CI red on type check | Fix in progress |
+| HIGH | verify_ssl=False default — pending TLS strategy decision | Blocked on platform cert/DNS decision |
+| HIGH | FileStation.upload() returns {"skipped": bool} — violates ensure return dict | v1.0 blocker |
+| HIGH | client.py timeout hardcoded at 30s — no per-operation timeout | v1.0 blocker |
+| MEDIUM | API reference lags code — missing list_detailed, add/remove_member | Backlog |
+| MEDIUM | README stale — test count + Python 3.13 badge missing | Backlog |
+| MEDIUM | build not in dev deps — wheel/sdist not CI-validated | Backlog |
+
+## Known DSM version bugs
+
+### DSM 7.1.1-42962 Update 9 (DS1513+) — SYNO.Core.Group member_list broken
+- `SYNO.Core.Group member_list` returns error 103 (invalid parameter) for ALL inputs
+- This is a DSM 7.1.x regression — **fixed in DSM 7.2.x**
+- Tracked in: GitHub issue #54 ("Upgrade DSM from 7.1.1 to 7.2.x")
+- Impact: `add_member` / `remove_member` cannot verify idempotency — they apply unconditionally and return `warning` key
+- Write operations (set with members=[]) work correctly — only read is broken
+- Workaround: upgrade DSM to 7.2.x. Until then, operations are correct but not fully idempotent.
+
+## API gotchas (read before touching any FileStation or Core code)
+
+- ALL write ops require `X-SYNO-TOKEN` header — missing it returns 403
+- Share create: must use `shareinfo` JSON object, not flat params
+- Group members: use `SYNO.Core.Group.set` with `members=[]`, NOT `member_set` (error 103)
+- NFS rules: use `SYNO.Core.FileServ.NFS.SharePrivilege.save`, NOT `SYNO.Core.Share.NFS` (error 102)
+- **FileStation upload**: `SynoToken` in URL query string only; session as cookie `id=`; field `path` not `dest_folder_path` — do NOT bypass `FileStationManager`
+- User/Group delete: name must be a JSON array string: `'["name"]'`
 
 ---
 
@@ -153,4 +171,5 @@ See ADR-0006 §9. Source → `assets/diagrams/`, render → `assets/exports/`, c
 
 - Platform charter: `doc-platform-core/docs/adr/0006-platform-charter.md`
 - RAID: `doc-platform-core/docs/raid.md`
-- GitHub Issues: <https://github.com/by-openclaw/platform-setup/issues>
+- GitHub Issues: <https://github.com/by-openclaw/lib-synology-dsm/issues>
+- Refactor decisions: docs/refactor-clarification-2026-03-30.md section 6 Decisions Log

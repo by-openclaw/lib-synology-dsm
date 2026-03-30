@@ -1,6 +1,6 @@
 # AGENTS.md — lib-synology-dsm
 
-Python library for Synology DSM API automation — session management, user/group/share CRUD, NFS export rules, and FileStation file operations (upload/download/list/mkdir/delete).
+Python library for Synology DSM API — session auth, user/group/share/NFS CRUD, FileStation file ops, quota, bandwidth, traffic control, and storage management.
 
 ## Always Read First
 
@@ -12,6 +12,12 @@ Before touching anything in this repo:
 4. [`docs/api-versions.md`](docs/api-versions.md) — tested API version table (ground truth)
 5. [`docs/api-reference.md`](docs/api-reference.md) — method reference with confirmed working signatures
 6. [`src/synology_dsm/`](src/synology_dsm/) — library source
+7. [`docs/refactor-clarification-2026-03-30.md`](docs/refactor-clarification-2026-03-30.md) — confirmed decisions and v1.0 priority matrix
+
+## Current Milestone — v1.0
+
+Target: stable public API, mypy clean, consistent return dicts across all managers.
+v1.0 blockers: see CLAUDE.md v1.0 Blockers section and docs/refactor-clarification-2026-03-30.md section 5.
 
 ## Coding & Commit Standards
 
@@ -24,7 +30,7 @@ Before touching anything in this repo:
 - **Version:** `pyproject.toml` — bump with `feat` or `fix` commits per semver
 - **Branch naming:** `feat/{issue-id}-{description}` or `fix/{issue-id}-{description}`
 - **All new managers** must implement `ensure(state=present|absent)` idempotent pattern
-- **No httpx** — integration tests use `urllib` only (httpx not available on Rune's host)
+- **No httpx** — ADR-0001 enforces zero runtime dependencies — urllib only
 
 ## Project Health Rules (mandatory)
 
@@ -39,14 +45,8 @@ Before touching anything in this repo:
 
 > ⛔ **Also read `CLAUDE.md` §HARD RULES** — architectural decisions enforced there. AGENTS.md and CLAUDE.md are both authoritative. When in doubt, CLAUDE.md wins.
 
-- ❌ Do NOT use `httpx` — use `urllib` for all HTTP calls
-- ❌ Do NOT use `auth.cgi` — always use `entry.cgi` for SYNO.API.Auth v6
-- ❌ Do NOT skip `X-SYNO-TOKEN` header on write requests
-- ❌ Do NOT check top-level `success` for compound requests — check `data.has_fail`
-- ❌ Do NOT use `sharename` param for NFS API — use `share_name` (causes error 2301)
-- ❌ Do NOT omit `name_org` in `shareinfo` JSON — causes HTTP 403 on DSM 7.x
 - ❌ Do NOT run live integration tests without first checking the DSM blocker below
-- ❌ Do NOT publish to PyPI without explicit instruction from My Lord
+- ❌ Do NOT publish to PyPI without explicit instruction from @yboujraf
 
 ## Known Blocker
 
@@ -70,7 +70,27 @@ Audit account (`AUDIT_USER` / e.g. `rune-audit`):
 Maintained by Rune (DevOps familiar) for the BY-SYSTEMS PoC platform.
 Owner: @yboujraf
 
-## Doc Maintenance — After Every Successful Build
+---
+
+## Project Stats
+
+> Auto-updated on every release. Last updated: 2026-03-30
+
+| Metric | Value |
+|---|---|
+| Version | v0.10.0 |
+| Tagged releases | 12 |
+| Unit tests | 283 passing, 100% coverage |
+| Open issues | 2 HIGH (mypy, verify_ssl) — release path resolved |
+| ADR decisions | 3 |
+| CI workflows | 2 (ci.yml + security job, release-please.yml) |
+| Pre-commit hooks | detect-secrets, ruff, ruff-format |
+| Dev container | ✅ .devcontainer/ |
+| mypy | ❌ 27 errors — v1.0 blocker |
+
+---
+
+## Post-Release Doc Checklist
 
 After each successful CI build (all jobs green), update these files to reflect current state:
 - **AGENTS.md** — Update "Project Stats", version, checklist, roadmap progress
@@ -80,21 +100,3 @@ After each successful CI build (all jobs green), update these files to reflect c
 Commit separately: `docs: update project docs to v{version}`
 
 This ensures any AI agent (or human) picking up the project always has accurate, current documentation.
-
----
-
-## Project Stats
-
-> Auto-updated on every release. Last updated: 2026-03-29
-
-| Metric | Value |
-|---|---|
-| Version | v0.9.0 |
-| Tagged releases | 8 (v0.7.0–v0.9.0) |
-| Unit tests | 283 passing, 100% coverage |
-| Open issues | 3 HIGH (mypy, release path, verify_ssl) |
-| ADR decisions | 3 |
-| CI workflows | 2 (ci.yml + security job, release-please.yml) |
-| Pre-commit hooks | detect-secrets, ruff, ruff-format |
-| Dev container | ✅ .devcontainer/ |
-| mypy | ❌ 27 errors — fix in progress |

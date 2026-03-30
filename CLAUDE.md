@@ -48,18 +48,9 @@ These are architectural decisions. They are NOT suggestions. Do not override the
 - Release Please is the canonical release path. Do NOT run `scripts/release.sh` on this repo.
 - Never manually edit version strings. Never run `cz bump` if Release Please is active.
 
-### Definition of Done — nothing ships at 60%
+### Definition of Done
 
-See SOUL.md for the canonical DoD principle. Checklist:
-
-- [ ] All public methods have docstrings
-- [ ] ensure() / idempotent pattern implemented
-- [ ] dry_run=True on all destructive methods
-- [ ] Unit tests (pytest) — happy path + error codes
-- [ ] mypy clean (zero errors)
-- [ ] ruff clean (zero warnings)
-- [ ] CHANGELOG entry
-- [ ] CLAUDE.md current state table updated
+Definition of Done: see SOUL.md (workspace) and CONTRIBUTING.md (checklist).
 
 ---
 
@@ -76,17 +67,6 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 
 ---
 
-## Key Files
-
-| File | Why |
-|---|---|
-| `README.md` | Install, quickstart, API reference |
-| `synology_dsm/` | Library source |
-| `tests/` | Unit + integration tests |
-| `CHANGELOG.md` | Semantic versioning history |
-
----
-
 ## Current State (v0.10.0 — 2026-03-30)
 
 | Component | Status |
@@ -99,7 +79,6 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 |
 | Quota manager | ✅ v0.9.0 |
 | Bandwidth manager (read + write + ensure_user/ensure_group) | ✅ v0.9.0 |
-| Traffic control manager | ✅ v0.9.0 |
 | TrafficControlManager (CRUD + ensure_rule) | ✅ v0.9.0 |
 | Storage manager | ✅ v0.9.0 |
 | DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
@@ -118,7 +97,7 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | Vault AppRole auth | ⏸ Phase 2 — blocked until Vault deployed |
 | Published to GitLab registry | ⏸ Phase 5 — blocked until GitLab CE deployed |
 
-## Open issues (as of 2026-03-29 audit)
+## Open issues (as of 2026-03-30 audit)
 
 | Priority | Issue | Tracking |
 |---|---|---|
@@ -129,16 +108,20 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | MEDIUM | API reference lags code — missing list_detailed, add/remove_member | Backlog |
 | MEDIUM | README stale — test count + Python 3.13 badge missing | Backlog |
 | MEDIUM | build not in dev deps — wheel/sdist not CI-validated | Backlog |
+| ~~MEDIUM~~ | ~~Two release paths (commitizen + release-please)~~ | ✅ Resolved — Release Please is canonical |
 
-## Known DSM version bugs
+---
 
-### DSM 7.1.1-42962 Update 9 (DS1513+) — SYNO.Core.Group member_list broken
-- `SYNO.Core.Group member_list` returns error 103 (invalid parameter) for ALL inputs
-- This is a DSM 7.1.x regression — **fixed in DSM 7.2.x**
-- Tracked in: GitHub issue #54 ("Upgrade DSM from 7.1.1 to 7.2.x")
-- Impact: `add_member` / `remove_member` cannot verify idempotency — they apply unconditionally and return `warning` key
-- Write operations (set with members=[]) work correctly — only read is broken
-- Workaround: upgrade DSM to 7.2.x. Until then, operations are correct but not fully idempotent.
+## Key Files
+
+| File | Why |
+|---|---|
+| `README.md` | Install, quickstart, API reference |
+| `synology_dsm/` | Library source |
+| `tests/` | Unit + integration tests |
+| `CHANGELOG.md` | Semantic versioning history |
+
+---
 
 ## API gotchas (read before touching any FileStation or Core code)
 
@@ -151,6 +134,18 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 
 ---
 
+## Known DSM version bugs
+
+### DSM 7.1.1-42962 Update 9 (DS1513+) — SYNO.Core.Group member_list broken
+- `SYNO.Core.Group member_list` returns error 103 (invalid parameter) for ALL inputs
+- This is a DSM 7.1.x regression — **fixed in DSM 7.2.x**
+- Tracked in: GitHub issue #54 ("Upgrade DSM from 7.1.1 to 7.2.x")
+- Impact: `add_member` / `remove_member` cannot verify idempotency — they apply unconditionally and return `warning` key
+- Write operations (set with members=[]) work correctly — only read is broken
+- Workaround: upgrade DSM to 7.2.x. Until then, operations are correct but not fully idempotent.
+
+---
+
 ## Constraints
 
 - Never commit DSM credentials or API tokens
@@ -158,12 +153,6 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 - Breaking changes = MAJOR version bump + migration note in CHANGELOG
 - `ruff` linting must be clean before commit
 - `mypy` must be clean before commit (27 open errors as of 2026-03-29 — tracked, fix in progress)
-
----
-
-## Diagram Standard
-
-See ADR-0006 §9. Source → `assets/diagrams/`, render → `assets/exports/`, commit + post to Discord.
 
 ---
 

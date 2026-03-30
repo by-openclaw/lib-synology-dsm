@@ -231,18 +231,22 @@ git push                    # release-please picks it up automatically
 
 ---
 
-## Definition of Done
+## Definition of Done — PR Checklist
 
 Before declaring any feature/fix done:
 
 - [ ] All public methods have docstrings
-- [ ] ensure() / idempotent pattern implemented
-- [ ] dry_run=True on all destructive methods
-- [ ] Unit tests (pytest) — happy path + error codes
-- [ ] mypy clean (zero errors)
-- [ ] ruff clean (zero warnings)
-- [ ] CHANGELOG entry
-- [ ] CLAUDE.md current state table updated
+- [ ] ensure() / idempotent pattern where applicable
+- [ ] dry_run=True mode where applicable
+- [ ] Unit tests — happy path + error codes
+- [ ] Integration test — live or mocked
+- [ ] Bash smoke test where applicable
+- [ ] PEP 8 + PEP 257 clean (ruff)
+- [ ] Type hints on all public API (mypy clean)
+- [ ] CHANGELOG entry with semantic version
+- [ ] Git tag (via Release Please)
+- [ ] CLAUDE.md + AGENTS.md updated if state changed
+- [ ] RAID.md + GitHub Issue + Project board updated for any issue or risk
 
 ---
 
@@ -262,6 +266,16 @@ After each CI-green release:
 - **CLAUDE.md** — update Current State table
 - **README.md** — update badges, feature lists, version numbers
 - Commit separately: `docs: update project docs to v{version}`
+
+---
+
+## Multi-Python Testing (nox)
+
+```bash
+nox          # run all sessions (lint + test on 3.10/3.11/3.12/3.13)
+nox -s test  # test only
+nox -s lint  # lint only
+```
 
 ---
 

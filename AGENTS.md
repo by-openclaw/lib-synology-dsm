@@ -30,7 +30,7 @@ v1.0 blockers: see CLAUDE.md v1.0 Blockers section and docs/refactor-clarificati
 - **Version:** `pyproject.toml` — bump with `feat` or `fix` commits per semver
 - **Branch naming:** `feat/{issue-id}-{description}` or `fix/{issue-id}-{description}`
 - **All new managers** must implement `ensure(state=present|absent)` idempotent pattern
-- **No httpx** — ADR-0001 enforces zero runtime dependencies — urllib only
+- **No httpx** — ADR-0001 decision: zero runtime deps — not a host availability constraint
 
 ## Project Health Rules (mandatory)
 
@@ -88,15 +88,3 @@ Owner: @yboujraf
 | Dev container | ✅ .devcontainer/ |
 | mypy | ❌ 27 errors — v1.0 blocker |
 
----
-
-## Post-Release Doc Checklist
-
-After each successful CI build (all jobs green), update these files to reflect current state:
-- **AGENTS.md** — Update "Project Stats", version, checklist, roadmap progress
-- **CLAUDE.md** — Update build commands, file table, current state if anything changed
-- **README.md** — Update badges, feature lists, version numbers
-
-Commit separately: `docs: update project docs to v{version}`
-
-This ensures any AI agent (or human) picking up the project always has accurate, current documentation.

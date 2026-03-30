@@ -37,7 +37,7 @@ import pytest
 
 # ── Config ────────────────────────────────────────────────────────────────────
 NAS_HOST = os.environ.get("NAS_HOST", "")
-NAS_PORT = int(os.environ.get("NAS_PORT", "5001"))
+NAS_PORT = int(os.environ.get("NAS_PORT") or "5001")
 ADMIN_USER = os.environ.get("API_USER", "")
 ADMIN_PASS = os.environ.get("API_PASS", "")
 TEST_USER_PASS = os.environ.get("TEST_USER_PASS", "TmpPass123!")

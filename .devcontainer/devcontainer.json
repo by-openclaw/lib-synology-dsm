@@ -1,13 +1,21 @@
 {
   "name": "lib-synology-dsm",
+
   // Python 3.13 — matches CI matrix upper bound (3.10–3.13).
   // Min supported: 3.10 (requires-python in pyproject.toml).
-  // To test against min: change to mcr.microsoft.com/devcontainers/python:3.10
+  // To test against minimum: change to mcr.microsoft.com/devcontainers/python:3.10
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
-  // remoteUser root: dev container only — avoids all pip permission issues on site-packages.
-  // pre-commit install intentionally omitted: .git/hooks is owned by Windows host user,
-  // cannot be written from inside the container. Run once from Git Bash on the host.
+  // ── LAN access (Synology NAS on local network) ────────────────────────────
+  // --network=host: container shares the WSL2 network stack.
+  // Requires WSL2 mirrored networking — see .devcontainer/README.md for setup.
+  // Without mirrored mode: internet works but LAN (10.x.x.x) is unreachable.
+  "runArgs": ["--network=host"],
+
+  // remoteUser root: avoids pip permission issues on site-packages in container.
+  // pre-commit install intentionally omitted: .git/hooks is owned by the Windows
+  // host user and cannot be written from inside the container.
+  // → Always commit from Git Bash on the host. Run pre-commit install once there.
   "remoteUser": "root",
   "postCreateCommand": "pip install -e '.[container]'",
 
@@ -42,6 +50,11 @@
 
         "mypy-type-checker.args": ["--ignore-missing-imports"],
 
+        // Unit tests run in VS Code test explorer (no NAS needed).
+        // Integration tests require LAN access — run from container terminal:
+        //   pytest tests/integration/ -m integration -v
+        // curl scripts:
+        //   bash tests/integration/curl/00-auth.sh
         "python.testing.pytestEnabled": true,
         "python.testing.pytestArgs": ["tests/unit"],
         "python.testing.unittestEnabled": false,
@@ -53,10 +66,19 @@
     }
   },
 
-  // remoteEnv intentionally omitted.
-  // Integration tests require LAN access to the NAS (10.6.224.x).
-  // Docker Desktop on Windows uses WSL2 NAT — the container cannot reach the LAN.
-  // Run integration tests from Rune VM or any machine on the same network:
-  //   export NAS_HOST=... API_USER=... API_PASS=...
-  //   pytest tests/integration/ -v
+  // NAS credentials forwarded from host environment variables.
+  // Set these on the Windows host (System → Environment Variables)
+  // or in Git Bash profile (~/.bashrc or ~/.bash_profile):
+  //   export NAS_HOST=10.6.224.6
+  //   export API_USER=rune-api
+  //   etc.
+  "remoteEnv": {
+    "NAS_HOST":       "${localEnv:NAS_HOST}",
+    "NAS_PORT":       "${localEnv:NAS_PORT}",
+    "API_USER":       "${localEnv:API_USER}",
+    "API_PASS":       "${localEnv:API_PASS}",
+    "NFS_CLIENT":     "${localEnv:NFS_CLIENT}",
+    "FS_BASE_SHARE":  "${localEnv:FS_BASE_SHARE}",
+    "TEST_USER_PASS": "${localEnv:TEST_USER_PASS}"
+  }
 }

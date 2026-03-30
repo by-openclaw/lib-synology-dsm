@@ -3,7 +3,7 @@
 > **Scope:** All agent context files, documentation, configuration, and templates for lib-synology-dsm
 > **Audited:** 2026-03-30
 > **Auditor:** Rune (via Claude Opus)
-> **Total audits:** 16 files across 6 categories
+> **Total audits:** 18 files (master set) + 4 per-repo audits across 7 categories
 
 ---
 
@@ -44,6 +44,8 @@
 | 14 | Global ADRs + RAID + Project Board | `doc-platform-core/` + all repos | Platform | RAID atomic rule not enforced, board automation missing, RAID location conflict | [14-global-adr-raid-project.md](14-global-adr-raid-project.md) |
 | 15 | Direction docs (roadmap, stack, architecture, RAID, charter) | `doc-platform-core/docs/` | Platform | No "current status" view, gap report superseded, layer rule compliance question | [15-direction-docs.md](15-direction-docs.md) |
 | 16 | Secrets redaction | All workspace + repos | Security | Discord webhook token EXPOSED, password in 6+ files, SSH keys in docs | [16-secrets-redaction.md](16-secrets-redaction.md) |
+| 17 | Workspace-level files | `workspace/` | Workspace | docs/ duplicates doc-platform-core, memory/ logs stale, IDENTITY.md redundant | [17-workspace-level.md](17-workspace-level.md) |
+| 18 | Cross-repo sync summary | All 5 repos + workspace | Platform | CONTRIBUTING.md missing in 4/5, SECURITY.md in 4/5, board automation in 3/5 | [18-cross-repo-sync.md](18-cross-repo-sync.md) |
 
 ---
 

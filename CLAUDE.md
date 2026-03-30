@@ -62,13 +62,13 @@ Definition of Done: see SOUL.md (workspace) and CONTRIBUTING.md (checklist).
 | ~~HIGH~~ | ~~client.py timeout hardcoded at 30s — no per-operation timeout~~ | ✅ Fixed — configurable via DSMClient(timeout=N) |
 | ~~HIGH~~ | ~~update()/disable() return None — violates ensure return dict standard~~ | ✅ Fixed — all return {"changed": bool, "action": str, "target": str} |
 | ~~HIGH~~ | ~~mypy 27 errors — CI type check failing~~ | ✅ Fixed — 0 errors |
-| MEDIUM | verify_ssl=False default — pending platform TLS strategy | Blocked on platform cert decision |
+| ~~MEDIUM~~ | ~~verify_ssl=False default~~ | ✅ Decision: intentional platform default — no infra for self-signed/LE yet. Decided 2026-03-30. |
 
 See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 
 ---
 
-## Current State (v0.10.0 — 2026-03-30)
+## Current State (v0.10.1 — 2026-03-30)
 
 | Component | Status |
 |---|---|
@@ -77,7 +77,7 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | Group CRUD + membership + ensure() | ✅ v0.7.0 |
 | Share CRUD + NFS permissions + ensure() | ✅ v0.7.0 |
 | NFS ensure() per-client rule | ✅ v0.8.0 |
-| FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 |
+| FileStation: list/upload/download/mkdir/delete + ensure() | ✅ v0.8.0 — download() returns {changed, action} (v0.10.1) |
 | Quota manager | ✅ v0.9.0 |
 | Bandwidth manager (read + write + ensure_user/ensure_group) | ✅ v0.9.0 |
 | TrafficControlManager (CRUD + ensure_rule) | ✅ v0.9.0 |

@@ -406,3 +406,55 @@ class TestDownload:
 
         req = mock_open_url.call_args.args[0]
         assert "path=%2Fby-share%2Ffile.txt" in req.full_url
+
+    def test_download_returns_changed_dict(self, tmp_path):
+        """download() returns {changed, action, file, local_path}."""
+        client = _real_client()
+        mgr = _mgr(client)
+        dest = tmp_path / "out.txt"
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"content"
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            result = mgr.download("/share/file.txt", str(dest))
+
+        assert result["changed"] is True
+        assert result["action"] == "downloaded"
+        assert result["file"] == "file.txt"
+        assert result["local_path"] == str(dest)
+
+    def test_upload_uses_client_timeout(self):
+        """upload() uses max(client._timeout, 60) — not a hardcoded value."""
+        import json as _j
+        import os
+        import tempfile
+        from unittest.mock import MagicMock, patch
+
+        client = _real_client()
+        client._timeout = 120  # set higher than 60 — should be respected
+        mgr = _mgr(client)
+
+        captured = {}
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = _j.dumps({"success": True, "data": {}}).encode()
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        def fake_urlopen(req, context=None, timeout=None):
+            captured["timeout"] = timeout
+            return mock_resp
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(b"data")
+            tmp = f.name
+        try:
+            with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+                mgr.upload(tmp, "/share")
+        finally:
+            os.unlink(tmp)
+
+        assert captured["timeout"] == 120  # max(120, 60) == 120

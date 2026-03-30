@@ -53,11 +53,10 @@
     }
   },
 
-  "remoteEnv": {
-    "NAS_HOST": "${localEnv:NAS_HOST}",
-    "NAS_PORT": "${localEnv:NAS_PORT}",
-    "API_USER": "${localEnv:API_USER}",
-    "API_PASS": "${localEnv:API_PASS}",
-    "NFS_CLIENT": "${localEnv:NFS_CLIENT}"
-  }
+  // remoteEnv intentionally omitted.
+  // Integration tests require LAN access to the NAS (10.6.224.x).
+  // Docker Desktop on Windows uses WSL2 NAT — the container cannot reach the LAN.
+  // Run integration tests from Rune VM or any machine on the same network:
+  //   export NAS_HOST=... API_USER=... API_PASS=...
+  //   pytest tests/integration/ -v
 }

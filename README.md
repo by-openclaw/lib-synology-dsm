@@ -176,16 +176,12 @@ git reset --hard origin/main && git pull origin main
 
 "Without Cache" is required — a normal rebuild reuses the old config.
 
-### Run integration tests (requires NAS reachable on your network)
+### Integration tests
 
-```bash
-# Set your NAS credentials in .env (copy from .env.example)
-cp .env.example .env
-# Edit .env with your values, then:
-source .env
-python tests/integration/test_live_nas.py --report /tmp/nas-report
-# Output: /tmp/nas-report.json + /tmp/nas-report.txt
-```
+> ⚠️ **Do not run integration tests inside the dev container.**
+> Docker Desktop on Windows uses WSL2 NAT — the container cannot reach your LAN (`10.6.224.x`).
+> Run from Rune VM, Git Bash on Windows, or any host on the same network as the NAS.
+> See the [Integration tests](#running-integration-tests-live-nas-required) section below.
 
 ---
 

@@ -165,19 +165,14 @@ pytest tests/unit/ -v
 # Expected: 223 passed, 3 warnings, 0 failed
 ```
 
-### Step 5 — Run integration tests (live NAS)
+### Step 5 — Integration tests
 
-```bash
-cp .env.example .env
-# Edit .env — use VS Code editor or: nano .env
-# Fill in: NAS_HOST, NAS_PORT, API_USER, API_PASS
+> ⚠️ **Integration tests do NOT run inside the dev container.**
+> Docker Desktop on Windows uses WSL2 NAT — the container has no route to your LAN (`10.6.224.x`).
+> Run integration tests from a machine that is actually on the network: Rune VM, Git Bash on Windows, or any Linux host with LAN access.
+> See [Path A](#path-a--native-venv) or the [Running integration tests](#running-integration-tests-live-nas-required) section below.
 
-export $(grep -v '^#' .env | grep -v '^$' | sed 's/[[:space:]]*#.*//' | xargs)
-pytest tests/integration/ -v
-# Expected: 51 passed, ~96s
-```
-
-> ⚠️ The container terminal is a Linux bash shell. `source .venv/Scripts/activate` does NOT apply here — Python is already active system-wide inside the container.
+> The dev container is for **unit tests and development only.**
 
 See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) for full config.
 

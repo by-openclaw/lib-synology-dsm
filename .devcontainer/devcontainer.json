@@ -71,7 +71,7 @@
         "files.insertFinalNewline": true
       }
     }
-  },
+  }
 
   // Credentials are loaded via --env-file .devcontainer/.env.local (see runArgs above).
   // No persistent Windows env vars needed. No remoteEnv block required.

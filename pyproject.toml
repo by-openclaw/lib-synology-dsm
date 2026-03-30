@@ -32,6 +32,9 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pre-commit", "detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen", "build", "pygments>=2.20.0"]
+# container: same as dev minus pre-commit (pre-commit tries to install .git/hooks which is
+# owned by the Windows host — not writable from inside the container)
+container = ["detect-secrets", "pytest", "pytest-cov", "ruff", "mypy", "python-dotenv>=1.0", "commitizen", "build", "pygments>=2.20.0"]
 vault = ["hvac", "python-dotenv"]
 
 [project.urls]

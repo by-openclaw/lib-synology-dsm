@@ -9,7 +9,7 @@
   // pre-commit install intentionally omitted: .git/hooks is owned by Windows host user,
   // cannot be written from inside the container. Run once from Git Bash on the host.
   "remoteUser": "root",
-  "postCreateCommand": "pip install -e '.[dev]'",
+  "postCreateCommand": "pip install -e '.[container]'",
 
   "customizations": {
     "vscode": {

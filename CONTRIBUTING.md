@@ -196,6 +196,75 @@ If the NAS is unreachable from inside the container: check Docker Desktop → Se
 
 ---
 
+## Commit & Version Standard
+
+**Tool:** commitizen (`cz`) + Conventional Commits
+**Config:** `.cz.toml` / `pyproject.toml [tool.commitizen]`
+
+**Commit format:**
+```
+<type>[optional scope]: <description>
+
+[optional body]
+[optional footer: BREAKING CHANGE: ...]
+```
+
+| Type | Version bump | When |
+|---|---|---|
+| `fix:` | patch (0.0.x) | Bug fixes |
+| `feat:` | minor (0.x.0) | New features |
+| `fix!:` / `feat!:` / `BREAKING CHANGE:` | major (x.0.0) | Breaking changes |
+| `docs:` `test:` `refactor:` `chore:` | none | Non-functional changes |
+
+**Workflow:**
+```bash
+git add .
+git commit -m "feat: ..."   # conventional commit message
+git push                    # release-please picks it up automatically
+```
+
+**Never:**
+- Manual version edits in files
+- `git tag` manually
+- Non-conventional commit messages
+- Running `scripts/release.sh` (release-please is canonical)
+
+---
+
+## Definition of Done
+
+Before declaring any feature/fix done:
+
+- [ ] All public methods have docstrings
+- [ ] ensure() / idempotent pattern implemented
+- [ ] dry_run=True on all destructive methods
+- [ ] Unit tests (pytest) — happy path + error codes
+- [ ] mypy clean (zero errors)
+- [ ] ruff clean (zero warnings)
+- [ ] CHANGELOG entry
+- [ ] CLAUDE.md current state table updated
+
+---
+
+## Diagram Standard
+
+- Source: PlantUML `.puml` → `assets/diagrams/`
+- Render: PNG via Kroki → `assets/exports/`
+- Docs always link to `assets/exports/` only
+- Post PNG to Discord `#bot-openclaw` with summary after finalized tasks
+
+---
+
+## Post-Release Doc Checklist
+
+After each CI-green release:
+- **AGENTS.md** — update Project Stats (version, test count, open issues)
+- **CLAUDE.md** — update Current State table
+- **README.md** — update badges, feature lists, version numbers
+- Commit separately: `docs: update project docs to v{version}`
+
+---
+
 ## Release process
 
 Never edit version numbers manually. See [`docs/release-process.md`](docs/release-process.md).

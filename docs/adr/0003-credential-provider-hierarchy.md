@@ -37,6 +37,6 @@ Priority 3: Explicit               — pass host/user/password directly to DSMCl
 - Explicit fallback always works for unit tests (no env setup required)
 
 **Negative:**
-- Vault AppRole authentication not yet implemented — currently only token auth
+- Vault AppRole authentication not yet implemented — currently only token auth. Vault AppRole planned for Phase 2 — blocked until Vault deployed on PoC.
 - `.env` file loading requires `python-dotenv` (optional dep, added to dev extras)
 - Priority logic in `get_credentials()` may surprise users who have both VAULT_ADDR and SYNOLOGY_HOST set — Vault takes priority, with silent fallback to env on Vault error

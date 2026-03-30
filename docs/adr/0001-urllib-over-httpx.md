@@ -22,7 +22,7 @@ Network errors wrapped as `DSMConnectionError` — callers never need to import 
 ## Consequences
 
 **Positive:**
-- Zero external HTTP dependencies — `pip install lib-synology-dsm` pulls only `pydantic`
+- Zero runtime dependencies — `pip install lib-synology-dsm` pulls zero external packages
 - Works in air-gapped environments
 - No version conflicts with other packages that also depend on httpx/requests
 

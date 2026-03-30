@@ -9,7 +9,7 @@ The library manages DSM resources (shares, users, groups) from automation pipeli
 
 ## Decision
 
-Every resource manager (`ShareManager`, `UserManager`, `GroupManager`) must implement:
+Every resource manager must implement:
 
 ```python
 def ensure(
@@ -42,3 +42,7 @@ Destructive methods (`delete()`, `create()`) also accept `dry_run=True`.
 **Negative:**
 - Requires an extra `list()` call before every mutation (2 API calls instead of 1)
 - More complex implementation than a simple `create()`/`delete()`
+
+## Note
+
+All public methods that mutate state must return `{"changed": bool, "action": str}`. This includes `ensure()` variants, `create()`, `delete()`, and `upload()` methods.

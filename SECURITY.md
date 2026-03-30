@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---|---|
-| 0.8.x | ✅ Current |
-| < 0.8 | ❌ No fixes |
+| 0.10.x | ✅ Current |
+| < 0.10 | ❌ No fixes |
 
 ## Reporting a Vulnerability
 
@@ -26,4 +26,4 @@ We aim to acknowledge reports within 48 hours and provide a fix within 14 days f
 This library handles Synology DSM credentials. Key security considerations:
 - Credentials are passed at runtime — never hardcoded in the library
 - `verify_ssl=False` is intentional for self-signed NAS certificates (typical lab/home setup)
-- Vault integration uses token auth — AppRole planned (platform-setup#7)
+- Vault integration uses token auth — AppRole planned (Phase 2 — blocked until Vault deployed on PoC) (platform-setup#7)

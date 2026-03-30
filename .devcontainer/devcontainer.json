@@ -10,7 +10,12 @@
   // --network=host: container shares the WSL2 network stack.
   // Requires WSL2 mirrored networking — see .devcontainer/README.md for setup.
   // Without mirrored mode: internet works but LAN (10.x.x.x) is unreachable.
-  "runArgs": ["--network=host"],
+  //
+  // ── Credentials (gitignored, never committed) ─────────────────────────────
+  // Copy .devcontainer/.env.local.example → .devcontainer/.env.local
+  // Fill in credentials. Delete the file when done.
+  // --env-file loads it into the container at build time — nothing persists on Windows.
+  "runArgs": ["--network=host", "--env-file", "${localWorkspaceFolder}/.devcontainer/.env.local"],
 
   // remoteUser root: avoids pip permission issues on site-packages in container.
   // pre-commit install intentionally omitted: .git/hooks is owned by the Windows
@@ -66,19 +71,6 @@
     }
   },
 
-  // NAS credentials forwarded from host environment variables.
-  // Set these on the Windows host (System → Environment Variables)
-  // or in Git Bash profile (~/.bashrc or ~/.bash_profile):
-  //   export NAS_HOST=10.6.224.6
-  //   export API_USER=rune-api
-  //   etc.
-  "remoteEnv": {
-    "NAS_HOST":       "${localEnv:NAS_HOST}",
-    "NAS_PORT":       "${localEnv:NAS_PORT}",
-    "API_USER":       "${localEnv:API_USER}",
-    "API_PASS":       "${localEnv:API_PASS}",
-    "NFS_CLIENT":     "${localEnv:NFS_CLIENT}",
-    "FS_BASE_SHARE":  "${localEnv:FS_BASE_SHARE}",
-    "TEST_USER_PASS": "${localEnv:TEST_USER_PASS}"
-  }
+  // Credentials are loaded via --env-file .devcontainer/.env.local (see runArgs above).
+  // No persistent Windows env vars needed. No remoteEnv block required.
 }

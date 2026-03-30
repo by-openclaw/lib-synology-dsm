@@ -1,30 +1,29 @@
 # Dev Container — LAN Access Setup
 
-## The problem
+## How credentials work
 
-Docker Desktop on Windows uses WSL2 as its backend. By default WSL2 uses
-a **NAT network** — containers reach the internet but not your local network
-(your Synology NAS at `10.6.x.x` is unreachable).
+Credentials are loaded from a **gitignored local file** — `.devcontainer/.env.local`.
 
-## The fix — two steps, done once per machine
+- Never stored in Windows env vars
+- Never committed to git
+- Delete the file when done with integration testing on this machine
+
+---
+
+## Setup — one time per machine
 
 ### Step 1 — Enable WSL2 mirrored networking
 
 Create or edit `%USERPROFILE%\.wslconfig` on the **Windows host**:
 
 ```ini
-# %USERPROFILE%\.wslconfig
-# Full path example: C:\Users\YourName\.wslconfig
-
 [wsl2]
 networkingMode=mirrored
 ```
 
-**Requirements:**
-- Windows 11 22H2 or later (build 22621+)
-- WSL version 2.0.0 or later
+**Requirements:** Windows 11 22H2+ (build 22621+), WSL 2.0.0+
 
-Check your WSL version:
+Check WSL version:
 ```powershell
 wsl --version
 ```
@@ -34,128 +33,81 @@ If WSL is older:
 wsl --update
 ```
 
-After editing `.wslconfig`, **restart WSL**:
+Restart WSL after editing `.wslconfig`:
 ```powershell
 wsl --shutdown
-# Then reopen Docker Desktop — it restarts WSL2 automatically
+```
+Then reopen Docker Desktop — it restarts WSL2 automatically.
+
+---
+
+### Step 2 — Create the credentials file
+
+In Git Bash, from the repo root:
+
+```bash
+cp .devcontainer/.env.local.example .devcontainer/.env.local
 ```
 
-Mirrored mode copies all Windows network interfaces into WSL2 — including
-your LAN adapter, its routes, and DNS. The container now sees your entire
-local network exactly as Windows does.
+Edit `.devcontainer/.env.local` and fill in the credentials:
 
-### Step 2 — Rebuild the dev container
+```ini
+NAS_HOST=10.6.224.6
+NAS_PORT=5001
+API_USER=rune-api
+API_PASS=<password>
+NFS_CLIENT=10.6.224.0/20
+FS_BASE_SHARE=by-terraform-state
+TEST_USER_PASS=<test-user-password>
+```
 
-In VS Code: `Ctrl+Shift+P` → `Dev Containers: Rebuild Container`
+This file is gitignored — it will never be committed.
 
-The `devcontainer.json` already has `--network=host` which tells Docker
-to share the WSL2 network stack. With mirrored networking active, this
-gives the container full LAN access.
+---
+
+### Step 3 — Build the container
+
+In VS Code:
+```
+Ctrl+Shift+P → Dev Containers: Rebuild Container (Without Cache)
+```
+
+The `--env-file` in `runArgs` loads `.env.local` into the container automatically.
+No Windows env vars needed. Nothing persists on the host after the container is stopped.
 
 ---
 
 ## Verify it works
 
-From inside the container terminal:
+From the container terminal:
 
 ```bash
-# Ping the NAS
-ping -c 2 $NAS_HOST
-
-# Auth check
-bash tests/integration/curl/00-auth.sh
+# Check LAN connectivity — should return {"success": true}
+curl -sk https://$NAS_HOST:$NAS_PORT/webapi/entry.cgi \
+  -d "api=SYNO.API.Auth&version=7&method=login&account=$API_USER&passwd=$API_PASS&session=DSM&format=cookie" \
+  | python3 -m json.tool
 
 # Full integration test suite
-pytest tests/integration/ -m integration -v
+pytest tests/integration/ -v
 ```
 
 ---
 
-## Why this approach
+## When done with integration testing
 
-| Approach | Windows support | Complexity | LAN access |
-|---|---|---|---|
-| `--network=host` alone | ❌ silently ignored on Windows | Low | ❌ |
-| WSL2 mirrored + `--network=host` | ✅ Windows 11 22H2+ | Low | ✅ |
-| macvlan bridge network | ✅ all Windows | High — per-machine setup | ✅ |
-| Run integration tests from host | ✅ all Windows | Zero | ✅ |
-
-WSL2 mirrored networking is the **official Microsoft solution** for this exact
-problem. It requires no per-project Docker network config and works for every
-container automatically.
-
----
-
-## Windows 10 or older Windows 11
-
-Mirrored networking requires Windows 11 22H2+. On older systems use
-**macvlan** (more complex) or run integration tests from Git Bash on the host.
-
-macvlan setup:
-```powershell
-# Run once in PowerShell as Administrator
-# Replace subnet, gateway, and adapter name with your network values
-docker network create `
-  --driver macvlan `
-  --subnet=10.6.0.0/20 `
-  --gateway=10.6.0.1 `
-  --opt parent=Ethernet `
-  by-systems-lan
-```
-
-Then in `devcontainer.json`, replace:
-```jsonc
-"runArgs": ["--network=host"]
-```
-with:
-```jsonc
-"runArgs": ["--network=by-systems-lan"]
-```
-
----
-
-## Environment variables
-
-NAS credentials are forwarded from host environment variables into the
-container via `remoteEnv` in `devcontainer.json`. Set them once on Windows:
-
-**Option A — System environment variables (permanent, all shells)**
-
-```
-Windows → Settings → System → About → Advanced system settings
-→ Environment Variables → User variables → New
-```
-
-Add each variable: `NAS_HOST`, `NAS_PORT`, `API_USER`, `API_PASS`,
-`NFS_CLIENT`, `FS_BASE_SHARE`, `TEST_USER_PASS`
-
-**Option B — Git Bash profile (Git Bash only)**
-
-Add to `~/.bash_profile` (create if missing):
-
+Delete the credentials file:
 ```bash
-export NAS_HOST=10.6.224.6
-export NAS_PORT=5001
-export API_USER=rune-api
-export API_PASS=your-password
-export NFS_CLIENT=10.6.0.0/20
-export FS_BASE_SHARE=by-terraform-state
-export TEST_USER_PASS=TmpPass123!
+rm .devcontainer/.env.local
 ```
 
-Restart Git Bash, then reopen VS Code from Git Bash:
-```bash
-code /path/to/lib-synology-dsm
-```
-
-VS Code inherits the environment and forwards the variables into the container.
+Nothing remains on the Windows host.
 
 ---
 
 ## Pre-commit hooks
 
-Pre-commit hooks **cannot be installed inside the container** — `.git/hooks`
-is owned by the Windows host and is not writable from the container.
+Pre-commit hooks **cannot be installed inside the container** — `.git/hooks` is owned
+by the Windows host and is not writable from inside the container.
 
 **Always commit from Git Bash on the Windows host**, not from the container terminal.
 
@@ -167,4 +119,45 @@ pip install pre-commit
 pre-commit install
 ```
 
-Hooks then run automatically on every `git commit` from Git Bash.
+---
+
+## Windows 10 or older Windows 11 (no mirrored networking)
+
+WSL2 mirrored networking requires Windows 11 22H2+. On older systems the container
+cannot reach LAN directly — run integration tests from Git Bash on the host instead:
+
+```bash
+# Git Bash on Windows host — no container needed
+cd lib-synology-dsm
+pip install -e ".[dev]"
+source .devcontainer/.env.local  # load credentials
+pytest tests/integration/ -v
+```
+
+Or use **macvlan** (Docker network that bridges to your LAN adapter):
+
+```powershell
+# Run once in PowerShell as Administrator
+docker network create `
+  --driver macvlan `
+  --subnet=10.6.224.0/20 `
+  --gateway=10.6.224.1 `
+  --opt parent=Ethernet `
+  by-systems-lan
+```
+
+Then replace `"runArgs"` in `devcontainer.json`:
+```jsonc
+"runArgs": ["--network=by-systems-lan", "--env-file", "${localWorkspaceFolder}/.devcontainer/.env.local"]
+```
+
+---
+
+## Approach comparison
+
+| Approach | Win 11 22H2+ | Older Windows | Complexity | Credentials on host |
+|---|---|---|---|---|
+| WSL2 mirrored + `--network=host` + `.env.local` | ✅ | ❌ | Low | ❌ None |
+| Run tests from host (Git Bash) | ✅ | ✅ | Zero | ❌ None |
+| macvlan bridge | ✅ | ✅ | Medium | ❌ None |
+| Windows User env vars | ✅ | ✅ | Low | ⚠️ Persistent — avoid |

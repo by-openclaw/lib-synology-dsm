@@ -7,23 +7,22 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
 
   // ── LAN access (Synology NAS on local network) ────────────────────────────
-  // Docker Desktop for Windows routes LAN traffic (10.x.x.x) via 192.168.65.1
-  // by default — no special network config needed. NAS is reachable as-is.
+  // Docker Desktop routes LAN traffic (10.x.x.x) via host gateway — no extra config needed.
 
   // ── Credentials ───────────────────────────────────────────────────────────
-  // Copy .devcontainer/.env.local.example → .devcontainer/.env.local and fill in credentials.
-  // The file is gitignored and mounted read-only into the container via the workspace mount.
-  // Integration tests load it automatically via python-dotenv (dotenv_path=.devcontainer/.env.local).
-  // No --env-file in runArgs — container always starts even if .env.local doesn't exist yet.
+  // Single file: cp .env.example .env — fill in API_PASS and TEST_USER_PASS.
+  // Same .env works for native Python and inside the container.
+  // conftest.py loads it automatically via python-dotenv — no --env-file needed.
+  // Container starts cleanly even if .env doesn't exist yet.
 
   // remoteUser root: avoids pip permission issues on site-packages in container.
-  // pre-commit install intentionally omitted: .git/hooks is owned by the Windows
-  // host user and cannot be written from inside the container.
-  // → Always commit from Git Bash on the host. Run pre-commit install once there.
+  // pre-commit install intentionally omitted: .git/hooks is owned by the host user
+  // and cannot be written from inside the container.
+  // → Always commit from Git Bash / terminal on the host. Run pre-commit install once there.
   "remoteUser": "root",
 
-  // sed -i strips Windows \r line endings from .env.local so python-dotenv loads cleanly.
-  "postCreateCommand": "pip install -e '.[container]' && sed -i 's/\\r//' .devcontainer/.env.local 2>/dev/null || true",
+  // Strip Windows \r line endings from .env so python-dotenv parses cleanly.
+  "postCreateCommand": "pip install -e '.[container]' && sed -i 's/\\r//' .env 2>/dev/null || true",
 
   "customizations": {
     "vscode": {
@@ -71,7 +70,4 @@
       }
     }
   }
-
-  // Credentials are loaded via --env-file .devcontainer/.env.local (see runArgs above).
-  // No persistent Windows env vars needed. No remoteEnv block required.
 }

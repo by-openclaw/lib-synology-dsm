@@ -1,6 +1,5 @@
 .env
 *.env
-.devcontainer/.env.local
 .venv/
 __pycache__/
 *.pyc

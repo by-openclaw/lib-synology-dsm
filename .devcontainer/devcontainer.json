@@ -23,6 +23,10 @@
   // → Always commit from Git Bash on the host. Run pre-commit install once there.
   "remoteUser": "root",
 
+  // Auto-create .env.local from example if it doesn't exist yet.
+  // Runs on the host before the container starts — requires bash in PATH (Git Bash on Windows).
+  "initializeCommand": "bash -c \"[ -f .devcontainer/.env.local ] || cp .devcontainer/.env.local.example .devcontainer/.env.local\"",
+
   // sed -i strips Windows \r line endings from .env.local so --env-file loads cleanly.
   "postCreateCommand": "pip install -e '.[container]' && sed -i 's/\\r//' .devcontainer/.env.local 2>/dev/null || true",
 

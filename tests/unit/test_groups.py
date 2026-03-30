@@ -64,6 +64,16 @@ class TestGroupEnsure:
         assert len(create_calls) == 0
 
 
+class TestGroupUpdate:
+    def test_update_returns_changed_dict(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        result = mgr.update("devops", description="new desc")
+        assert result["changed"] is True
+        assert result["action"] == "updated"
+        assert result["target"] == "devops"
+
+
 class TestGroupDelete:
     def test_delete_calls_api(self, mock_client):
         mock_client.request.return_value = {}

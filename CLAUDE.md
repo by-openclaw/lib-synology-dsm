@@ -58,9 +58,10 @@ Definition of Done: see SOUL.md (workspace) and CONTRIBUTING.md (checklist).
 
 | Priority | Blocker | Notes |
 |---|---|---|
-| HIGH | FileStation.upload() returns {"skipped": bool} — violates ensure return dict standard | Fix: return {"changed": bool, "action": str} |
-| HIGH | client.py timeout hardcoded at 30s — no per-operation timeout, no streaming upload | Fix: per-op timeout param |
-| HIGH | mypy 27 errors — CI type check failing | Fix in progress |
+| ~~HIGH~~ | ~~FileStation.upload() returns {"skipped": bool} — violates ensure return dict standard~~ | ✅ Fixed — returns {"changed": bool, "action": str} |
+| ~~HIGH~~ | ~~client.py timeout hardcoded at 30s — no per-operation timeout~~ | ✅ Fixed — configurable via DSMClient(timeout=N) |
+| ~~HIGH~~ | ~~update()/disable() return None — violates ensure return dict standard~~ | ✅ Fixed — all return {"changed": bool, "action": str, "target": str} |
+| ~~HIGH~~ | ~~mypy 27 errors — CI type check failing~~ | ✅ Fixed — 0 errors |
 | MEDIUM | verify_ssl=False default — pending platform TLS strategy | Blocked on platform cert decision |
 
 See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
@@ -84,7 +85,7 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
 | Exception hierarchy (DSMError → 6 typed exceptions) | ✅ v0.7.3 |
 | dry_run support (all managers) | ✅ v0.7.0 |
-| Unit tests (283 passing, 100% coverage) | ✅ v0.9.0 |
+| Unit tests (293 passing, 100% coverage) | ✅ v0.10.x |
 | CI: ruff + mypy + pytest on Python 3.10/3.11/3.12/3.13 | ✅ CI active |
 | CI: Bandit SAST + pip-audit CVE gate | ✅ 2026-03-29 |
 | Coverage artifacts (htmlcov + coverage.xml, 30-day) | ✅ v0.7.2 |
@@ -92,7 +93,7 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | Dev container (.devcontainer/) | ✅ v0.7.3 |
 | ADR: 3 decisions recorded | ✅ v0.7.3 |
 | LICENSE (MIT) + disclaimer | ✅ v0.7.3 |
-| mypy — 27 open errors (7 files) | ❌ BLOCKING — fix in progress |
+| mypy — 0 errors | ✅ v0.10.x |
 | Ansible collection | ⏸ Phase 2 — see docs/ansible-roadmap.md |
 | Vault AppRole auth | ⏸ Phase 2 — blocked until Vault deployed |
 | Published to GitLab registry | ⏸ Phase 5 — blocked until GitLab CE deployed |
@@ -101,10 +102,10 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 
 | Priority | Issue | Tracking |
 |---|---|---|
-| HIGH | mypy 27 errors — CI red on type check | Fix in progress |
+| ~~HIGH~~ | ~~mypy 27 errors — CI red on type check~~ | ✅ Fixed — 0 errors |
 | HIGH | verify_ssl=False default — pending TLS strategy decision | Blocked on platform cert/DNS decision |
-| HIGH | FileStation.upload() returns {"skipped": bool} — violates ensure return dict | v1.0 blocker |
-| HIGH | client.py timeout hardcoded at 30s — no per-operation timeout | v1.0 blocker |
+| ~~HIGH~~ | ~~FileStation.upload() returns {"skipped": bool} — violates ensure return dict~~ | ✅ Fixed |
+| ~~HIGH~~ | ~~client.py timeout hardcoded at 30s — no per-operation timeout~~ | ✅ Fixed |
 | MEDIUM | API reference lags code — missing list_detailed, add/remove_member | Backlog |
 | MEDIUM | README stale — test count + Python 3.13 badge missing | Backlog |
 | MEDIUM | build not in dev deps — wheel/sdist not CI-validated | Backlog |
@@ -152,7 +153,7 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 - `tests/` must pass before any merge to `main`
 - Breaking changes = MAJOR version bump + migration note in CHANGELOG
 - `ruff` linting must be clean before commit
-- `mypy` must be clean before commit (27 open errors as of 2026-03-29 — tracked, fix in progress)
+- `mypy` must be clean before commit (0 errors as of 2026-03-30)
 
 ---
 

@@ -141,7 +141,7 @@ class UserManager:
         self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))
         return None
 
-    def update(self, name: str, **kwargs: object) -> None:
+    def update(self, name: str, **kwargs: object) -> dict:
         """Update user attributes.
 
         Updatable fields (verified against DSM 7.1.1):
@@ -152,18 +152,26 @@ class UserManager:
             name: Username to update.
             **kwargs: Fields to update.
 
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str), ``target`` (str).
+
         Example:
             mgr.update("rune-api", description="Updated description", email="new@example.com")
         """
         self._c.request("SYNO.Core.User", "set", version=1, name=name, **kwargs)
+        return {"changed": True, "action": "updated", "target": name}
 
-    def disable(self, name: str) -> None:
+    def disable(self, name: str) -> dict:
         """Disable a user (preferred over delete — audit trail preserved).
 
         Args:
             name: Username to disable.
+
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str), ``target`` (str).
         """
         self._c.request("SYNO.Core.User", "set", version=1, name=name, expired="true")
+        return {"changed": True, "action": "disabled", "target": name}
 
     def list_groups(self) -> builtins.list[dict]:
         """List all groups.

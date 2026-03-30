@@ -42,7 +42,8 @@ class TestUpload:
 
         req = mock_open_url.call_args.args[0]
         assert "SynoToken=TOK-456" in req.full_url
-        assert result["success"] is True
+        assert result["changed"] is True
+        assert result["action"] == "uploaded"
 
     def test_upload_sends_session_as_cookie(self):
         """Session ID must be sent as cookie id=, not form field."""
@@ -75,6 +76,8 @@ class TestUpload:
         mgr = FileStationManager(mock_client)
         result = mgr.upload("/tmp/f.txt", "/dest", dry_run=True)
         assert result["dry_run"] is True
+        assert result["changed"] is True
+        assert result["action"] == "would_upload"
 
     def test_upload_overwrite_false_skips_existing(self, mock_client):
         """overwrite=False when file exists should return skipped=True."""
@@ -82,6 +85,42 @@ class TestUpload:
         mgr = FileStationManager(mock_client)
         result = mgr.upload("/tmp/f.txt", "/dest", overwrite=False, dry_run=True)
         assert result["skipped"] is True
+        assert result["changed"] is False
+        assert result["action"] == "noop"
+
+    def test_upload_returns_changed_true_on_success(self):
+        """Normal upload returns changed=True, action=uploaded."""
+        mgr = _mgr()
+        mock_resp = _mock_urlopen({"success": True, "data": {"file": "f.txt", "pid": 42}})
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with patch("builtins.open", mock_open(read_data=b"data")):
+                result = mgr.upload("/tmp/f.txt", "/share")
+        assert result["changed"] is True
+        assert result["action"] == "uploaded"
+        assert result["file"] == "f.txt"
+        assert result["pid"] == 42
+
+    def test_upload_returns_changed_false_when_skipped(self):
+        """Upload with blSkip=True returns changed=False, action=noop."""
+        mgr = _mgr()
+        mock_resp = _mock_urlopen(
+            {"success": True, "data": {"blSkip": True, "file": "f.txt", "pid": 1}}
+        )
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with patch("builtins.open", mock_open(read_data=b"data")):
+                result = mgr.upload("/tmp/f.txt", "/share", overwrite=False)
+        assert result["changed"] is False
+        assert result["action"] == "noop"
+        assert result["skipped"] is True
+
+    def test_upload_dry_run_would_overwrite(self, mock_client):
+        """dry_run with existing file and overwrite=True returns would_overwrite."""
+        mock_client.request.return_value = {"files": [{"name": "f.txt"}]}
+        mgr = FileStationManager(mock_client)
+        result = mgr.upload("/tmp/f.txt", "/dest", overwrite=True, dry_run=True)
+        assert result["changed"] is True
+        assert result["action"] == "would_overwrite"
+        assert result["dry_run"] is True
 
 
 class TestDelete:

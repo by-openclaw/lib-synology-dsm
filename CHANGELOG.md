@@ -38,10 +38,21 @@
 
 ## [Unreleased]
 
-### Features
+### Added
 
+* **smoke:** smoke test suite (`tests/smoke/`) — import and instantiation checks, no network required
+* **nox:** `smoke` session for CI-friendly smoke tests across Python 3.10–3.13
 * **bandwidth:** full read+write+ensure+dry_run — set_user, set_group, ensure_user, ensure_group, disable_user, disable_group
 * **trafficcontrol:** new TrafficControlManager — load, save, add_rule, remove_rule, clear_rules, ensure_rule with idempotent pattern
+
+### Fixed
+
+* **filestation:** `upload()` now returns ADR-0007 compliant `{"changed": bool, "action": str}` dict instead of `{"success": bool, "skipped": bool}`
+* **client:** `DSMClient` accepts configurable `timeout` parameter (default 30s) — no longer hardcoded
+* **users:** `UserManager.update()` returns `{"changed": True, "action": "updated", "target": name}` instead of `None`
+* **users:** `UserManager.disable()` returns `{"changed": True, "action": "disabled", "target": name}` instead of `None`
+* **groups:** `GroupManager.update()` returns `{"changed": True, "action": "updated", "target": name}` instead of `None`
+* **shares:** `ShareManager.update()` returns `{"changed": True, "action": "updated", "target": name}` instead of `None`
 
 ## [0.9.3](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.9.2...v0.9.3) (2026-03-30)
 

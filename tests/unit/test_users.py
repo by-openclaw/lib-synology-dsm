@@ -228,6 +228,16 @@ class TestUserDelete:
         assert len(delete_calls) == 0
 
 
+class TestUserUpdate:
+    def test_update_returns_changed_dict(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        result = mgr.update("alice", description="new desc")
+        assert result["changed"] is True
+        assert result["action"] == "updated"
+        assert result["target"] == "alice"
+
+
 class TestUserDisable:
     def test_disable_calls_set_expired(self, mock_client):
         mock_client.request.return_value = {}
@@ -238,6 +248,14 @@ class TestUserDisable:
         assert call.args[1] == "set"
         assert call.kwargs.get("name") == "alice"
         assert call.kwargs.get("expired") == "true"
+
+    def test_disable_returns_changed_dict(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = _mgr(mock_client)
+        result = mgr.disable("alice")
+        assert result["changed"] is True
+        assert result["action"] == "disabled"
+        assert result["target"] == "alice"
 
 
 class TestUserListGroups:

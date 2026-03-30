@@ -151,6 +151,42 @@ def test_logout_suppresses_exception():
     assert client._sid is None
 
 
+class TestTimeout:
+    def test_default_timeout_is_30(self):
+        client = DSMClient("your-nas-host")
+        assert client._timeout == 30
+
+    def test_custom_timeout(self):
+        client = DSMClient("your-nas-host", timeout=60)
+        assert client._timeout == 60
+
+    def test_timeout_used_in_post(self):
+        """_post passes _timeout to urlopen."""
+        import json as _j
+
+        client = DSMClient("your-nas-host", https=False, timeout=45)
+        captured = {}
+
+        class FakeResp:
+            def read(self):
+                return _j.dumps({"ok": True}).encode()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                pass
+
+        def fake_urlopen(req, context=None, timeout=None):
+            captured["timeout"] = timeout
+            return FakeResp()
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            client._post("http://nas/api", {"key": "val"})
+
+        assert captured["timeout"] == 45
+
+
 class TestResolveError:
     def test_resolve_error_maps_code_119_to_session_error(self):
         from synology_dsm.exceptions import DSMSessionError

@@ -141,7 +141,8 @@ class FileStationManager:
 
         Returns:
             Dict with keys:
-              - ``success`` (bool)
+              - ``changed`` (bool) — True when file was uploaded
+              - ``action`` (str) — "uploaded", "noop", "would_upload", "would_overwrite"
               - ``skipped`` (bool) — True when file existed and overwrite=False
               - ``file`` (str) — filename on NAS
               - ``pid`` (int) — DSM task pid
@@ -156,17 +157,16 @@ class FileStationManager:
             exists = self._file_exists(dest_folder, p.name)
             if exists and not overwrite:
                 return {
-                    "success": True,
+                    "changed": False,
+                    "action": "noop",
                     "skipped": True,
                     "dry_run": True,
-                    "action": "noop",
                     "file": p.name,
                 }
             return {
-                "success": True,
-                "skipped": False,
-                "dry_run": True,
+                "changed": True,
                 "action": "would_upload" if not exists else "would_overwrite",
+                "dry_run": True,
                 "file": p.name,
             }
 
@@ -200,7 +200,7 @@ class FileStationManager:
         ssl_ctx = self._c._ssl_ctx
 
         try:
-            with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
+            with urllib.request.urlopen(req, context=ssl_ctx, timeout=max(self._c._timeout, 60)) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
                 data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.URLError as exc:
             raise DSMConnectionError(
@@ -214,19 +214,24 @@ class FileStationManager:
 
         # Normalise response: expose blSkip as skipped
         result = data.get("data", {})
+        skipped = bool(result.get("blSkip", False))
         return {
-            "success": True,
-            "skipped": bool(result.get("blSkip", False)),
+            "changed": not skipped,
+            "action": "noop" if skipped else "uploaded",
+            "skipped": skipped,
             "file": result.get("file", p.name),
             "pid": result.get("pid"),
         }
 
-    def download(self, remote_path: str, local_path: str) -> None:
+    def download(self, remote_path: str, local_path: str) -> dict:
         """Download a single file from the NAS.
 
         Args:
             remote_path: Absolute NAS file path (e.g. '/by-terraform-state/poc/terraform.tfstate').
             local_path:  Local destination path.
+
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str), ``file`` (str), ``local_path`` (str).
         """
         params = urllib.parse.urlencode(
             {
@@ -243,7 +248,7 @@ class FileStationManager:
         req.add_header("X-SYNO-TOKEN", self._c._synotoken)
         ssl_ctx = self._c._ssl_ctx
         try:
-            with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
+            with urllib.request.urlopen(req, context=ssl_ctx, timeout=max(self._c._timeout, 60)) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
                 with open(local_path, "wb") as fh:
                     fh.write(resp.read())
         except urllib.error.URLError as exc:
@@ -254,6 +259,12 @@ class FileStationManager:
             raise DSMConnectionError(
                 f"FileStation download network error: {exc}", code=None
             ) from exc
+        return {
+            "changed": True,
+            "action": "downloaded",
+            "file": PurePosixPath(remote_path).name,
+            "local_path": local_path,
+        }
 
     def delete(self, path: str, dry_run: bool = False) -> dict:
         """Delete a file or folder at *path*.

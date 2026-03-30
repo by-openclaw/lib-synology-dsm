@@ -34,7 +34,12 @@ class DSMClient:
     """Synology DSM API client with session lifecycle management."""
 
     def __init__(
-        self, host: str, port: int = 5001, https: bool = True, verify_ssl: bool = False
+        self,
+        host: str,
+        port: int = 5001,
+        https: bool = True,
+        verify_ssl: bool = False,
+        timeout: int = 30,
     ) -> None:
         """Initialise a DSM API client.
 
@@ -43,10 +48,12 @@ class DSMClient:
             port:       HTTPS or HTTP port (default 5001).
             https:      Use HTTPS if True (default).
             verify_ssl: Verify SSL certificate. Set False for self-signed NAS certs.
+            timeout:    Default HTTP timeout in seconds for API requests.
         """
         scheme = "https" if https else "http"
         self.base_url = f"{scheme}://{host}:{port}/webapi"
         self._verify = verify_ssl
+        self._timeout = timeout
         self._sid: str | None = None
         self._synotoken: str = ""
         # SSL context — skip verification when verify_ssl=False (self-signed NAS certs)
@@ -66,7 +73,7 @@ class DSMClient:
             for k, v in headers.items():
                 req.add_header(k, v)
         try:
-            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=30) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
+            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=self._timeout) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
                 return cast(dict[Any, Any], json.loads(resp.read().decode("utf-8")))
         except urllib.error.URLError as exc:
             raise DSMConnectionError(f"Cannot reach DSM at {url}: {exc.reason}", code=None) from exc

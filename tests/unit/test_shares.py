@@ -118,6 +118,14 @@ class TestShareUpdateDirect:
         assert call.args[1] == "set"
         assert call.kwargs.get("description") == "new desc"
 
+    def test_update_returns_changed_dict(self, mock_client):
+        mock_client.request.return_value = {}
+        mgr = ShareManager(mock_client)
+        result = mgr.update("myshare", desc="updated")
+        assert result["changed"] is True
+        assert result["action"] == "updated"
+        assert result["target"] == "myshare"
+
 
 class TestShareDelete:
     def test_delete_calls_api(self, mock_client):

@@ -44,7 +44,10 @@ Changelog = "https://github.com/by-openclaw/lib-synology-dsm/blob/main/CHANGELOG
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
-markers = ["integration: live NAS required (deselect with -m 'not integration')"]
+markers = [
+    "integration: live NAS required (deselect with -m 'not integration')",
+    "smoke: import and instantiation checks, no network required",
+]
 addopts = "-v --tb=short"
 
 [tool.coverage.run]

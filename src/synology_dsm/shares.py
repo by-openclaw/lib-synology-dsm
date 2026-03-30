@@ -262,7 +262,7 @@ class ShareManager:
 
         return result
 
-    def update(self, name: str, **kwargs: object) -> None:
+    def update(self, name: str, **kwargs: object) -> dict:
         """Update shared folder attributes.
 
         Requires administrators group membership.
@@ -276,10 +276,14 @@ class ShareManager:
             name: Share name to update.
             **kwargs: Fields to update.
 
+        Returns:
+            Dict with keys: ``changed`` (bool), ``action`` (str), ``target`` (str).
+
         Example:
             mgr.update("by-gitlab", desc="GitLab storage — production data")
         """
         self._c.request("SYNO.Core.Share", "set", version=1, name=name, **kwargs)
+        return {"changed": True, "action": "updated", "target": name}
 
     def delete(self, name: str, dry_run: bool = False) -> dict | None:
         """Delete a shared folder.

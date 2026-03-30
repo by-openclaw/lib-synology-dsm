@@ -423,7 +423,8 @@ class TestFileStationManager:
             f.write("lib-synology-dsm pytest integration test\n")
         try:
             result = self.fs.upload(tmp, self.folder_path, overwrite=True)
-            assert result.get("success") or result.get("skipped") is False
+            assert result["changed"] is True
+            assert result["action"] == "uploaded"
             files = self.fs.list(self.folder_path)
             names = [f["name"] for f in files]
             assert self.filename in names

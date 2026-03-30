@@ -37,6 +37,13 @@ def lint(session: nox.Session) -> None:
     session.run("mypy", "src/synology_dsm/", "--ignore-missing-imports")
 
 
+@nox.session(python=["3.10", "3.11", "3.12", "3.13"])
+def smoke(session: nox.Session) -> None:
+    """Run smoke tests — import and instantiation checks, no network required."""
+    session.install("-e", ".[dev]")
+    session.run("pytest", "tests/smoke/", "-m", "smoke", "-v")
+
+
 @nox.session(python="3.10")
 def integration(session: nox.Session) -> None:
     """Run integration tests — requires NAS_HOST / API_USER / API_PASS env vars."""

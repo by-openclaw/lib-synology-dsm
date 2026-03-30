@@ -6,334 +6,200 @@
 
 | Path | When to use |
 |---|---|
-| [A — Native (venv)](#path-a--native-venv) | Git Bash on Windows, or Linux/macOS terminal — Python installed locally |
-| [B — VS Code Dev Container](#path-b--vs-code-dev-container) | No local Python install, or you want a pre-configured IDE — requires Docker Desktop |
+| [A — Native Python + venv](#path-a--native-python--venv) | Any OS — Python installed locally, prefer terminal |
+| [B — VS Code Dev Container](#path-b--vs-code-dev-container) | Any OS — Docker Desktop installed, prefer VS Code IDE |
+
+Both paths use the **same `.env` file at the repo root** for credentials.
 
 ---
 
-## Path A — Native (venv)
+## Credentials — always first
 
-No Docker required. Python runs directly on your machine.
+Regardless of the path you choose, you need a `.env` file at the repo root.
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in the two required values:
+
+```ini
+API_PASS=your-dsm-admin-password
+TEST_USER_PASS=TmpPass123!        # password set on the temporary test user
+```
+
+The other fields (`NAS_HOST`, `NFS_CLIENT`, etc.) are pre-filled with BY-SYSTEMS defaults.
+`.env` is gitignored — it will never be committed.
+
+---
+
+## Path A — Native Python + venv
+
+No Docker required. Python 3.10+ must be installed.
+
+### Windows (Git Bash)
+
+```bash
+git clone https://github.com/by-openclaw/lib-synology-dsm.git
+cd lib-synology-dsm
+
+# Create and activate venv
+python -m venv .venv
+source .venv/Scripts/activate
+
+# Install with dev extras
+pip install -e ".[dev]"
+
+# Copy and fill credentials
+cp .env.example .env
+# edit .env — fill in API_PASS and TEST_USER_PASS
+```
 
 ### Linux / macOS
 
 ```bash
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 cd lib-synology-dsm
-python -m venv .venv && source .venv/bin/activate
+
+# Create and activate venv
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install with dev extras
 pip install -e ".[dev]"
-pre-commit install
-pytest tests/unit/ -v   # Expected: 223 passed, 0 failed
-deactivate              # when done
-```
 
-### Windows 11 with Git Bash
-
-#### Step 1 — Install Python 3.13
-
-Run in Git Bash (or PowerShell):
-```bash
-winget install Python.Python.3.13
-```
-
-Restart Git Bash after install.
-
-#### Step 2 — Disable App Execution Aliases
-
-Windows intercepts `python` in Git Bash and redirects it to the Microsoft Store instead of the real binary.
-**Disable the aliases before doing anything else:**
-
-```
-Start → Settings → Apps → Advanced app settings → App execution aliases
-→ Turn OFF: python.exe
-→ Turn OFF: python3.exe
-```
-
-#### Step 3 — Add Python to Git Bash PATH
-
-The Python installer does **not** automatically add itself to Git Bash's PATH.
-Add it manually — run this once in Git Bash (replace `YourUsername` with your Windows username):
-
-```bash
-echo 'export PATH="/c/Users/YourUsername/AppData/Local/Programs/Python/Python313:/c/Users/YourUsername/AppData/Local/Programs/Python/Python313/Scripts:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-Verify:
-```bash
-python --version   # Expected: Python 3.13.x
-pip --version      # Expected: pip 2x.x from .../Python313/...
-```
-
-#### Step 4 — Clone and set up
-
-```bash
-git clone https://github.com/by-openclaw/lib-synology-dsm.git
-cd lib-synology-dsm
-python -m venv .venv
-source .venv/Scripts/activate   # Git Bash on Windows: Scripts, not bin
-pip install -e ".[dev]"
-pre-commit install
-```
-
-> ⚠️ `bin/activate` is Linux/macOS. On Windows Git Bash it is always `Scripts/activate`.
-
-#### Step 5 — Run unit tests
-
-```bash
-pytest tests/unit/ -v
-# Expected: 223 passed, 3 warnings, 0 failed
-# The 3 warnings are intentional — they test that deprecation/fallback warnings fire correctly
-```
-
-#### Step 6 — Run integration tests (live NAS)
-
-```bash
+# Copy and fill credentials
 cp .env.example .env
-notepad .env   # fill in NAS_HOST, NAS_PORT, API_USER, API_PASS
-
-# Load env vars into shell — no inline comments in .env or this will fail
-export $(grep -v '^#' .env | grep -v '^$' | sed 's/[[:space:]]*#.*//' | xargs)
-
-pytest tests/integration/ -v
-# Expected: 51 passed, ~96s
+# edit .env — fill in API_PASS and TEST_USER_PASS
 ```
 
-#### Step 7 — Deactivate when done
+### Run tests
 
 ```bash
-deactivate
+# Unit tests (no NAS required)
+pytest tests/unit/ -v
+
+# Integration tests (live NAS required — .env must be filled)
+pytest tests/integration/ -m integration -v
 ```
 
 ---
 
 ## Path B — VS Code Dev Container
 
-Python runs inside a Docker container. Nothing to install locally except Docker and VS Code.
+Docker Desktop must be installed and running.
+No local Python install required — everything runs inside the container.
 
 ### Prerequisites
 
-1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-2. Install [VS Code](https://code.visualstudio.com/) + [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+| Tool | Download |
+|---|---|
+| Docker Desktop | <https://www.docker.com/products/docker-desktop> |
+| VS Code | <https://code.visualstudio.com> |
+| Dev Containers extension | VS Code → Extensions → `ms-vscode-remote.remote-containers` |
 
-### Docker Desktop install settings (Windows)
+### Setup
 
-During Docker Desktop installation you will see a configuration screen:
-
-| Option | Setting | Why |
-|---|---|---|
-| ✅ Use WSL 2 instead of Hyper-V | **Enable** | Required for Linux containers |
-| ☐ Allow Windows Containers | **Leave disabled** | We use Linux containers only |
-
-After install, Docker Desktop will prompt for a logout/restart — do it before continuing.
-
-### Step 1 — Clone the repo
+**Step 1 — Clone the repo**
 
 ```bash
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 ```
 
-### Step 2 — Open in VS Code
-
-```
-File → Open Folder → select lib-synology-dsm
-```
-
-VS Code will detect `.devcontainer/devcontainer.json` and show a popup:
-**"Reopen in Container"** → click it.
-
-Or: `Ctrl+Shift+P` → `Dev Containers: Reopen in Container`
-
-First time: ~2 min to pull Python 3.13 image and install all deps automatically.
-
-### Step 3 — Open a terminal inside the container
-
-After the container starts, open a terminal:
-- `Ctrl+\`` ` (backtick) — open a new terminal
-- Or: **Terminal → New Terminal** from the menu bar
-
-> ⚠️ VS Code may take a few seconds to become responsive after the build finishes.
-> If the terminal panel does not appear immediately, wait for the status bar (bottom-left) to stop showing a spinner, then try again.
-> If VS Code's built-in terminal is still not accessible, use **Terminal → New Terminal → bash** — this opens a raw bash session that always works.
-
-### Step 4 — Run unit tests
-
-In the container terminal:
+**Step 2 — Create `.env`**
 
 ```bash
-pytest tests/unit/ -v
-# Expected: 223 passed, 3 warnings, 0 failed
-```
-
-### Step 5 — Integration tests
-
-> ⚠️ **Integration tests do NOT run inside the dev container.**
-> Docker Desktop on Windows uses WSL2 NAT — the container has no route to your LAN (`10.6.224.x`).
-> Run integration tests from a machine that is actually on the network: Rune VM, Git Bash on Windows, or any Linux host with LAN access.
-> See [Path A](#path-a--native-venv) or the [Running integration tests](#running-integration-tests-live-nas-required) section below.
-
-> The dev container is for **unit tests and development only.**
-
-See [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) for full config.
-
-### Troubleshooting — permission errors or stale build
-
-If you see a `PermissionError` during container startup, or the `postCreateCommand` looks wrong
-(e.g. still shows `pre-commit install` from an old cached build):
-
-```bash
-# Step 1 — pull latest devcontainer config
-git reset --hard origin/main && git pull origin main
-
-# Step 2 — full rebuild without cache
-# Ctrl+Shift+P → Dev Containers: Rebuild Container Without Cache
-```
-
-The **"Without Cache"** option is critical — a normal rebuild reuses the old config.
-
-> **Note on pre-commit in the container:**
-> `pre-commit` is intentionally not installed inside the container. `.git/hooks/` is owned by the
-> Windows host user and is not writable from inside the Linux container. Git hooks (pre-commit,
-> detect-secrets, ruff, etc.) run on the **host** only — via Path A or Git Bash.
-> To install hooks on the host: `pip install -e ".[dev]" && pre-commit install` (run once in Git Bash).
-
----
-
-## Pre-commit hooks (mandatory)
-
-After cloning, run `pre-commit install` once. This installs git hooks that run automatically on every `git commit`:
-
-| Hook | What it checks |
-|---|---|
-| `detect-secrets` | Blocks commits containing passwords, API tokens, private keys |
-| `check-added-large-files` | Blocks files > 500KB |
-| `end-of-file-fixer` | Ensures files end with newline |
-| `ruff` | Python linting (auto-fix) |
-| `ruff-format` | Python formatting |
-
-**If detect-secrets flags a false positive** (e.g. a test placeholder like `"secret"`):
-```bash
-detect-secrets audit .secrets.baseline
-# Follow prompts: press 'n' to mark as not a real secret
-git add .secrets.baseline
-git commit -m "chore: update secrets baseline"
-```
-
-**Never bypass the hooks** with `git commit --no-verify` unless you have an explicit reason and review it immediately.
-
----
-
-## Running unit tests
-
-> **No `.env` needed. No NAS needed. No network needed.** All HTTP calls are mocked.
-> Unit tests are completely self-contained — just `pytest tests/unit/ -v` on either Path A or B.
-
-Unit tests are fully offline — no NAS required. All HTTP calls are mocked.
-
-```bash
-# Run unit tests with coverage report
-pytest tests/unit/ -v
-
-# Terminal output: per-test PASS/FAIL + coverage table
-# HTML report: open htmlcov/index.html in browser after run
-# Gate: fails if total coverage < 80%
-```
-
-Coverage summary:
-
-| Module | Target | Notes |
-|---|---|---|
-| `client.py` | ≥80% | urllib only — no external HTTP deps |
-| `credentials.py` | ≥80% | env vars + Vault providers |
-| `filestation.py` | ≥80% | upload/download/list/mkdir/delete |
-| `groups.py` | 100% | full ensure/CRUD/members |
-| `nfs.py` | 100% | get_rules |
-| `shares.py` | ≥80% | full ensure/CRUD/permissions |
-| `users.py` | ≥80% | full ensure/CRUD |
-
----
-
-## Running integration tests (live NAS required)
-
-> **This is where `.env` is needed.** Integration tests connect to a real NAS.
-> Skip this entirely if you're just developing and running unit tests.
-
-Integration tests talk to a real Synology NAS. They create and delete test artifacts
-in controlled locations. **They never touch existing shares or user data.**
-
-### What the integration test creates and cleans up
-
-| Object | Name | Cleaned up |
-|---|---|---|
-| DSM user | `rune-test-tmp` | ✅ deleted at end |
-| DSM group | `rune-test-group` | ✅ deleted at end |
-| Shared folder | `rune-test-share` | ✅ deleted at end |
-| FileStation folder | `/{TEST_SHARE}/rune-test-fs-tmp/` | ✅ deleted at end |
-| FileStation file | `rune-test-upload.txt` inside above | ✅ deleted with folder |
-
-### Prerequisites on the NAS
-
-1. Create a DSM admin user (e.g. `your-dsm-user`) in DSM → Control Panel → User & Group
-2. Add it to the `administrators` group
-3. Enable: Control Panel → User & Group → `your-dsm-user` → Applications → DSM = **Allow**
-4. Create a read-only audit user (e.g. `your-audit-user`) — normal user, no admin rights
-5. NFS service must be enabled if testing NFS rules: Control Panel → File Services → NFS
-
-### Setup
-
-```bash
+cd lib-synology-dsm
 cp .env.example .env
-notepad .env   # or your editor — fill in NAS_HOST, NAS_PORT, API_USER, API_PASS
+# edit .env — fill in API_PASS and TEST_USER_PASS
 ```
 
-> ⚠️ **Do not add inline comments** (`# ...`) after values in `.env`. The `xargs` loader will fail.
+**Step 3 — Open in VS Code**
 
-### Run
+```
+File → Open Folder → lib-synology-dsm
+```
+
+**Step 4 — Reopen in container**
+
+VS Code will show a notification: _"Folder contains a Dev Container configuration"_ → click **Reopen in Container**.
+
+Or: `Ctrl+Shift+P` → `Dev Containers: Rebuild and Reopen in Container`
+
+The container will:
+1. Pull `mcr.microsoft.com/devcontainers/python:3.13`
+2. Create a venv at `/home/vscode/.venv`
+3. Install the project with `pip install -e '.[container]'`
+4. Strip Windows `\r` line endings from `.env` if present
+
+**Step 5 — Run tests in the container terminal**
 
 ```bash
-# Export env vars from file, then run
-export $(grep -v '^#' .env | grep -v '^$' | sed 's/[[:space:]]*#.*//' | xargs)
-pytest tests/integration/ -v
-# Expected: 51 passed, ~96s
+# Unit tests (no NAS required)
+pytest tests/unit/ -v
+
+# Integration tests (live NAS required — .env must be filled)
+pytest tests/integration/ -m integration -v
 ```
 
-### What it does
+### VS Code extensions (auto-installed)
 
-Each test creates a uniquely named object (e.g. `rune-u-b4c9d1cc`), runs assertions, then deletes it.
-Your NAS audit log will show create/delete pairs for each test — this is expected and correct.
-**Nothing persists on the NAS after the run.**
+The dev container installs these automatically:
+
+| Extension | Purpose |
+|---|---|
+| Python | Language support, IntelliSense |
+| Pylance | Type checking |
+| Ruff | Linter + formatter (format on save) |
+| Mypy | Static type checker |
+| GitLens | Git annotations |
+| Python Test Adapter | Test explorer sidebar |
+| Code Spell Checker | Typo detection |
+
+### Unit tests in VS Code test explorer
+
+The test explorer sidebar runs **unit tests only** by default (no NAS needed).
+Integration tests must be run manually from the container terminal.
 
 ---
 
-## Code standards
+## Pre-commit hooks
 
-- **No external HTTP dependencies** — use `urllib.request` only (no `httpx`, no `requests`)
-- **Conventional commits**: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`
-- **Formatting**: `ruff format src/ tests/` before committing
-- **Linting**: `ruff check src/ tests/` must be clean
-- **Types**: `mypy src/synology_dsm/ --ignore-missing-imports` must pass
-- **Docstrings**: all public classes and methods — no exceptions
-- **ensure() pattern**: all managers must implement idempotent `ensure(name, state="present"|"absent", dry_run=False)`
-- **dry_run**: all destructive methods must support `dry_run=True` (no-op + describe what would happen)
+Pre-commit hooks run on the **host** (not inside the container) because `.git/hooks/` is owned by the host user.
 
-## Adding a new module
+Install once on the host:
 
-1. Create `src/synology_dsm/{module}.py`
-2. Add unit tests in `tests/unit/test_{module}.py`
-3. Add integration tests in `tests/integration/test_live_nas.py` — use isolated test objects, clean up after
-4. Export from `src/synology_dsm/__init__.py` if appropriate
-5. Update `docs/feature-coverage.md` and `README.md`
+```bash
+# Native path — in your venv
+pip install pre-commit
+pre-commit install
 
-## Session management
-
-Always use `DSMClient` as a context manager — it handles login/logout and session cleanup:
-
-```python
-with DSMClient(host, port=5001, verify_ssl=False) as client:
-    client.login(user, password)
-    mgr = ShareManager(client)
-    mgr.ensure("my-share", state="present")
-# logout called automatically on __exit__
+# Dev container path — run this in Git Bash on the host (outside VS Code)
+cd lib-synology-dsm
+pip install pre-commit  # or use system Python
+pre-commit install
 ```
 
-Never store session IDs in state — they are short-lived (30 min default on DSM 7.x).
+Hooks configured: `detect-secrets` (credential scanner) + `ruff` (lint + format).
+
+---
+
+## LAN access from the container
+
+| Platform | Status | Notes |
+|---|---|---|
+| Windows 11 + Docker Desktop | ✅ Validated | LAN routes via `192.168.65.1` by default — NAS reachable as-is |
+| macOS + Docker Desktop | ⏳ Pending | Expected same behaviour |
+| Ubuntu Desktop + Docker Desktop | ⏳ Pending | Expected same behaviour |
+
+If the NAS is unreachable from inside the container: check Docker Desktop → Settings → Resources → Network — enable host networking or ensure the LAN route is present.
+
+---
+
+## Release process
+
+Never edit version numbers manually. See [`docs/release-process.md`](docs/release-process.md).
+
+```
+push commits with conventional messages → release-please opens PR → merge it → done
+```

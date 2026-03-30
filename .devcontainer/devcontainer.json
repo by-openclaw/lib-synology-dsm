@@ -15,14 +15,16 @@
   // conftest.py loads it automatically via python-dotenv — no --env-file needed.
   // Container starts cleanly even if .env doesn't exist yet.
 
-  // remoteUser root: avoids pip permission issues on site-packages in container.
+  // ── User ──────────────────────────────────────────────────────────────────
+  // remoteUser "vscode": non-root user provided by the base image.
+  // pip installs into a venv at /home/vscode/.venv — no sudo, no root, no warnings.
   // pre-commit install intentionally omitted: .git/hooks is owned by the host user
   // and cannot be written from inside the container.
   // → Always commit from Git Bash / terminal on the host. Run pre-commit install once there.
-  "remoteUser": "root",
+  "remoteUser": "vscode",
 
-  // Strip Windows \r line endings from .env so python-dotenv parses cleanly.
-  "postCreateCommand": "pip install -e '.[container]' && sed -i 's/\\r//' .env 2>/dev/null || true",
+  // Create venv, install project in editable mode, strip Windows \r from .env.
+  "postCreateCommand": "python -m venv /home/vscode/.venv && /home/vscode/.venv/bin/pip install -e '.[container]' && sed -i 's/\\r//' .env 2>/dev/null || true",
 
   "customizations": {
     "vscode": {
@@ -38,7 +40,7 @@
         "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "/home/vscode/.venv/bin/python",
         "python.terminal.activateEnvironment": true,
 
         "[python]": {
@@ -58,8 +60,6 @@
         // Unit tests run in VS Code test explorer (no NAS needed).
         // Integration tests require LAN access — run from container terminal:
         //   pytest tests/integration/ -m integration -v
-        // curl scripts:
-        //   bash tests/integration/curl/00-auth.sh
         "python.testing.pytestEnabled": true,
         "python.testing.pytestArgs": ["tests/unit"],
         "python.testing.unittestEnabled": false,

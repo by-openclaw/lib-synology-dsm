@@ -9,13 +9,12 @@
   // ── LAN access (Synology NAS on local network) ────────────────────────────
   // Docker Desktop for Windows routes LAN traffic (10.x.x.x) via 192.168.65.1
   // by default — no special network config needed. NAS is reachable as-is.
-  // --network=host is silently ignored by Docker Desktop on Windows.
-  //
-  // ── Credentials (gitignored, never committed) ─────────────────────────────
-  // Copy .devcontainer/.env.local.example → .devcontainer/.env.local
-  // Fill in credentials. Delete the file when done.
-  // --env-file loads it into the container at build time — nothing persists on Windows.
-  "runArgs": ["--env-file", "${localWorkspaceFolder}/.devcontainer/.env.local"],
+
+  // ── Credentials ───────────────────────────────────────────────────────────
+  // Copy .devcontainer/.env.local.example → .devcontainer/.env.local and fill in credentials.
+  // The file is gitignored and mounted read-only into the container via the workspace mount.
+  // Integration tests load it automatically via python-dotenv (dotenv_path=.devcontainer/.env.local).
+  // No --env-file in runArgs — container always starts even if .env.local doesn't exist yet.
 
   // remoteUser root: avoids pip permission issues on site-packages in container.
   // pre-commit install intentionally omitted: .git/hooks is owned by the Windows
@@ -23,11 +22,7 @@
   // → Always commit from Git Bash on the host. Run pre-commit install once there.
   "remoteUser": "root",
 
-  // Auto-create .env.local from example if it doesn't exist yet.
-  // Runs on the host before the container starts — requires bash in PATH (Git Bash on Windows).
-  "initializeCommand": "bash -c \"[ -f .devcontainer/.env.local ] || cp .devcontainer/.env.local.example .devcontainer/.env.local\"",
-
-  // sed -i strips Windows \r line endings from .env.local so --env-file loads cleanly.
+  // sed -i strips Windows \r line endings from .env.local so python-dotenv loads cleanly.
   "postCreateCommand": "pip install -e '.[container]' && sed -i 's/\\r//' .devcontainer/.env.local 2>/dev/null || true",
 
   "customizations": {

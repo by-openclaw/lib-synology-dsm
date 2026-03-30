@@ -4,6 +4,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from synology_dsm.credentials import (
     DSMCredentials,
     EnvCredentialProvider,

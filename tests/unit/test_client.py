@@ -4,6 +4,7 @@ import urllib.error
 from unittest.mock import patch
 
 import pytest
+
 from synology_dsm import DSMClient, DSMConnectionError
 from synology_dsm.exceptions import DSMAuthError
 

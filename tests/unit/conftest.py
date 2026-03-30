@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+
 from synology_dsm.client import DSMClient
 
 

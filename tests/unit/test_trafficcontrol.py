@@ -2,8 +2,6 @@
 
 import json
 
-import pytest
-
 from synology_dsm.trafficcontrol import TrafficControlManager
 
 

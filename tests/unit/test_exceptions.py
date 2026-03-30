@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+
 from synology_dsm import DSMClient
 from synology_dsm.exceptions import (
     DSMAPIError,

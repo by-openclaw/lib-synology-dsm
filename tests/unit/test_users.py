@@ -1,6 +1,7 @@
 """Unit tests — UserManager."""
 
 import pytest
+
 from synology_dsm.exceptions import DSMNotFoundError
 from synology_dsm.users import UserManager
 

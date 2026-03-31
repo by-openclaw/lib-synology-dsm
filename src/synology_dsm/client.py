@@ -29,18 +29,18 @@ from .exceptions import (
 # https://github.com/pmilano1/synology-dsm-api/blob/master/docs/guides/error-handling.md
 _ERROR_MAP: dict[int, type[DSMError]] = {
     # Authentication
-    400: DSMAuthError,              # Invalid credentials
-    401: DSMAuthError,              # Account not found
-    402: DSMAuthError,              # Account disabled
+    400: DSMAuthError,  # Invalid credentials
+    401: DSMAuthError,  # Account not found
+    402: DSMAuthError,  # Account disabled
     # Permissions
-    103: DSMPermissionError,        # API-level permission denied
-    403: DSMPermissionError,        # Login-level permission denied / 2FA required
+    103: DSMPermissionError,  # API-level permission denied
+    403: DSMPermissionError,  # Login-level permission denied / 2FA required
     # Session
-    105: DSMSessionError,           # Session timeout
-    106: DSMSessionError,           # Session interrupted
-    119: DSMSessionError,           # Invalid session / SID expired
+    105: DSMSessionError,  # Session timeout
+    106: DSMSessionError,  # Session interrupted
+    119: DSMSessionError,  # Invalid session / SID expired
     # Not found
-    404: DSMNotFoundError,          # Resource not found
+    404: DSMNotFoundError,  # Resource not found
     # Invalid operation
     117: DSMInvalidOperationError,  # Operation not permitted in current state
     # Parameter errors
@@ -48,9 +48,9 @@ _ERROR_MAP: dict[int, type[DSMError]] = {
     101: DSMInvalidParameterError,  # Invalid parameter
     102: DSMInvalidParameterError,  # Method not found
     120: DSMInvalidParameterError,  # Missing required parameter
-    1001: DSMInvalidParameterError, # Invalid parameter value
-    1009: DSMInvalidParameterError, # Invalid parameter format
-    1010: DSMInvalidParameterError, # Parameter out of range
+    1001: DSMInvalidParameterError,  # Invalid parameter value
+    1009: DSMInvalidParameterError,  # Invalid parameter format
+    1010: DSMInvalidParameterError,  # Parameter out of range
 }
 
 

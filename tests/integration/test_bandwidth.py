@@ -151,8 +151,9 @@ class TestBandwidthManager:
     def test_ensure_group_updates(self) -> None:
         """ensure_group() — changed=True when state differs, then restore."""
         self.bw.ensure_group("administrators", "FTP", "disabled")
-        r = self.bw.ensure_group("administrators", "FTP", "enabled",
-                                  upload_limit_1=100, download_limit_1=100)
+        r = self.bw.ensure_group(
+            "administrators", "FTP", "enabled", upload_limit_1=100, download_limit_1=100
+        )
         assert isinstance(r["changed"], bool)
         # Restore
         self.bw.ensure_group("administrators", "FTP", "disabled")

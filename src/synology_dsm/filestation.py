@@ -200,7 +200,9 @@ class FileStationManager:
         ssl_ctx = self._c._ssl_ctx
 
         try:
-            with urllib.request.urlopen(req, context=ssl_ctx, timeout=max(self._c._timeout, 60)) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
+            with urllib.request.urlopen(
+                req, context=ssl_ctx, timeout=max(self._c._timeout, 60)
+            ) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
                 data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.URLError as exc:
             raise DSMConnectionError(
@@ -248,7 +250,9 @@ class FileStationManager:
         req.add_header("X-SYNO-TOKEN", self._c._synotoken)
         ssl_ctx = self._c._ssl_ctx
         try:
-            with urllib.request.urlopen(req, context=ssl_ctx, timeout=max(self._c._timeout, 60)) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
+            with urllib.request.urlopen(
+                req, context=ssl_ctx, timeout=max(self._c._timeout, 60)
+            ) as resp:  # nosec B310 — URL always constructed internally as https://NAS_HOST/…
                 with open(local_path, "wb") as fh:
                     fh.write(resp.read())
         except urllib.error.URLError as exc:

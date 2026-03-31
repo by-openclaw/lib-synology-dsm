@@ -122,7 +122,7 @@ if __name__ == "__main__":
     if "--report" in args:
         idx = args.index("--report")
         report_path = args[idx + 1]
-        args = args[:idx] + args[idx + 2:]
+        args = args[:idx] + args[idx + 2 :]
 
     cmd = [
         sys.executable,

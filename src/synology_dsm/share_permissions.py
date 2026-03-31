@@ -84,17 +84,21 @@ class SharePermissionManager:
 
         result: list[dict] = []
         for entry in user_entries:
-            result.append({
-                "name": entry["name"],
-                "is_group": False,
-                "perm": _perm_from_flags(entry),
-            })
+            result.append(
+                {
+                    "name": entry["name"],
+                    "is_group": False,
+                    "perm": _perm_from_flags(entry),
+                }
+            )
         for entry in group_entries:
-            result.append({
-                "name": entry["name"],
-                "is_group": True,
-                "perm": _perm_from_flags(entry),
-            })
+            result.append(
+                {
+                    "name": entry["name"],
+                    "is_group": True,
+                    "perm": _perm_from_flags(entry),
+                }
+            )
         return result
 
     def set(
@@ -235,9 +239,7 @@ class SharePermissionManager:
             raise ValueError(f"Invalid state '{state}'. Use 'present' or 'absent'.")
 
         current_perms = self.list(share)
-        existing = {
-            (p["name"], p["is_group"]): p["perm"] for p in current_perms
-        }
+        existing = {(p["name"], p["is_group"]): p["perm"] for p in current_perms}
         current_perm = existing.get((subject, is_group))
 
         if state == "present":

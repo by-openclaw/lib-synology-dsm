@@ -250,9 +250,16 @@ class TestEnsurePresent:
             if args[1] == "list":
                 if kwargs.get("user_group_type") == "local_group":
                     return {"items": []}
-                return {"items": [
-                    {"name": "admin", "is_writable": False, "is_readonly": True, "is_deny": False}
-                ]}
+                return {
+                    "items": [
+                        {
+                            "name": "admin",
+                            "is_writable": False,
+                            "is_readonly": True,
+                            "is_deny": False,
+                        }
+                    ]
+                }
             return {}
 
         mock_client.request.side_effect = side_effect
@@ -281,9 +288,16 @@ class TestEnsurePresent:
         def side_effect(*args, **kwargs):
             if args[1] == "list":
                 if kwargs.get("user_group_type") == "local_group":
-                    return {"items": [
-                        {"name": "devs", "is_writable": True, "is_readonly": False, "is_deny": False}
-                    ]}
+                    return {
+                        "items": [
+                            {
+                                "name": "devs",
+                                "is_writable": True,
+                                "is_readonly": False,
+                                "is_deny": False,
+                            }
+                        ]
+                    }
                 return {"items": []}
             return {}
 
@@ -319,9 +333,16 @@ class TestEnsureAbsent:
             if args[1] == "list":
                 if kwargs.get("user_group_type") == "local_group":
                     return {"items": []}
-                return {"items": [
-                    {"name": "admin", "is_writable": True, "is_readonly": False, "is_deny": False}
-                ]}
+                return {
+                    "items": [
+                        {
+                            "name": "admin",
+                            "is_writable": True,
+                            "is_readonly": False,
+                            "is_deny": False,
+                        }
+                    ]
+                }
             return {}
 
         mock_client.request.side_effect = side_effect
@@ -353,9 +374,16 @@ class TestEnsureAbsent:
             if args[1] == "list":
                 if kwargs.get("user_group_type") == "local_group":
                     return {"items": []}
-                return {"items": [
-                    {"name": "admin", "is_writable": True, "is_readonly": False, "is_deny": False}
-                ]}
+                return {
+                    "items": [
+                        {
+                            "name": "admin",
+                            "is_writable": True,
+                            "is_readonly": False,
+                            "is_deny": False,
+                        }
+                    ]
+                }
             return {}
 
         mock_client.request.side_effect = side_effect
@@ -369,9 +397,16 @@ class TestEnsureAbsent:
         def side_effect(*args, **kwargs):
             if args[1] == "list":
                 if kwargs.get("user_group_type") == "local_group":
-                    return {"items": [
-                        {"name": "devs", "is_writable": False, "is_readonly": True, "is_deny": False}
-                    ]}
+                    return {
+                        "items": [
+                            {
+                                "name": "devs",
+                                "is_writable": False,
+                                "is_readonly": True,
+                                "is_deny": False,
+                            }
+                        ]
+                    }
                 return {"items": []}
             return {}
 

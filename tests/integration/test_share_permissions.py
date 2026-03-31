@@ -82,9 +82,12 @@ class TestSharePermissionManager:
         assert result["action"] == "set"
 
     def test_set_bulk_permissions(self):
-        result = self.perms.set_bulk(self.sharename, [
-            {"name": self.username, "is_group": False, "perm": "read_only"},
-        ])
+        result = self.perms.set_bulk(
+            self.sharename,
+            [
+                {"name": self.username, "is_group": False, "perm": "read_only"},
+            ],
+        )
         assert result["changed"] is True
         assert result["action"] == "set_bulk"
         assert result["count"] == 1

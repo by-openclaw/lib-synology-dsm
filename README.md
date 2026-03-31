@@ -4,7 +4,7 @@ Python library for [Synology DSM](https://www.synology.com/en-global/dsm) API au
 
 [![CI](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml/badge.svg)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.9.3-blue)](https://github.com/by-openclaw/lib-synology-dsm/releases)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A580%25-brightgreen)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/by-openclaw/lib-synology-dsm/actions/workflows/ci.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Dev Container](https://img.shields.io/badge/dev%20container-ready-blue?logo=docker)](https://containers.dev/)

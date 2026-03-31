@@ -24,8 +24,10 @@ from .filestation import FileStationManager
 from .groups import GroupManager
 from .nfs import NFSManager
 from .quota import QuotaManager
+from .share_permissions import SharePermissionManager
 from .shares import ShareManager
 from .storage import StorageManager
+from .system import SystemManager
 from .trafficcontrol import TrafficControlManager
 from .users import UserManager
 
@@ -49,7 +51,9 @@ __all__ = [
     "NFSManager",
     "QuotaManager",
     "ShareManager",
+    "SharePermissionManager",
     "StorageManager",
+    "SystemManager",
     "TrafficControlManager",
     "UserManager",
     "VaultCredentialProvider",

@@ -38,6 +38,20 @@
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-03-31
+
+### Bug Fixes
+
+* `login()` corrected to use `/webapi/auth.cgi` (was incorrectly using `entry.cgi`) per official DSM Login Web API Guide
+* `login()` API version bumped from `6` → `7` (current max per Synology KB)
+* `logout()` API version bumped from `1` → `7`
+* `logout()` now includes `session` parameter (required by spec)
+
+### Tests
+
+* 5 new unit tests asserting correct endpoint, version, and session param for login/logout
+* Integration `TestAuth` confirmed green on live NAS with corrected auth flow
+
 ## [0.10.2] - 2026-03-31
 
 ### Bug Fixes

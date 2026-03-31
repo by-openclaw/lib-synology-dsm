@@ -151,6 +151,68 @@ def test_logout_suppresses_exception():
     assert client._sid is None
 
 
+def test_login_uses_auth_cgi_endpoint():
+    """login() must POST to /webapi/auth.cgi per official DSM spec (not entry.cgi)."""
+    client = DSMClient("your-nas-host")
+    with patch.object(
+        client,
+        "_post",
+        return_value={"success": True, "data": {"sid": "s1", "synotoken": "t1"}},
+    ) as mock_post:
+        client.login("admin", "pass")
+    url_used = mock_post.call_args[0][0]
+    assert url_used.endswith("/auth.cgi"), f"Expected /auth.cgi, got: {url_used}"
+
+
+def test_login_uses_api_version_7():
+    """login() must use SYNO.API.Auth version 7 per official DSM spec."""
+    client = DSMClient("your-nas-host")
+    with patch.object(
+        client,
+        "_post",
+        return_value={"success": True, "data": {"sid": "s1", "synotoken": "t1"}},
+    ) as mock_post:
+        client.login("admin", "pass")
+    payload = mock_post.call_args[0][1]
+    assert payload["version"] == "7", f"Expected version 7, got: {payload['version']}"
+
+
+def test_logout_uses_auth_cgi_endpoint():
+    """logout() must POST to /webapi/auth.cgi per official DSM spec."""
+    client = DSMClient("your-nas-host")
+    client._sid = "fake-sid"
+    with patch.object(client, "_post", return_value={}) as mock_post:
+        client.logout()
+    url_used = mock_post.call_args[0][0]
+    assert url_used.endswith("/auth.cgi"), f"Expected /auth.cgi, got: {url_used}"
+
+
+def test_logout_uses_api_version_7():
+    """logout() must use SYNO.API.Auth version 7 per official DSM spec."""
+    client = DSMClient("your-nas-host")
+    client._sid = "fake-sid"
+    with patch.object(client, "_post", return_value={}) as mock_post:
+        client.logout()
+    payload = mock_post.call_args[0][1]
+    assert payload["version"] == "7", f"Expected version 7, got: {payload['version']}"
+
+
+def test_logout_includes_session_name():
+    """logout() must include session name parameter per official DSM spec."""
+    client = DSMClient("your-nas-host")
+    client._sid = "fake-sid"
+    with patch.object(
+        client,
+        "_post",
+        return_value={"success": True, "data": {"sid": "s1", "synotoken": "t1"}},
+    ):
+        client.login("admin", "pass", session="FileStation")
+    with patch.object(client, "_post", return_value={}) as mock_post:
+        client.logout()
+    payload = mock_post.call_args[0][1]
+    assert payload.get("session") == "FileStation"
+
+
 class TestTimeout:
     def test_default_timeout_is_30(self):
         client = DSMClient("your-nas-host")

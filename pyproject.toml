@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synology-dsm"
-version = "0.10.2"
+version = "0.10.3"
 description = "Python library for Synology DSM API — shares, users, NFS, system management"
 readme = "README.md"
 license = { file = "LICENSE" }

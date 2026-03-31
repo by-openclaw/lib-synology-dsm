@@ -130,12 +130,16 @@ class DSMClient:
         raise exc_class(f"{context}: {error}", code=code)
 
     def login(self, account: str, password: str, session: str = "DSM") -> str:
-        """Login and return session ID."""
+        """Login and return session ID.
+
+        Uses SYNO.API.Auth v7 on /webapi/auth.cgi per official DSM Login Web API Guide.
+        """
+        self._session_name = session
         data = self._post(
-            f"{self.base_url}/entry.cgi",
+            f"{self.base_url}/auth.cgi",
             {
                 "api": "SYNO.API.Auth",
-                "version": "6",
+                "version": "7",
                 "method": "login",
                 "account": account,
                 "passwd": password,
@@ -153,13 +157,22 @@ class DSMClient:
         return self._sid
 
     def logout(self) -> None:
-        """Logout and invalidate session."""
+        """Logout and invalidate session.
+
+        Uses SYNO.API.Auth v7 on /webapi/auth.cgi with session name per official spec.
+        """
         if not self._sid:
             return
         try:
             self._post(
                 f"{self.base_url}/auth.cgi",
-                {"api": "SYNO.API.Auth", "version": "1", "method": "logout", "_sid": self._sid},
+                {
+                    "api": "SYNO.API.Auth",
+                    "version": "7",
+                    "method": "logout",
+                    "session": getattr(self, "_session_name", "DSM"),
+                    "_sid": self._sid,
+                },
             )
         except Exception:
             pass  # Best-effort logout — don't raise on cleanup

@@ -85,13 +85,14 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | DSMConnectionError (network failures wrapped) | ✅ v0.7.3 |
 | Exception hierarchy (DSMError → 6 typed exceptions) | ✅ v0.7.3 |
 | dry_run support (all managers) | ✅ v0.7.0 |
-| Unit tests (293 passing, 100% coverage) | ✅ v0.10.x |
+| Unit tests (345 passing, 100% coverage) | ✅ v0.10.3 |
 | CI: ruff + mypy + pytest on Python 3.10/3.11/3.12/3.13 | ✅ CI active |
+| CI scope: `src/synology_dsm/` + `tests/unit/` + `tests/integration/` only (v2 WIP excluded) | ✅ 2026-03-31 |
 | CI: Bandit SAST + pip-audit CVE gate | ✅ 2026-03-29 |
 | Coverage artifacts (htmlcov + coverage.xml, 30-day) | ✅ v0.7.2 |
 | Pre-commit hooks (detect-secrets + ruff) | ✅ v0.7.3 |
 | Dev container (.devcontainer/) | ✅ v0.7.3 |
-| ADR: 3 decisions recorded | ✅ v0.7.3 |
+| ADR: 9 decisions recorded | ✅ v0.10.3 |
 | LICENSE (MIT) + disclaimer | ✅ v0.7.3 |
 | mypy — 0 errors | ✅ v0.10.x |
 | Ansible collection | ⏸ Phase 2 — see docs/ansible-roadmap.md |
@@ -118,8 +119,10 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 | File | Why |
 |---|---|
 | `README.md` | Install, quickstart, API reference |
-| `synology_dsm/` | Library source |
-| `tests/` | Unit + integration tests |
+| `src/synology_dsm/` | v1 library source (stable) |
+| `src/synology_dsm_v2/` | v2 WIP — OOB design patterns (in progress, CI-excluded until ready) |
+| `tests/unit/` + `tests/integration/` | v1 tests |
+| `tests/unit_v2/` + `tests/integration_v2/` | v2 tests (CI-excluded until ready) |
 | `CHANGELOG.md` | Semantic versioning history |
 
 ---
@@ -152,7 +155,8 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 - Never commit DSM credentials or API tokens
 - `tests/` must pass before any merge to `main`
 - Breaking changes = MAJOR version bump + migration note in CHANGELOG
-- `ruff` linting must be clean before commit
+- `ruff` linting must be clean before commit (v1 scope only; v2 WIP is CI-excluded)
+- Do NOT add `src/synology_dsm_v2/` or `tests/unit_v2/` to CI scope until v2 sprint is complete
 - `mypy` must be clean before commit (0 errors as of 2026-03-30)
 
 ---

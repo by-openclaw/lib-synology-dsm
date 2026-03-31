@@ -10,7 +10,7 @@
 #   - Form field is "path" (NOT "dest_folder_path")
 #
 # Usage:
-#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=BySyst3ms_
+#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=<REDACTED:password>
 #   export FS_BASE_SHARE=by-terraform-state  # existing share to use as test base
 #   bash tests/integration/curl/04-filestation.sh
 

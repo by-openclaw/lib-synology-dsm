@@ -7,7 +7,7 @@
 # Usage:
 #   export NAS_HOST=10.6.224.6
 #   export API_USER=rune-api
-#   export API_PASS=BySyst3ms_
+#   export API_PASS=<REDACTED:password>
 #   bash tests/integration/curl/00-auth.sh
 #
 # On success: prints SID and TOKEN, exits 0

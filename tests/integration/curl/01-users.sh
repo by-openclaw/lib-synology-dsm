@@ -5,7 +5,7 @@
 # Each step is confirmed before proceeding to the next.
 #
 # Usage:
-#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=BySyst3ms_
+#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=<REDACTED:password>
 #   export TEST_USER_PASS=TmpPass123!   # optional, default used if not set
 #   bash tests/integration/curl/01-users.sh
 #

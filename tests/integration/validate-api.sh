@@ -6,7 +6,7 @@
 #          If curl succeeds but the lib fails, the bug is in the lib.
 #
 # Usage:
-#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=BySyst3ms_
+#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=<REDACTED:password>
 #   bash tests/integration/validate-api.sh
 #
 # Optional:

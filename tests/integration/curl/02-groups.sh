@@ -7,7 +7,7 @@
 # platform-setup#54. The write side (set members) works correctly.
 #
 # Usage:
-#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=BySyst3ms_
+#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=<REDACTED:password>
 #   bash tests/integration/curl/02-groups.sh
 
 set -euo pipefail

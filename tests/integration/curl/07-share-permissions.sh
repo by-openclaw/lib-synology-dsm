@@ -12,7 +12,7 @@
 # (Image 3 — SYNO.Core.Share.Permission list_by_group payload).
 #
 # Usage:
-#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=BySyst3ms_
+#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=<REDACTED:password>
 #   export QUERY_GROUP=administrators    # group to query (default: administrators)
 #   bash tests/integration/curl/07-share-permissions.sh
 

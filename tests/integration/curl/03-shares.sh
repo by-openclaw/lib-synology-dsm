@@ -7,7 +7,7 @@
 #   - NFS:   set rule (rw) / verify present / update (ro) / delete / verify absent
 #
 # Usage:
-#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=BySyst3ms_
+#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=<REDACTED:password>
 #   export NFS_CLIENT=10.6.224.0/20     # CIDR for NFS rule
 #   export SHARE_USER=rune-api          # DSM user to assign to share
 #   export SHARE_GROUP=svc-automation   # DSM group to assign to share

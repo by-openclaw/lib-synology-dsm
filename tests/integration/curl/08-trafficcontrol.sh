@@ -14,7 +14,7 @@
 # Payloads confirmed via Chrome DevTools F12 on DSM 7.1.1-42962 Update 9.
 #
 # Usage:
-#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=BySyst3ms_
+#   export NAS_HOST=10.6.224.6 API_USER=rune-api API_PASS=<REDACTED:password>
 #   bash tests/integration/curl/08-trafficcontrol.sh
 
 set -euo pipefail

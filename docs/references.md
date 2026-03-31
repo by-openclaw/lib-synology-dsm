@@ -4,6 +4,7 @@
 
 | Resource | URL | Notes |
 |---|---|---|
+| DSM Login Web API Guide | https://kb.synology.com/en-us/DG/DSM_Login_Web_API_Guide/2 | Official KB — authentication, session management, SYNO.API.Auth |
 | Synology Developer Guide | https://global.download.synology.com/download/Document/Software/DeveloperGuide/ | PDF guides per package |
 | On-NAS API Explorer | `http://{NAS_IP}:5000/webapi/entry.cgi?api=SYNO.API.Info&version=1&method=query&query=all` | Lists all APIs + supported versions |
 | DSM FileStation API Guide | https://global.download.synology.com/download/Document/Software/DeveloperGuide/Package/FileStation/All/enu/Synology_File_Station_API_Guide.pdf | File operations |
@@ -12,6 +13,7 @@
 
 | Resource | URL | Notes |
 |---|---|---|
+| synology-api docs (N4S4) | https://n4s4.github.io/synology-api/ | Python wrapper docs — method reference, usage patterns |
 | synology-dsm-api (pmilano1) | https://github.com/pmilano1/synology-dsm-api | Comprehensive API reference, quick-start guides, examples |
 | Synology Community | https://community.synology.com/enu/forum | Official community forum |
 | DSM Open API GitHub | https://github.com/synology-community/synology-api | Python community library (alternative reference) |

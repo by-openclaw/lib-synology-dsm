@@ -205,7 +205,7 @@ class FileStationManager(BaseManager):
         timeout = getattr(self._client, "_timeout", 60)
 
         try:
-            with urllib.request.urlopen(
+            with urllib.request.urlopen(  # nosec B310 — URL built from self._client._host (trusted config, not user input)
                 req, context=ssl_ctx, timeout=max(timeout, 60)
             ) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
@@ -248,7 +248,7 @@ class FileStationManager(BaseManager):
         timeout = getattr(self._client, "_timeout", 60)
 
         try:
-            with urllib.request.urlopen(
+            with urllib.request.urlopen(  # nosec B310 — URL built from self._client.base_url (trusted config, not user input)
                 req, context=ssl_ctx, timeout=max(timeout, 60)
             ) as resp:
                 with open(local_path, "wb") as fh:

@@ -57,7 +57,7 @@ The API account **must** be in the `administrators` group. Apps alone are not su
 | List members | `GroupManager.list_members()` | ✅ | |
 | List shares for group | `ShareManager.list_shares_for_group()` | ✅ | Returns shares accessible to a group |
 | Ensure present/absent | `GroupManager.ensure()` | ✅ | Idempotent, Ansible-style |
-| Set group share permissions | | 🚧 | SYNO.Core.Share.Permission — ACL |
+| Set group share permissions | `SharePermissionManager.set()` | ✅ | SYNO.Core.Share.Permission — ACL |
 
 ## Shared Folder Management (`SYNO.Core.Share`)
 
@@ -149,11 +149,21 @@ The API account **must** be in the `administrators` group. Apps alone are not su
 | Clear rules | `TrafficControlManager.clear_rules()` | ✅ | Removes all rules for an adapter |
 | Ensure rule present/absent | `TrafficControlManager.ensure_rule()` | ✅ | Idempotent |
 
+## Share Permissions (`SYNO.Core.Share.Permission`)
+
+| Feature | Method | Status | Notes |
+|---|---|---|---|
+| List permissions | `SharePermissionManager.list()` | ✅ | Users + groups, returns perm string |
+| Set single permission | `SharePermissionManager.set()` | ✅ | Per user or group |
+| Set bulk permissions | `SharePermissionManager.set_bulk()` | ✅ | Atomic replace for users + groups |
+| Ensure permission present/absent | `SharePermissionManager.ensure()` | ✅ | Idempotent, Ansible-style |
+
 ## System & Security (`SYNO.Core.*`)
 
 | Feature | API | Status | Notes |
 |---|---|---|---|
-| Get system info (model, DSM version, serial) | `SYNO.Core.System` | 🚧 | **Priority — needed for NetBox automation** |
+| Get system info (model, DSM version, serial) | `SystemManager.get_info()` | ✅ | SYNO.DSM.Info + SYNO.Core.System fallback — **NetBox automation** |
+| System ensure (fact gathering) | `SystemManager.ensure()` | ✅ | Read-only noop — Ansible fact gather |
 | List installed packages | `SYNO.Core.Package` | 🚧 | Useful for security audit automation |
 | Firewall status / rules | `SYNO.Core.Security.Firewall` | 🚧 | |
 | SSH / terminal config | `SYNO.Core.Terminal` | 🚧 | Enable/disable SSH, port, password auth toggle |
@@ -180,7 +190,7 @@ Priority order based on platform value:
 
 | Priority | Feature | API | Rationale |
 |---|---|---|---|
-| HIGH | System info (model, version, serial, uptime) | `SYNO.Core.System` | NetBox automation — populate device record from NAS |
+| ~~HIGH~~ | ~~System info (model, version, serial, uptime)~~ | ~~`SYNO.Core.System`~~ | ✅ Implemented — `SystemManager.get_info()` |
 | HIGH | SSH / terminal config | `SYNO.Core.Terminal` | Security hardening automation — disable password auth, set port |
 | MEDIUM | Move / copy files | `SYNO.FileStation.CopyMove` | Terraform state management — cross-share ops |
 | MEDIUM | Rename file/folder | `SYNO.FileStation.Rename` | FileStation completeness |

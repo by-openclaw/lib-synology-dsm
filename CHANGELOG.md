@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* **share-permissions:** SharePermissionManager with full ACL lifecycle — list, set, set_bulk, ensure() with state=present/absent and dry_run support
+* **system:** SystemManager with get_info() + ensure() for NetBox fact gathering — SYNO.DSM.Info primary, SYNO.Core.System fallback
+
+### Tests
+
+* Split integration tests into per-manager files (11 files) for maintainability
+* 100% unit coverage for SharePermissionManager (33 tests) and SystemManager (12 tests)
+* Integration tests for SharePermissionManager (8 tests) and SystemManager (5 tests)
+
 ## [0.10.1](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.10.0...v0.10.1) (2026-03-30)
 
 

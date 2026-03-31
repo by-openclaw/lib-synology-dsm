@@ -217,3 +217,83 @@ class TestResolveError:
         client = DSMClient("nas.local")
         with pytest.raises(DSMAPIError):
             client._resolve_error("raw string error", context="test")
+
+    def test_resolve_error_maps_code_400_to_auth_error(self):
+        from synology_dsm.exceptions import DSMAuthError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMAuthError) as exc_info:
+            client._resolve_error({"code": 400}, context="test")
+        assert exc_info.value.code == 400
+
+    def test_resolve_error_maps_code_401_to_auth_error(self):
+        from synology_dsm.exceptions import DSMAuthError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMAuthError) as exc_info:
+            client._resolve_error({"code": 401}, context="test")
+        assert exc_info.value.code == 401
+
+    def test_resolve_error_maps_code_402_to_auth_error(self):
+        from synology_dsm.exceptions import DSMAuthError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMAuthError) as exc_info:
+            client._resolve_error({"code": 402}, context="test")
+        assert exc_info.value.code == 402
+
+    def test_resolve_error_maps_code_103_to_permission_error(self):
+        from synology_dsm.exceptions import DSMPermissionError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMPermissionError) as exc_info:
+            client._resolve_error({"code": 103}, context="test")
+        assert exc_info.value.code == 103
+
+    def test_resolve_error_maps_code_404_to_not_found(self):
+        from synology_dsm.exceptions import DSMNotFoundError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMNotFoundError) as exc_info:
+            client._resolve_error({"code": 404}, context="test")
+        assert exc_info.value.code == 404
+
+    def test_resolve_error_maps_code_117_to_invalid_operation(self):
+        from synology_dsm.exceptions import DSMInvalidOperationError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMInvalidOperationError) as exc_info:
+            client._resolve_error({"code": 117}, context="test")
+        assert exc_info.value.code == 117
+
+    def test_resolve_error_maps_code_102_to_invalid_parameter(self):
+        from synology_dsm.exceptions import DSMInvalidParameterError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMInvalidParameterError) as exc_info:
+            client._resolve_error({"code": 102}, context="test")
+        assert exc_info.value.code == 102
+
+    def test_resolve_error_maps_code_120_to_invalid_parameter(self):
+        from synology_dsm.exceptions import DSMInvalidParameterError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMInvalidParameterError) as exc_info:
+            client._resolve_error({"code": 120}, context="test")
+        assert exc_info.value.code == 120
+
+    def test_resolve_error_maps_code_1001_to_invalid_parameter(self):
+        from synology_dsm.exceptions import DSMInvalidParameterError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMInvalidParameterError) as exc_info:
+            client._resolve_error({"code": 1001}, context="test")
+        assert exc_info.value.code == 1001
+
+    def test_resolve_error_maps_code_105_to_session_error(self):
+        from synology_dsm.exceptions import DSMSessionError
+
+        client = DSMClient("nas.local")
+        with pytest.raises(DSMSessionError) as exc_info:
+            client._resolve_error({"code": 105}, context="test")
+        assert exc_info.value.code == 105

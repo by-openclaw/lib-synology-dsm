@@ -13,6 +13,8 @@ from .exceptions import (
     DSMAuthError,
     DSMConnectionError,
     DSMError,
+    DSMInvalidOperationError,
+    DSMInvalidParameterError,
     DSMNotFoundError,
     DSMPermissionError,
     DSMResourceNotFoundError,
@@ -34,6 +36,8 @@ __all__ = [
     "DSMConnectionError",
     "DSMCredentials",
     "DSMError",
+    "DSMInvalidOperationError",
+    "DSMInvalidParameterError",
     "DSMNotFoundError",
     "DSMPermissionError",
     "DSMResourceNotFoundError",
@@ -51,4 +55,4 @@ __all__ = [
     "VaultCredentialProvider",
     "get_credentials",
 ]
-__version__ = "0.10.1"
+__version__ = "0.10.2"

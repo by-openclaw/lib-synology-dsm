@@ -17,16 +17,40 @@ from .exceptions import (
     DSMAuthError,
     DSMConnectionError,
     DSMError,
+    DSMInvalidOperationError,
+    DSMInvalidParameterError,
+    DSMNotFoundError,
     DSMPermissionError,
     DSMSessionError,
 )
 
-# Map DSM error codes to exception classes
-_ERROR_MAP = {
-    400: DSMAuthError,
-    402: DSMAuthError,
-    403: DSMPermissionError,
-    119: DSMSessionError,
+# Map DSM error codes to typed exceptions.
+# Codes follow the official DSM API error-handling guide:
+# https://github.com/pmilano1/synology-dsm-api/blob/master/docs/guides/error-handling.md
+_ERROR_MAP: dict[int, type[DSMError]] = {
+    # Authentication
+    400: DSMAuthError,              # Invalid credentials
+    401: DSMAuthError,              # Account not found
+    402: DSMAuthError,              # Account disabled
+    # Permissions
+    103: DSMPermissionError,        # API-level permission denied
+    403: DSMPermissionError,        # Login-level permission denied / 2FA required
+    # Session
+    105: DSMSessionError,           # Session timeout
+    106: DSMSessionError,           # Session interrupted
+    119: DSMSessionError,           # Invalid session / SID expired
+    # Not found
+    404: DSMNotFoundError,          # Resource not found
+    # Invalid operation
+    117: DSMInvalidOperationError,  # Operation not permitted in current state
+    # Parameter errors
+    100: DSMInvalidParameterError,  # Unknown error / invalid parameter
+    101: DSMInvalidParameterError,  # Invalid parameter
+    102: DSMInvalidParameterError,  # Method not found
+    120: DSMInvalidParameterError,  # Missing required parameter
+    1001: DSMInvalidParameterError, # Invalid parameter value
+    1009: DSMInvalidParameterError, # Invalid parameter format
+    1010: DSMInvalidParameterError, # Parameter out of range
 }
 
 
@@ -148,9 +172,12 @@ class DSMClient:
         ALL write operations on DSM 7.x).
 
         Raises:
-            DSMAuthError: On error codes 400 or 402.
-            DSMPermissionError: On error code 403.
-            DSMSessionError: On error code 119.
+            DSMAuthError: On error codes 400, 401, 402.
+            DSMPermissionError: On error codes 103, 403.
+            DSMSessionError: On error codes 105, 106, 119.
+            DSMNotFoundError: On error code 404.
+            DSMInvalidOperationError: On error code 117.
+            DSMInvalidParameterError: On error codes 100, 101, 102, 120, 1001, 1009, 1010.
             DSMAPIError: On any other API error.
         """
         if not self._sid:

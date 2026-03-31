@@ -34,7 +34,19 @@ class DSMPermissionError(DSMError):
 
 
 class DSMNotFoundError(DSMError):
-    """Resource not found — DSM error code 408."""
+    """Resource not found — DSM error code 404."""
+
+    pass
+
+
+class DSMInvalidParameterError(DSMError):
+    """Invalid or missing parameter — DSM error codes 100, 101, 102, 120, 1001, 1009, 1010."""
+
+    pass
+
+
+class DSMInvalidOperationError(DSMError):
+    """Operation not permitted in current state — DSM error code 117."""
 
     pass
 

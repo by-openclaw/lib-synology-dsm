@@ -205,7 +205,7 @@ class TestUserDelete:
         mock_client.request.return_value = {"users": []}
         with pytest.raises(DSMNotFoundError) as exc_info:
             mgr.delete("ghost")
-        assert exc_info.value.code == 408
+        assert exc_info.value.code == 404
 
     def test_delete_calls_api_for_existing(self, mock_client):
         import json

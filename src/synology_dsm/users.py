@@ -135,7 +135,7 @@ class UserManager:
         """
         existing = {u["name"] for u in self.list()}
         if name not in existing:
-            raise DSMNotFoundError(f"User '{name}' not found", code=408)
+            raise DSMNotFoundError(f"User '{name}' not found", code=404)
         if dry_run:
             return {"changed": True, "dry_run": True, "action": "would_delete", "target": name}
         self._c.request("SYNO.Core.User", "delete", version=1, name=json.dumps([name]))

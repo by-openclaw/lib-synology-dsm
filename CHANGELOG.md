@@ -38,6 +38,24 @@
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-03-31
+
+### Bug Fixes
+
+* `DSMNotFoundError.code` corrected from 408 to 404 per official DSM API spec
+* Error map in `client.py` aligned to official error-handling guide — added codes 100, 101, 102, 103, 105, 106, 117, 120, 401, 404, 1001, 1009, 1010
+
+### Features
+
+* `DSMInvalidParameterError` — new exception for parameter errors (codes 100, 101, 102, 120, 1001, 1009, 1010)
+* `DSMInvalidOperationError` — new exception for invalid operation state (code 117)
+* Both new exceptions exported from package `__init__`
+
+### Tests
+
+* 12 new unit tests for all newly mapped error codes in `TestResolveError`
+* `test_users.py` — corrected `DSMNotFoundError.code` assertion from 408 → 404
+
 ### Added
 
 * **smoke:** smoke test suite (`tests/smoke/`) — import and instantiation checks, no network required

@@ -148,20 +148,17 @@ class TestEnsurePresent:
         assert result.action == Action.NOOP
         assert result.before is not None
 
-    def test_update_when_description_drifted(self) -> None:
+    def test_description_is_noop_on_drift(self) -> None:
+        """DSM 7.1.x: group description is not persisted/returned — always excluded from diff.
+        Passing a different description is a no-op (best-effort on create only).
+        """
         client = _mock_client()
-        client.request.side_effect = [
-            {"groups": [_group_dict("svc-auto", description="old")]},   # get()
-            {},                                                          # _update()
-            {"groups": [_group_dict("svc-auto", description="new")]},   # get() for after
-        ]
+        client.request.return_value = {"groups": [_group_dict("svc-auto", description="old")]}
         mgr = CoreGroupManager(client)
 
         result = mgr.ensure("svc-auto", state=State.PRESENT, description="new")
-        assert result.changed is True
-        assert result.action == Action.UPDATED
-        assert result.before["description"] == "old"
-        assert result.after["description"] == "new"
+        assert result.changed is False
+        assert result.action == Action.NOOP
 
     def test_update_when_members_drifted(self) -> None:
         client = _mock_client()
@@ -224,16 +221,15 @@ class TestEnsureDryRun:
         assert result.dry_run is True
         assert client.request.call_count == 1  # Only list() — no write
 
-    def test_dry_run_would_update(self) -> None:
+    def test_dry_run_description_drift_is_noop(self) -> None:
+        """DSM 7.1.x: description excluded from diff — dry_run with description drift = NOOP."""
         client = _mock_client()
         client.request.return_value = {"groups": [_group_dict("svc-auto", description="old")]}
         mgr = CoreGroupManager(client)
 
         result = mgr.ensure("svc-auto", state=State.PRESENT, dry_run=True, description="new")
-        assert result.action == Action.WOULD_UPDATE
-        assert result.dry_run is True
-        assert result.before is not None
-        assert client.request.call_count == 1
+        assert result.action == Action.NOOP
+        assert result.changed is False
 
     def test_dry_run_would_delete(self) -> None:
         client = _mock_client()

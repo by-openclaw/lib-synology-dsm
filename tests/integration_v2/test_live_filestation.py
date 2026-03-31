@@ -50,7 +50,8 @@ def _load_credentials() -> dict[str, str]:
 def client() -> DSMClient:
     creds = _load_credentials()
     c = DSMClient(host=creds["host"], port=int(creds["port"]), timeout=30)
-    c.login(creds["username"], creds["password"])
+    # FileStation requires session="FileStation" — not the default "DSM" session.
+    c.login(creds["username"], creds["password"], session="FileStation")
     yield c
     c.logout()
 

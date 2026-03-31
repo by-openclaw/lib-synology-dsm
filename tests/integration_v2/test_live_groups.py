@@ -84,13 +84,21 @@ class TestLiveGroupEnsure:
         print(f"  Noop: {result.to_dict()}")
 
     def test_03_ensure_update(self, groups: CoreGroupManager) -> None:
+        # DSM 7.1.x: description is not returned/persisted, excluded from diff.
+        # Use members drift to verify update path on live NAS.
+        # Note: requires a real user on NAS. Use the API username from credentials.
+        import json as _json
+        from pathlib import Path as _Path
+        creds_path = _Path.home() / ".openclaw/workspace/infra/secrets/infra-synology-nas.json"
+        _user = _json.loads(creds_path.read_text())["fields"]["username"]
+
         result = groups.ensure(
             TEST_GROUP, state=State.PRESENT,
-            description="v2 integration test group — updated",
+            members=[_user],
         )
         assert result.changed is True
         assert result.action == Action.UPDATED
-        print(f"  Updated: {result.to_dict()}")
+        print(f"  Updated (members): {result.to_dict()}")
 
     def test_04_dry_run_would_delete(self, groups: CoreGroupManager) -> None:
         result = groups.ensure(TEST_GROUP, state=State.ABSENT, dry_run=True)

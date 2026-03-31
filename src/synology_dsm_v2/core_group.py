@@ -42,7 +42,10 @@ class CoreGroupManager(BaseManager):
         grp = groups.get("svc-automation")
     """
 
-    _DIFF_FIELDS = ("description",)
+    # NOTE: DSM 7.1.x does not reliably persist or return group descriptions via SYNO.Core.Group.
+    # The description field is accepted on create but always returns empty on list/get.
+    # Therefore description is excluded from diff — setting it on create is best-effort only.
+    _DIFF_FIELDS: tuple[()] = ()
 
     def __init__(self, client: ClientProtocol) -> None:
         super().__init__(client, api="SYNO.Core.Group", version=1)

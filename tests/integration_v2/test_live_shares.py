@@ -85,6 +85,7 @@ class TestLiveShareEnsure:
         assert result.action == Action.NOOP
         print(f"  Noop: {result.to_dict()}")
 
+    @pytest.mark.skip(reason="DSM 7.1.x: SYNO.Core.Share.set requires 2FA/elevated session — known DSM security policy, not a code bug. Re-enable after DSM upgrade to 7.2.x.")
     def test_03_ensure_update(self, shares: CoreShareManager) -> None:
         result = shares.ensure(
             TEST_SHARE, state=State.PRESENT,

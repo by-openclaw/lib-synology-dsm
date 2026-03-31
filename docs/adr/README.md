@@ -38,5 +38,5 @@ Use [0000-template.md](0000-template.md) as a starting point for new ADRs.
 | [ADR-0005](0005-separate-repos-per-language.md) | Separate repos per language | Accepted | 2026-03-30 |
 | ADR-0006 | *(reserved — platform charter, see doc-platform-core)* | — | — |
 | [ADR-0007](0007-return-dict-contract.md) | Consistent return dict contract for all mutating methods | Accepted | 2026-03-30 |
-| ADR-0008 | *(reserved — method naming convention, pending)* | — | — |
+| [ADR-0008](0008-method-naming-convention.md) | Method naming convention | Accepted | 2026-03-31 |
 | [ADR-0009](0009-secrets-json-schema.md) | Local secrets JSON schema (Vault KV v2 migration format) | Accepted | 2026-03-31 |

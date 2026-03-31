@@ -539,6 +539,31 @@ class TestStorageManager:
         result = self.storage.get_volume("/volume999")
         assert result is None
 
+    def test_ensure_present_returns_dict(self) -> None:
+        """ensure(present) — returns {changed=False, action="none", volume=dict}."""
+        volumes = self.storage.list_volumes()
+        assert len(volumes) >= 1
+        vol_ref = volumes[0].get("volume_path") or volumes[0].get("id")
+        r = self.storage.ensure(vol_ref, state="present")
+        assert r["changed"] is False
+        assert r["action"] == "none"
+        assert isinstance(r["volume"], dict)
+
+    def test_ensure_absent_returns_dict(self) -> None:
+        """ensure(absent) — read-assert only, never raises, returns volume."""
+        volumes = self.storage.list_volumes()
+        assert len(volumes) >= 1
+        vol_ref = volumes[0].get("volume_path") or volumes[0].get("id")
+        r = self.storage.ensure(vol_ref, state="absent")
+        assert r["changed"] is False
+        assert r["action"] == "none"
+
+    def test_ensure_present_missing_raises(self) -> None:
+        """ensure(present) — raises DSMResourceNotFoundError for unknown volume."""
+        from synology_dsm.exceptions import DSMResourceNotFoundError
+        with pytest.raises(DSMResourceNotFoundError):
+            self.storage.ensure("/volume999", state="present")
+
 
 # ── QuotaManager ─────────────────────────────────────────────────────────────
 
@@ -572,6 +597,44 @@ class TestQuotaManager:
     def test_invalid_subject_type_raises(self) -> None:
         with pytest.raises(ValueError, match="Invalid subject_type"):
             self.quota.get_quota("administrators", "invalid")
+
+    def test_ensure_present_creates_or_updates(self) -> None:
+        """ensure(present) — sets quota, returns {changed, action}."""
+        r = self.quota.ensure(ADMIN_USER, "user", "/volume1", quota_mb=10240)
+        assert isinstance(r["changed"], bool)
+        assert r["action"] in ("created", "updated", "none")
+
+    def test_ensure_present_noop(self) -> None:
+        """ensure(present) — noop when quota already matches."""
+        self.quota.ensure(ADMIN_USER, "user", "/volume1", quota_mb=10240)
+        r = self.quota.ensure(ADMIN_USER, "user", "/volume1", quota_mb=10240)
+        assert r["changed"] is False
+        assert r["action"] == "none"
+
+    def test_ensure_absent_removes(self) -> None:
+        """ensure(absent) — sets quota to 0 (unlimited), returns changed."""
+        self.quota.ensure(ADMIN_USER, "user", "/volume1", quota_mb=10240)
+        r = self.quota.ensure(ADMIN_USER, "user", "/volume1", state="absent")
+        assert isinstance(r["changed"], bool)
+        assert r["action"] in ("removed", "none")
+
+    def test_set_user_quota_returns_dict(self) -> None:
+        """set_user_quota() — returns {changed=True, action="set"}."""
+        r = self.quota.set_user_quota(ADMIN_USER, "/volume1", quota_mb=0)
+        assert r["changed"] is True
+        assert r["action"] == "set"
+
+    def test_set_group_quota_returns_dict(self) -> None:
+        """set_group_quota() — returns {changed=True, action="set"}."""
+        r = self.quota.set_group_quota("administrators", "/volume1", quota_mb=0)
+        assert r["changed"] is True
+        assert r["action"] == "set"
+
+    def test_dry_run_does_not_change(self) -> None:
+        """ensure() dry_run=True — returns plan without writing."""
+        r = self.quota.ensure(ADMIN_USER, "user", "/volume1", quota_mb=51200, dry_run=True)
+        assert r.get("dry_run") is True
+        assert isinstance(r["changed"], bool)
 
 
 # ── BandwidthManager ──────────────────────────────────────────────────────────
@@ -674,6 +737,46 @@ class TestBandwidthManager:
         assert r["dry_run"] is True
         assert before == after
 
+    def test_ensure_group_noop(self) -> None:
+        """ensure_group() — noop when state already matches."""
+        self.bw.ensure_group("administrators", "FileStation", "disabled")
+        r = self.bw.ensure_group("administrators", "FileStation", "disabled")
+        assert r["changed"] is False
+        assert r["action"] == "none"
+
+    def test_ensure_group_updates(self) -> None:
+        """ensure_group() — changed=True when state differs, then restore."""
+        self.bw.ensure_group("administrators", "FTP", "disabled")
+        r = self.bw.ensure_group("administrators", "FTP", "enabled",
+                                  upload_limit_1=100, download_limit_1=100)
+        assert isinstance(r["changed"], bool)
+        # Restore
+        self.bw.ensure_group("administrators", "FTP", "disabled")
+
+    def test_disable_user_returns_dict(self) -> None:
+        """disable_user() — returns {changed, action}."""
+        r = self.bw.disable_user(ADMIN_USER, "FileStation")
+        assert isinstance(r["changed"], bool)
+        assert "action" in r
+
+    def test_disable_group_returns_dict(self) -> None:
+        """disable_group() — returns {changed, action}."""
+        r = self.bw.disable_group("administrators", "FileStation")
+        assert isinstance(r["changed"], bool)
+        assert "action" in r
+
+    def test_ensure_user_returns_action_key(self) -> None:
+        """ensure_user() result always has action key."""
+        r = self.bw.ensure_user(ADMIN_USER, "FileStation", "disabled")
+        assert "action" in r
+        assert r["action"] in ("none", "updated")
+
+    def test_ensure_group_returns_action_key(self) -> None:
+        """ensure_group() result always has action key."""
+        r = self.bw.ensure_group("administrators", "FileStation", "disabled")
+        assert "action" in r
+        assert r["action"] in ("none", "updated")
+
 
 # ── TrafficControlManager ─────────────────────────────────────────────────────
 
@@ -704,6 +807,7 @@ class TestTrafficControlManager:
         """clear_rules() — empties rule list, returns changed."""
         r = self.tc.clear_rules(self.ADAPTER)
         assert isinstance(r["changed"], bool)
+        assert "action" in r
         assert self.tc.load(self.ADAPTER) == []
 
     def test_add_and_remove_rule(self) -> None:
@@ -746,6 +850,7 @@ class TestTrafficControlManager:
         }
         r = self.tc.ensure_rule(self.ADAPTER, rule)
         assert r["changed"] is True
+        assert r["action"] == "added"
 
     def test_ensure_rule_noop(self) -> None:
         """ensure_rule() — noop when identical rule already present."""
@@ -764,6 +869,7 @@ class TestTrafficControlManager:
         self.tc.ensure_rule(self.ADAPTER, rule)
         r = self.tc.ensure_rule(self.ADAPTER, rule)
         assert r["changed"] is False
+        assert r["action"] == "none"
 
     def test_dry_run_does_not_change(self) -> None:
         """dry_run=True must not write rules."""

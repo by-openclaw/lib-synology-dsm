@@ -30,3 +30,9 @@ As the platform tooling grows, the question arose: should a library have impleme
 ## Notes
 
 Different languages serve different performance profiles: Python for Ansible/automation/file processing, Go/C++ for real-time or high-throughput workloads.
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.14.2.1 | Secure development — language-specific repos enable targeted CI/CD security gates |

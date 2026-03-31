@@ -31,3 +31,10 @@ Network errors wrapped as `DSMConnectionError` — callers never need to import 
 - No built-in async support (not needed for current scope)
 - No HTTP/2 (DSM does not require it)
 - Cookie handling is manual (needed for FileStation upload auth quirk)
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.14.2.1 | Secure development — stdlib urllib chosen to minimise third-party attack surface |
+| ISO 27001 | A.14.2.5 | Secure system engineering — no external HTTP dependency reduces supply-chain risk |

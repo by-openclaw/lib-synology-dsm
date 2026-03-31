@@ -52,3 +52,11 @@ Naming: `{service}-{context}.json` (e.g., `synology-api.json`, `proxmox-nonprod.
 - Old `.env` files (`.synology.env`, `.proxmox-nonprod.env`) kept as deprecated — redacted, not deleted
 - Repo `.env` files (e.g., `lib-synology-dsm/.env`) are local consumers, gitignored, populated manually
 - Redaction format: `<REDACTED:{type}>` per OPERATING-STANDARD.md §6.1
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.10.1.1 | Cryptographic controls — structured schema enforces per-env secret isolation |
+| ISO 27001 | A.9.4.3 | Password management — JSON schema validates credential structure, prevents plaintext leaks |
+| NIS2 | Art.21(2)(d) | Supply chain security — secrets schema enables automated credential auditing |

@@ -40,3 +40,11 @@ Priority 3: Explicit               — pass host/user/password directly to DSMCl
 - Vault AppRole authentication not yet implemented — currently only token auth. Vault AppRole planned for Phase 2 — blocked until Vault deployed on PoC.
 - `.env` file loading requires `python-dotenv` (optional dep, added to dev extras)
 - Priority logic in `get_credentials()` may surprise users who have both VAULT_ADDR and SYNOLOGY_HOST set — Vault takes priority, with silent fallback to env on Vault error
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.9.4.3 | Password management — credentials resolved via hierarchy, never hard-coded |
+| ISO 27001 | A.10.1.1 | Cryptographic controls — Vault KV v2 at top of provider chain for encrypted storage |
+| NIS2 | Art.21(2)(e) | Security in network and information systems — credential isolation per environment |

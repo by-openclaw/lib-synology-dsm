@@ -75,3 +75,10 @@ Managers that batch-read and batch-write (e.g., TrafficControlManager) use `load
 - Source: `docs/design-v2-poc.md` §5 (method naming table)
 - v2 `BaseManager` ABC will enforce `ensure()`, `list()`, `get()` at the type level — `TypeError` at instantiation if missing
 - This ADR covers method naming only. Return value contract is ADR-0007. Ensure pattern semantics are ADR-0002.
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.14.2.1 | Secure development — consistent method naming reduces misuse and integration errors |
+| ISO 27001 | A.12.1.1 | Documented operating procedures — naming convention is a documented standard |

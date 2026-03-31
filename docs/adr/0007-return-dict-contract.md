@@ -45,3 +45,10 @@ This includes:
 ## Supersedes
 
 Extends ADR-0002 to cover all mutating methods, not just `ensure()`.
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.14.2.1 | Secure development — uniform return contract enables automated validation |
+| ISO 27001 | A.12.1.2 | Change management — changed/action fields provide auditable mutation records |

@@ -35,3 +35,10 @@ Per-repo documentation follows the same model: `docs/adr/`, `docs/api-reference.
 ## Supersedes
 
 Partially supersedes ADR-0003 §RAID location. ADR-0003 is amended to reflect the hybrid model.
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.12.1.1 | Documented operating procedures — RAID and docs co-located with code |
+| NIS2 | Art.21(2)(a) | Risk management — per-repo RAID enables scoped risk tracking |

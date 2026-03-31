@@ -46,3 +46,10 @@ Destructive methods (`delete()`, `create()`) also accept `dry_run=True`.
 ## Note
 
 All public methods that mutate state must return `{"changed": bool, "action": str}`. This includes `ensure()` variants, `create()`, `delete()`, and `upload()` methods.
+
+## Compliance
+
+| Framework | Control | Relevance |
+|---|---|---|
+| ISO 27001 | A.14.2.1 | Secure development — idempotent ensure pattern prevents unintended state drift |
+| ISO 27001 | A.12.1.2 | Change management — deterministic changed/action return enables auditable mutations |

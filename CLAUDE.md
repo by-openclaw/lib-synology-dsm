@@ -1,3 +1,7 @@
+> **Mandatory — read before any work:**
+> 1. `workspace/OPERATING-STANDARD.md` — platform rules, quality gates, compliance
+> 2. This file — repo-specific context
+
 # CLAUDE.md — lib-synology-dsm
 
 > **Scope:** `lib` | **Component:** `synology-dsm`

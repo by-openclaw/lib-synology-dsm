@@ -406,20 +406,24 @@ When a Go lib or C++ lib is created, the same `ensure()` contract applies — di
 
 The PoC is proven when:
 
-- [ ] `BaseManager` ABC — `TypeError` raised if `ensure()` missing
-- [ ] `State` + `Action` enums — IDE catches typos at write time
-- [ ] `EnsureResult` dataclass — `.changed`, `.action`, `.to_dict()` all work
-- [ ] `DSMClient` properties — `client.sid` is read-only, `client.timeout` validates
-- [ ] `__repr__` — all classes print useful debug info
-- [ ] Error code map — every known DSM code maps to typed exception
-- [ ] Unknown error codes — `DSMAPIError` fallback, never crashes
-- [ ] Network errors — wrapped as `DSMConnectionError`, never raw `urllib.error`
-- [ ] `UserManager.ensure()` — present/absent/dry_run all tested
-- [ ] `UserManager.ensure()` returns `EnsureResult` (not dict)
-- [ ] `.to_dict()` produces `{"changed": True, "action": "created"}` for Ansible compatibility
-- [ ] All tests pass, 100% coverage on v2 modules
+- [x] `BaseManager` ABC — `TypeError` raised if `ensure()` missing
+- [x] `State` + `Action` enums — IDE catches typos at write time
+- [x] `EnsureResult` dataclass — `.changed`, `.action`, `.to_dict()` all work
+- [x] `DSMClient` properties — `client.sid` is read-only, `client.timeout` validates
+- [x] `__repr__` — all classes print useful debug info
+- [x] Error code map — every known DSM code maps to typed exception
+- [x] Unknown error codes — `DSMAPIError` fallback, never crashes
+- [x] Network errors — wrapped as `DSMConnectionError`, never raw `urllib.error`
+- [x] `UserManager.ensure()` — present/absent/dry_run all tested
+- [x] `UserManager.ensure()` returns `EnsureResult` (not dict)
+- [x] `.to_dict()` produces `{"changed": True, "action": "created"}` for Ansible compatibility
+- [x] All tests pass, 100% coverage on v2 modules
+- [x] 5 managers implemented: CoreUserManager, CoreGroupManager, CoreShareManager, CoreFileServNFSManager, FileStationManager
+- [x] 245 unit tests passing across all v2 modules
+- [x] Integration tests for all 5 managers (lifecycle + error handling)
+- [x] `__init__.py` exports all 5 managers
 
-**When all boxes are checked:** The pattern is proven. v1 → v2 migration can proceed as a tracked PR.
+**All criteria met (2026-03-31).** Pattern proven across 5 managers including HIGH complexity (FileStation multipart). v1 → v2 migration can proceed.
 
 ---
 

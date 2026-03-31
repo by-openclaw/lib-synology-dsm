@@ -26,11 +26,11 @@ class CoreFileServNFSManager(BaseManager):
         nfs = CoreFileServNFSManager(client)
 
         # Ensure NFS rule for a host on a share
-        result = nfs.ensure("my-share", "10.6.224.105",
+        result = nfs.ensure("my-share", hostname="10.6.224.105",
                             state=State.PRESENT, rw=True, root_squash="root")
 
         # Remove NFS rule for a host
-        result = nfs.ensure("my-share", "10.6.224.105", state=State.ABSENT)
+        result = nfs.ensure("my-share", hostname="10.6.224.105", state=State.ABSENT)
 
         # List all rules for a share
         rules = nfs.list("my-share")

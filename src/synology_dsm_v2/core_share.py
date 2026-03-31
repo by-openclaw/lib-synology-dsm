@@ -102,7 +102,7 @@ class CoreShareManager(BaseManager):
 
     def _delete(self, name: str) -> dict[str, Any]:
         """Delete a shared folder."""
-        return self._request("delete", name=name)
+        return self._request("delete", name=json.dumps([name]))
 
     # -- Private: ensure logic --
 

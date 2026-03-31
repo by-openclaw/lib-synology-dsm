@@ -74,17 +74,19 @@ Owner: @yboujraf
 
 ## Project Stats
 
-> Auto-updated on every release. Last updated: 2026-03-30
+> Auto-updated on every release. Last updated: 2026-03-31
 
 | Metric | Value |
 |---|---|
-| Version | v0.10.0 |
+| Version | v0.10.3 |
 | Tagged releases | 12 |
-| Unit tests | 283 passing, 100% coverage |
-| Open issues | 2 HIGH (mypy, verify_ssl) — release path resolved |
-| ADR decisions | 3 |
+| Unit tests | 345 passing, 100% coverage |
+| Test files | 32 |
+| Python source files | 20 |
+| Open issues | 1 HIGH (verify_ssl) — mypy resolved |
+| ADR decisions | 9 |
 | CI workflows | 2 (ci.yml + security job, release-please.yml) |
 | Pre-commit hooks | detect-secrets, ruff, ruff-format |
 | Dev container | ✅ .devcontainer/ |
-| mypy | ❌ 27 errors — v1.0 blocker |
+| mypy | ✅ 0 errors |
 

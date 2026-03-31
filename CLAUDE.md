@@ -157,6 +157,13 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 
 ---
 
+## Cross-repo References
+
+- Naming convention: see `doc-platform-core/docs/adr/0010-naming-and-identity-convention.md`
+- Environment tiers: poc/dev/test/staging/acc/prod — always explicit. See `doc-platform-core/docs/adr/0012-environment-tier-standard.md`
+
+---
+
 ## Related
 
 - Platform charter: `doc-platform-core/docs/adr/0006-platform-charter.md`

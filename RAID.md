@@ -28,6 +28,9 @@
 | A-002 | Implement per-op timeout in client.py | @yboujraf | v1.0 | OPEN |
 | A-003 | Fix mypy 27 errors | @yboujraf | v1.0 | OPEN |
 
+| R-003 | Service account `rune-api` and group `svc-automation` do not follow ADR-0010 naming (`svc-{function}-{env}`) | MEDIUM | HIGH | Rename when Authentik (Layer 3) deployed. Document as known gap. | OPEN |
+| R-004 | CLAUDE.md/AGENTS.md did not reference ADR-0010/ADR-0012 | LOW | HIGH | Fixed in sprint Block 3 | IN PROGRESS |
+
 ## Dependencies
 
 | ID | Dependency | On | Blocks | Status |

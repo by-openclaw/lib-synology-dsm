@@ -1,25 +1,44 @@
 ## Summary
 
-<!-- What does this PR do? -->
+<!-- What changed and why. One sentence. -->
 
-## Type of change
+Closes #___
 
+## Type
+
+- [ ] Feature
 - [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation / chore
+- [ ] Documentation
+- [ ] Chore / refactor
+- [ ] Security
 
-## Checklist
+## Verification
 
-- [ ] `ruff check src/ tests/` passes
-- [ ] `ruff format --check src/ tests/` passes
-- [ ] `mypy src/synology_dsm/ src/synology_dsm_v2/ --ignore-missing-imports` passes
-- [ ] v1 unit tests pass: `pytest tests/unit/ --cov=src/synology_dsm --cov-fail-under=100`
-- [ ] v2 unit tests pass: `pytest tests/unit_v2/ --cov=src/synology_dsm_v2 --cov-fail-under=100`
-- [ ] Coverage gate passes (100% — both v1 and v2)
-- [ ] New behaviour has unit tests
-- [ ] Public API changes have docstrings (PEP 257)
-- [ ] `CHANGELOG.md` entry added (or not needed for chore/docs)
-- [ ] If NAS-touching: integration tests verified
-  - v1: `pytest tests/integration/`
-  - v2: `pytest tests/integration_v2/`
+<!-- Check what applies to THIS change. Not all boxes apply to every PR. -->
+
+### Code quality (if code changed)
+- [ ] Linting clean (ruff / ansible-lint / terraform fmt)
+- [ ] Type checking clean (mypy — if applicable)
+- [ ] Unit tests pass
+- [ ] Integration tests pass (if touching live infra/NAS)
+- [ ] Coverage maintained (no drop)
+
+### Security (always)
+- [ ] No secrets, tokens, or passwords in committed files
+- [ ] No `<REDACTED>` values in code (only in docs)
+- [ ] ADR compliance section present (if new ADR)
+
+### Documentation (if applicable)
+- [ ] CHANGELOG entry added
+- [ ] CLAUDE.md updated (if state changed)
+- [ ] RAID.md updated (if new risk/issue found)
+
+### Idempotency (if automation/lib code)
+- [ ] ensure() returns EnsureResult with correct action
+- [ ] dry_run=True tested
+- [ ] Running twice produces same result
+
+## Review
+
+- [ ] @by-opus review requested (label: `review:opus`)
+

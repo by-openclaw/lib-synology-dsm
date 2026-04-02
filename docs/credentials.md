@@ -6,6 +6,9 @@
 2. **Environment variables / `.env` file** — development and CI
 3. **Explicit values** — fallback / testing (passed directly to `DSMClient.login()`)
 
+> **Integration tests** use `infra-synology-nas.json` (KV `fields` block) directly via `conftest.py` —
+> not `EnvCredentialProvider`. See [CONTRIBUTING.md](../CONTRIBUTING.md#credentials--always-first).
+
 ---
 
 ## Auto-detect (recommended)

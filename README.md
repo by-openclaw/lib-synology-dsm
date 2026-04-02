@@ -60,13 +60,15 @@ See [docs/api-reference.md](docs/api-reference.md) for full usage examples.
 
 ## DSM account requirements
 
-### Admin account (`API_USER`)
+### `svc-rune` — executor
 - DSM group: `administrators`
 - Applications: **DSM = Allow**, **File Station = Allow**
+- Used by: integration tests (`dsm_client` fixture), all CRUD operations
 
-### Audit account (`AUDIT_USER`, optional — for read-only integration tests)
+### `svc-opus` — auditor
 - DSM group: `users` (no admin)
 - Applications: **DSM = Allow**, **File Station = Allow**
+- Used by: integration tests (`audit_client` fixture), read-only + write-blocked verification
 
 See [docs/hardening.md](docs/hardening.md) for IP restriction and log center setup.
 
@@ -89,12 +91,10 @@ HTML coverage reports are also uploaded as **CI artifacts** on every push — av
 
 ### Integration tests (live NAS)
 
-Requires a reachable Synology NAS and env vars set (see [CONTRIBUTING.md](CONTRIBUTING.md)):
+Requires a reachable Synology NAS and `infra-synology-nas.json` accessible (see [CONTRIBUTING.md](CONTRIBUTING.md)):
 
 ```bash
-NAS_HOST=your-nas-host API_USER=your-user API_PASS=your-pass \
-AUDIT_USER=your-audit AUDIT_PASS=your-audit-pass \
-NFS_CLIENT=your-nfs-subnet TEST_USER_PASS=TmpPass123! \
+NAS_CREDS_JSON=~/.openclaw/workspace/infra/secrets/infra-synology-nas.json \
 pytest tests/integration/ -m integration -v
 # 51 tests — full CRUD coverage against live DSM
 # Or use --report for a standalone JSON/text summary:

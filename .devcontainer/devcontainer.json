@@ -10,10 +10,9 @@
   // Docker Desktop routes LAN traffic (10.x.x.x) via host gateway — no extra config needed.
 
   // ── Credentials ───────────────────────────────────────────────────────────
-  // Single file: cp .env.example .env — fill in API_PASS and TEST_USER_PASS.
-  // Same .env works for native Python and inside the container.
-  // conftest.py loads it automatically via python-dotenv — no --env-file needed.
-  // Container starts cleanly even if .env doesn't exist yet.
+  // Credentials loaded from infra-synology-nas.json (KV fields block).
+  // Set NAS_CREDS_JSON env var to point to the file before running integration tests.
+  // Unit tests require no credentials — run cleanly inside the container.
 
   // ── User ──────────────────────────────────────────────────────────────────
   // remoteUser "vscode": non-root user provided by the base image.
@@ -23,8 +22,8 @@
   // → Always commit from Git Bash / terminal on the host. Run pre-commit install once there.
   "remoteUser": "vscode",
 
-  // Create venv, install project in editable mode, strip Windows \r from .env.
-  "postCreateCommand": "python -m venv /home/vscode/.venv && /home/vscode/.venv/bin/pip install -e '.[container]' && sed -i 's/\\r//' .env 2>/dev/null || true",
+  // Create venv and install project in editable mode.
+  "postCreateCommand": "python -m venv /home/vscode/.venv && /home/vscode/.venv/bin/pip install -e '.[container]'",
 
   "customizations": {
     "vscode": {

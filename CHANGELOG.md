@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.11.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.10.1...v0.11.0) (2026-04-02)
+
+
+### Features
+
+* ADR-0007 compliance — upload return dict, configurable timeout, update/disable return dict, smoke tests ([033ba2c](https://github.com/by-openclaw/lib-synology-dsm/commit/033ba2ced80d1fadfab512b9c6abc5da6322cf93))
+* **share-permissions:** SharePermissionManager with full ACL lifecycle + ensure() ([6bb30b4](https://github.com/by-openclaw/lib-synology-dsm/commit/6bb30b4df88da2a66473385153a8fa28ce5688e2))
+* **system:** SystemManager with get_info() + ensure() for NetBox fact gathering ([b9ae4a4](https://github.com/by-openclaw/lib-synology-dsm/commit/b9ae4a480d58df27c0df0a4db800533aa41235b3))
+* **v2:** CoreFileServNFSManager — SYNO.Core.FileServ.NFS ([ed214d8](https://github.com/by-openclaw/lib-synology-dsm/commit/ed214d859ed0f8e307eb22762e11b8821ef1bc0b))
+* **v2:** CoreGroupManager — SYNO.Core.Group ([80136cb](https://github.com/by-openclaw/lib-synology-dsm/commit/80136cbb393cfefebf38a1ca1d0c546d496d3472))
+* **v2:** CoreShareManager — SYNO.Core.Share ([e484d29](https://github.com/by-openclaw/lib-synology-dsm/commit/e484d290e137aacc07bb6288f02513ea33b6a9d0))
+* **v2:** export all 5 managers + integration tests ([c577c1e](https://github.com/by-openclaw/lib-synology-dsm/commit/c577c1ed318180842d6a379a5b6cc43e0742ee43))
+* **v2:** FileStationManager — SYNO.FileStation ([912d64d](https://github.com/by-openclaw/lib-synology-dsm/commit/912d64d23ec7fdfc186f1586971f0cbd3d52d112))
+
+
+### Bug Fixes
+
+* **ci:** align coverage gate — 80% in pyproject, README, PR template ([4a6300f](https://github.com/by-openclaw/lib-synology-dsm/commit/4a6300f9266e0713dad62b6c273ef8a3b72cebb5))
+* **ci:** ruff format v1 files; exclude v2 WIP dirs from CI scope; add PROJECT_TOKEN ([1f7299c](https://github.com/by-openclaw/lib-synology-dsm/commit/1f7299cff198aa8f5a4db1987a9f37f9db8d838c))
+* **client:** correct login/logout to use auth.cgi + SYNO.API.Auth v7 per official Synology KB ([b54c919](https://github.com/by-openclaw/lib-synology-dsm/commit/b54c919e724a0461ab283f859f757dc3f3703501))
+* **exceptions:** align error map to DSM spec — add DSMInvalidParameterError, DSMInvalidOperationError, fix DSMNotFoundError code 408→404 ([15a10b1](https://github.com/by-openclaw/lib-synology-dsm/commit/15a10b18c0b603c5632814390c647b72155e2c68))
+* **filestation:** download returns {changed,action}, upload/download use client timeout; update CLAUDE.md; add audit files 17-18 ([c7ca01e](https://github.com/by-openclaw/lib-synology-dsm/commit/c7ca01eb78c1c5d16f11bfd9d0c0b62c38f99092))
+* **v2:** integration test fixes — group desc DSM quirk, Share.set 2FA skip, FileStation session ([3c2213c](https://github.com/by-openclaw/lib-synology-dsm/commit/3c2213c42a8da21d5bd07ac7315254bfe3f68889))
+* **v2:** production-readiness fixes + PR template v2 paths ([1d5dff9](https://github.com/by-openclaw/lib-synology-dsm/commit/1d5dff97215bafe6ad2c42432eced0880a6e0acf))
+* **v2:** suppress Bandit B310 on FileStation urlopen — URL from trusted config, not user input ([79d28ab](https://github.com/by-openclaw/lib-synology-dsm/commit/79d28ab2767d89ea466ac920f51591ea9420943a))
+
+
+### Documentation
+
+* **adr:** add compliance sections to ADR-0001 through 0009 ([fd3cfbb](https://github.com/by-openclaw/lib-synology-dsm/commit/fd3cfbbe6deb472eb463f1f9c2de86ff38f79663))
+* **adr:** ADR-0008 method naming convention ([5e5e55f](https://github.com/by-openclaw/lib-synology-dsm/commit/5e5e55feb40b6ada015f18b2244a93b81fc01967))
+* align agent files with sprint ADRs (Block 3) ([6911963](https://github.com/by-openclaw/lib-synology-dsm/commit/69119639e9f2bcca207f8bac9fee0fce6a538460))
+* **audit:** review checklist 2026-03-31 ([540b7bd](https://github.com/by-openclaw/lib-synology-dsm/commit/540b7bdc01ac77980de68c2f72ad4bf8ee1c3efe))
+* CLAUDE.md references OPERATING-STANDARD.md ([c997a1e](https://github.com/by-openclaw/lib-synology-dsm/commit/c997a1eea637c8d9fe3c27f0d43c15c3297ea7d6))
+* **claude:** reflect CI scope fix, v2 WIP dirs, ADR count, test count ([1bcc470](https://github.com/by-openclaw/lib-synology-dsm/commit/1bcc470cd888918ad6b740a72f3a1b9cdde00737))
+* **feature-coverage:** full rewrite — all 9 managers, correct status, NetBox priority, SSH/CopyMove in TODO ([4a95698](https://github.com/by-openclaw/lib-synology-dsm/commit/4a95698956db2c280f731037ff7f78b449eba229))
+* **lib:** api-versions.md — verified against v1 source, 9 managers ([01c3e82](https://github.com/by-openclaw/lib-synology-dsm/commit/01c3e82a9874a0cd36ec0b5cfed5e540915949dc))
+* NAS firewall port inventory + 2FA API compatibility research ([2372e22](https://github.com/by-openclaw/lib-synology-dsm/commit/2372e22113eeadf699ee9027b825b01fdbf9bea8))
+* pre-sprint baseline — ADR-0009, v2 design, CI proposal, integration tests ([41512f3](https://github.com/by-openclaw/lib-synology-dsm/commit/41512f30a27c0442d6a783a9a9d085f9fb021667))
+* update feature-coverage.md + CHANGELOG.md for SharePermissionManager + SystemManager ([6c8992b](https://github.com/by-openclaw/lib-synology-dsm/commit/6c8992b11b1bf3045ab34f352d284e031ba347a4))
+* **v2:** lock FileStation multi-API decision — Option A (self._client.request direct) ([d0e01e6](https://github.com/by-openclaw/lib-synology-dsm/commit/d0e01e65b351cda0b5aa5cbbbb66e9508ee0e49b))
+* **v2:** update coverage and design doc ([bd9afb9](https://github.com/by-openclaw/lib-synology-dsm/commit/bd9afb9b9ba3bfcd943bdc078060884921106135))
+
 ## [Unreleased]
 
 ### Features
@@ -313,4 +356,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.6.1]: https://github.com/by-openclaw/lib-synology-dsm/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/by-openclaw/lib-synology-dsm/compare/v0.4.1...v0.6.0
 [0.4.1]: https://github.com/by-openclaw/lib-synology-dsm/releases/tag/v0.4.1
-

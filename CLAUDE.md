@@ -168,7 +168,7 @@ See: docs/refactor-clarification-2026-03-30.md section 5 Priority Matrix
 ## Cross-repo References
 
 - Naming convention: see `doc-platform-core/docs/adr/0010-naming-and-identity-convention.md`
-- Environment tiers: poc/dev/test/staging/acc/prod — always explicit. See `doc-platform-core/docs/adr/0012-environment-tier-standard.md`
+- Environment tiers: dev/test/staging/acc/prod — always explicit per deploy target. See `doc-platform-core/docs/adr/0012-environment-tier-standard.md`
 
 ---
 

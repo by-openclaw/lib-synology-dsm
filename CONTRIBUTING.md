@@ -9,27 +9,28 @@
 | [A — Native Python + venv](#path-a--native-python--venv) | Any OS — Python installed locally, prefer terminal |
 | [B — VS Code Dev Container](#path-b--vs-code-dev-container) | Any OS — Docker Desktop installed, prefer VS Code IDE |
 
-Both paths use the **same `.env` file at the repo root** for credentials.
+Both paths use the **same `infra-synology-nas.json` credentials file** (KV `fields` block).
 
 ---
 
 ## Credentials — always first
 
-Regardless of the path you choose, you need a `.env` file at the repo root.
+Credentials are loaded from `infra-synology-nas.json` (KV `fields` block). No `.env` needed.
 
+Default path: `~/.openclaw/workspace/infra/secrets/infra-synology-nas.json`
+
+Override with env var:
 ```bash
-cp .env.example .env
+export NAS_CREDS_JSON=/path/to/infra-synology-nas.json
 ```
 
-Open `.env` and fill in the two required values:
+**Fields used by integration tests:**
 
-```ini
-API_PASS=your-dsm-admin-password
-TEST_USER_PASS=TmpPass123!        # password set on the temporary test user
-```
-
-The other fields (`NAS_HOST`, `NFS_CLIENT`, etc.) are pre-filled with BY-SYSTEMS defaults.
-`.env` is gitignored — it will never be committed.
+| Key | Role | Description |
+|---|---|---|
+| `svc_rune_username` / `svc_rune_password` | executor | `svc-rune` — administrators group, full CRUD |
+| `svc_opus_username` / `svc_opus_password` | auditor | `svc-opus` — users group, read-only |
+| `host` / `port` | connection | NAS IP + HTTPS port |
 
 ---
 
@@ -50,9 +51,8 @@ source .venv/Scripts/activate
 # Install with dev extras
 pip install -e ".[dev]"
 
-# Copy and fill credentials
-cp .env.example .env
-# edit .env — fill in API_PASS and TEST_USER_PASS
+# Credentials loaded automatically from infra-synology-nas.json
+# Override path if needed: export NAS_CREDS_JSON=/path/to/infra-synology-nas.json
 ```
 
 ### Linux / macOS
@@ -68,9 +68,8 @@ source .venv/bin/activate
 # Install with dev extras
 pip install -e ".[dev]"
 
-# Copy and fill credentials
-cp .env.example .env
-# edit .env — fill in API_PASS and TEST_USER_PASS
+# Credentials loaded automatically from infra-synology-nas.json
+# Override path if needed: export NAS_CREDS_JSON=/path/to/infra-synology-nas.json
 ```
 
 ### Run tests
@@ -79,7 +78,7 @@ cp .env.example .env
 # Unit tests (no NAS required)
 pytest tests/unit/ -v
 
-# Integration tests (live NAS required — .env must be filled)
+# Integration tests (live NAS required — infra-synology-nas.json must be accessible)
 pytest tests/integration/ -m integration -v
 ```
 
@@ -106,21 +105,13 @@ No local Python install required — everything runs inside the container.
 git clone https://github.com/by-openclaw/lib-synology-dsm.git
 ```
 
-**Step 2 — Create `.env`**
-
-```bash
-cd lib-synology-dsm
-cp .env.example .env
-# edit .env — fill in API_PASS and TEST_USER_PASS
-```
-
-**Step 3 — Open in VS Code**
+**Step 2 — Open in VS Code**
 
 ```
 File → Open Folder → lib-synology-dsm
 ```
 
-**Step 4 — Reopen in container**
+**Step 3 — Reopen in container**
 
 VS Code will show a notification: _"Folder contains a Dev Container configuration"_ → click **Reopen in Container**.
 
@@ -130,15 +121,15 @@ The container will:
 1. Pull `mcr.microsoft.com/devcontainers/python:3.13`
 2. Create a venv at `/home/vscode/.venv`
 3. Install the project with `pip install -e '.[container]'`
-4. Strip Windows `\r` line endings from `.env` if present
 
-**Step 5 — Run tests in the container terminal**
+**Step 4 — Run tests in the container terminal**
 
 ```bash
 # Unit tests (no NAS required)
 pytest tests/unit/ -v
 
-# Integration tests (live NAS required — .env must be filled)
+# Integration tests (live NAS required — NAS_CREDS_JSON must point to infra-synology-nas.json)
+NAS_CREDS_JSON=~/.openclaw/workspace/infra/secrets/infra-synology-nas.json \
 pytest tests/integration/ -m integration -v
 ```
 

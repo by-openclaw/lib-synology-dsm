@@ -90,7 +90,8 @@ class TestLiveGroupEnsure:
         import json as _json
         from pathlib import Path as _Path
         creds_path = _Path.home() / ".openclaw/workspace/infra/secrets/infra-synology-nas.json"
-        _user = _json.loads(creds_path.read_text())["fields"]["username"]
+        _creds = _json.loads(creds_path.read_text())["fields"]
+        _user = _creds.get("svc_rune_username") or _creds.get("username")
 
         result = groups.ensure(
             TEST_GROUP, state=State.PRESENT,

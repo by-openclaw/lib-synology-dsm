@@ -47,7 +47,7 @@ jobs:
             --cov-fail-under=80
 
       - name: Upload coverage report (HTML)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: matrix.python-version == '3.13'
         with:
           name: coverage-report-html
@@ -55,7 +55,7 @@ jobs:
           retention-days: 30
 
       - name: Upload coverage report (XML)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: matrix.python-version == '3.13'
         with:
           name: coverage-report-xml

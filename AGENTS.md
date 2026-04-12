@@ -1,6 +1,5 @@
 # AGENTS.md -- lib-synology-dsm
 
-> **Rules:** See [OPERATING-STANDARD.md](~/.openclaw/workspace/OPERATING-STANDARD.md) for all platform rules.
 
 Python library for Synology DSM API -- session auth, user/group/share/NFS CRUD, FileStation file ops, quota, bandwidth, traffic control, and storage management.
 

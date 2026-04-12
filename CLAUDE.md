@@ -48,9 +48,7 @@ These are architectural decisions. They are NOT suggestions. Do not override the
 - Track as open risk: `doc-platform-core/docs/raid.md`.
 
 ### Commit and version discipline
-- All commits MUST follow Conventional Commits format.
-- Release Please is the canonical release path. Do NOT run `scripts/release.sh` on this repo.
-- Never manually edit version strings. Never run `cz bump` if Release Please is active.
+See OPERATING-STANDARD.md §4. Conventional Commits + Release Please.
 
 ### Definition of Done
 

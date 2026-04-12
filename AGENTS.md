@@ -1,5 +1,6 @@
 # AGENTS.md -- lib-synology-dsm
 
+> **Rules:** OPERATING-STANDARD.md (workspace) is mandatory for all agents, all sessions.
 
 Python library for Synology DSM API -- session auth, user/group/share/NFS CRUD, FileStation file ops, quota, bandwidth, traffic control, and storage management.
 

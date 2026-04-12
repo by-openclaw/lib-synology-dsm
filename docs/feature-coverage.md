@@ -57,7 +57,7 @@ The API account **must** be in the `administrators` group. Apps alone are not su
 | List members | `GroupManager.list_members()` | ✅ | |
 | List shares for group | `ShareManager.list_shares_for_group()` | ✅ | Returns shares accessible to a group |
 | Ensure present/absent | `GroupManager.ensure()` | ✅ | Idempotent, Ansible-style |
-| Set group share permissions | `SharePermissionManager.set()` | ✅ | SYNO.Core.Share.Permission — ACL |
+| Set group share permissions | | 🚧 | SYNO.Core.Share.Permission — ACL |
 
 ## Shared Folder Management (`SYNO.Core.Share`)
 
@@ -149,28 +149,41 @@ The API account **must** be in the `administrators` group. Apps alone are not su
 | Clear rules | `TrafficControlManager.clear_rules()` | ✅ | Removes all rules for an adapter |
 | Ensure rule present/absent | `TrafficControlManager.ensure_rule()` | ✅ | Idempotent |
 
-## Share Permissions (`SYNO.Core.Share.Permission`)
-
-| Feature | Method | Status | Notes |
-|---|---|---|---|
-| List permissions | `SharePermissionManager.list()` | ✅ | Users + groups, returns perm string |
-| Set single permission | `SharePermissionManager.set()` | ✅ | Per user or group |
-| Set bulk permissions | `SharePermissionManager.set_bulk()` | ✅ | Atomic replace for users + groups |
-| Ensure permission present/absent | `SharePermissionManager.ensure()` | ✅ | Idempotent, Ansible-style |
-
 ## System & Security (`SYNO.Core.*`)
 
 | Feature | API | Status | Notes |
 |---|---|---|---|
-| Get system info (model, DSM version, serial) | `SystemManager.get_info()` | ✅ | SYNO.DSM.Info + SYNO.Core.System fallback — **NetBox automation** |
-| System ensure (fact gathering) | `SystemManager.ensure()` | ✅ | Read-only noop — Ansible fact gather |
-| List installed packages | `SYNO.Core.Package` | 🚧 | Useful for security audit automation |
-| Firewall status / rules | `SYNO.Core.Security.Firewall` | 🚧 | |
-| SSH / terminal config | `SYNO.Core.Terminal` | 🚧 | Enable/disable SSH, port, password auth toggle |
-| DSM update status | `SYNO.Core.SynoUpdate` | 🚧 | |
-| Security scan | `SYNO.SecurityScan` | 🚧 | |
-| Scheduled tasks | `SYNO.Core.TaskScheduler` | 🚧 | |
-| Email notification config | `SYNO.Core.Notification.Mail` | 🚧 | |
+| Get system info (model, DSM version, serial) | `SYNO.DSM.Info` | 🚧 | **Priority — needed for NetBox automation** (#33) |
+| System utilization (CPU, RAM) | `SYNO.Core.System.Utilization` | 🚧 | Hardware stats |
+| System health status | `SYNO.Core.System.Status` | 🚧 | Hardware health check |
+| SSH / terminal config | `SYNO.Core.Terminal` | 🚧 | Enable/disable SSH, port, password auth (#34) |
+| List/install/remove packages | `SYNO.Core.Package` | 🚧 | Package management (#35) |
+| Certificate management | `SYNO.Core.Certificate.CRT` | 🚧 | TLS cert import/delete |
+| Firewall status / rules | `SYNO.Core.Security.Firewall.Profile` | 🚧 | Firewall policy |
+| Security advisor checklist | `SYNO.SecurityAdvisor.Conf.Checklist` | 🚧 | Security posture audit |
+| Login activity audit | `SYNO.SecurityAdvisor.LoginActivity` | 🚧 | Auth event log |
+| DSM update status | `SYNO.Core.Upgrade.Server` | 🚧 | Update check + apply |
+| Auto-update config | `SYNO.Core.Upgrade.AutoUpgrade` | 🚧 | Enable/disable auto-update |
+| Scheduled tasks | `SYNO.Core.TaskScheduler` | 🚧 | Create/manage scheduled tasks |
+| SNMP config | `SYNO.Core.SNMP` | 🚧 | SNMP enable/community |
+| SMB/NFS/FTP service control | `SYNO.Core.FileServ.*` | 🚧 | Enable/disable file services |
+| Email notification config | `SYNO.Core.Notification.Mail.Conf` | 🚧 | Alert routing |
+
+## User Policy (`SYNO.Core.User.*`)
+
+| Feature | API | Status | Notes |
+|---|---|---|---|
+| Password policy | `SYNO.Core.User.PasswordPolicy` | 🚧 | Enforce complexity, min length |
+| Password expiry | `SYNO.Core.User.PasswordExpiry` | 🚧 | Max age enforcement |
+| Username policy | `SYNO.Core.User.UsernamePolicy` | 🚧 | Character constraints |
+
+## Share ACL (`SYNO.Core.Share.Permission`)
+
+| Feature | API | Status | Notes |
+|---|---|---|---|
+| Get share ACL | `SYNO.Core.Share.Permission` | 🚧 | Per-user/group RW/deny |
+| Set share ACL | `SYNO.Core.Share.Permission` | 🚧 | Full ACL replacement |
+| Ensure share ACL | — | 🚧 | Idempotent ensure pattern |
 
 ## Credential Management
 
@@ -188,14 +201,29 @@ The API account **must** be in the `administrators` group. Apps alone are not su
 
 Priority order based on platform value:
 
-| Priority | Feature | API | Rationale |
-|---|---|---|---|
-| ~~HIGH~~ | ~~System info (model, version, serial, uptime)~~ | ~~`SYNO.Core.System`~~ | ✅ Implemented — `SystemManager.get_info()` |
-| HIGH | SSH / terminal config | `SYNO.Core.Terminal` | Security hardening automation — disable password auth, set port |
-| MEDIUM | Move / copy files | `SYNO.FileStation.CopyMove` | Terraform state management — cross-share ops |
-| MEDIUM | Rename file/folder | `SYNO.FileStation.Rename` | FileStation completeness |
-| LOW | List installed packages | `SYNO.Core.Package` | Security audit — detect EOL packages (e.g. Python 2.7) |
-| LOW | Firewall status | `SYNO.Core.Security.Firewall` | Verify firewall enabled — DSM hardening checks |
-| LOW | Update status | `SYNO.Core.SynoUpdate` | Alert when DSM version is behind |
-| FUTURE | Ansible collection | — | Phase 2 — see docs/ansible-roadmap.md |
-| FUTURE | Vault AppRole auth | — | Phase 2 — blocked until Vault deployed |
+| Priority | Feature | API | Issue | Rationale |
+|---|---|---|---|---|
+| HIGH | System info (model, version, serial) | `SYNO.DSM.Info` | #33 | NetBox automation — populate device record |
+| HIGH | SSH / terminal config | `SYNO.Core.Terminal` | #34 | Security hardening — disable password auth, set port |
+| HIGH | Share ACL (per user/group) | `SYNO.Core.Share.Permission` | — | Complete share management surface |
+| MEDIUM | Move / copy files | `SYNO.FileStation.CopyMove` | — | Cross-share file ops |
+| MEDIUM | Package management | `SYNO.Core.Package` | #35 | Idempotent package install/remove |
+| MEDIUM | Password policy enforcement | `SYNO.Core.User.PasswordPolicy` | — | Security hardening |
+| MEDIUM | Certificate management | `SYNO.Core.Certificate.CRT` | — | TLS lifecycle automation |
+| MEDIUM | Retry logic (transient errors) | client | #32 | Resilience — session expiry + network blips |
+| LOW | Firewall policy | `SYNO.Core.Security.Firewall.Profile` | — | Verify firewall enabled |
+| LOW | DSM update status | `SYNO.Core.Upgrade.Server` | — | Alert when DSM behind |
+| LOW | Security advisor checklist | `SYNO.SecurityAdvisor.Conf.Checklist` | — | Compliance audit |
+| LOW | Scheduled tasks | `SYNO.Core.TaskScheduler` | — | NAS automation tasks |
+| FUTURE | Ansible collection | — | — | Phase 2 — see docs/ansible-roadmap.md |
+| FUTURE | Vault AppRole auth | — | — | Phase 2 — blocked until Vault deployed |
+
+---
+
+## API References
+
+| Source | URL | Use for |
+|---|---|---|
+| Official Synology KB | <https://kb.synology.com/en-us/DG/DSM_Login_Web_API_Guide/2> | Auth spec, ground truth |
+| pmilano1/synology-dsm-api | <https://github.com/pmilano1/synology-dsm-api/tree/master/docs/api-reference> | Full API reference |
+| n4s4/synology-api | <https://n4s4.github.io/synology-api/docs/apis> | Request/response shape reference |

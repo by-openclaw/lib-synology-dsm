@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Integration test: v2 CoreShareManager against live NAS.
 
-Reads credentials from workspace/infra/secrets/infra-synology-nas.json.
+Reads credentials from workspace/infra/secrets/fabric/infra-synology-nas.json.
 
 Full chain tested:
   secrets/*.json → DSMClient → CoreShareManager.ensure() → live NAS API
@@ -21,7 +21,9 @@ from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
 from synology_dsm_v2.core_share import CoreShareManager
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "fabric/infra-synology-nas.json"
+)
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),
     "port": os.environ.get("NAS_PORT", "5001"),
@@ -68,8 +70,10 @@ class TestLiveShareEnsure:
             shares._delete(TEST_SHARE)
 
         result = shares.ensure(
-            TEST_SHARE, state=State.PRESENT,
-            vol_path="/volume1", description="v2 integration test share",
+            TEST_SHARE,
+            state=State.PRESENT,
+            vol_path="/volume1",
+            description="v2 integration test share",
         )
         assert isinstance(result, EnsureResult)
         assert result.changed is True
@@ -78,17 +82,21 @@ class TestLiveShareEnsure:
 
     def test_02_ensure_noop(self, shares: CoreShareManager) -> None:
         result = shares.ensure(
-            TEST_SHARE, state=State.PRESENT,
+            TEST_SHARE,
+            state=State.PRESENT,
             description="v2 integration test share",
         )
         assert result.changed is False
         assert result.action == Action.NOOP
         print(f"  Noop: {result.to_dict()}")
 
-    @pytest.mark.skip(reason="DSM 7.1.x: SYNO.Core.Share.set requires 2FA/elevated session — known DSM security policy, not a code bug. Re-enable after DSM upgrade to 7.2.x.")
+    @pytest.mark.skip(
+        reason="DSM 7.1.x: SYNO.Core.Share.set requires 2FA/elevated session — known DSM security policy, not a code bug. Re-enable after DSM upgrade to 7.2.x."
+    )
     def test_03_ensure_update(self, shares: CoreShareManager) -> None:
         result = shares.ensure(
-            TEST_SHARE, state=State.PRESENT,
+            TEST_SHARE,
+            state=State.PRESENT,
             description="v2 integration test share — updated",
         )
         assert result.changed is True

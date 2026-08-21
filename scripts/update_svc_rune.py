@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """One-shot: update svc-rune description + email on NAS."""
-import sys
+
 import json
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -10,7 +11,9 @@ from synology_dsm.client import DSMClient
 from synology_dsm.users import UserManager
 
 creds = json.loads(
-    Path("/home/by-systems/.openclaw/workspace/infra/secrets/infra-synology-nas.json").read_text()
+    Path(
+        "/home/by-systems/.openclaw/workspace/infra/secrets/fabric/infra-synology-nas.json"
+    ).read_text()
 )["fields"]
 
 c = DSMClient(creds["host"], port=int(creds["port"]), verify_ssl=False)

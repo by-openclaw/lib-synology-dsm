@@ -3,7 +3,7 @@
 Credentials are loaded from infra-synology-nas.json (KV fields block).
 Path resolved via NAS_CREDS_JSON env var, or falls back to the workspace default.
 
-  NAS_CREDS_JSON=~/.openclaw/workspace/infra/secrets/infra-synology-nas.json \\
+  NAS_CREDS_JSON=~/.openclaw/workspace/infra/secrets/fabric/infra-synology-nas.json \\
   pytest tests/integration/ -v
 """
 
@@ -15,7 +15,7 @@ import pytest
 
 from synology_dsm import DSMClient
 
-_DEFAULT_CREDS = Path.home() / ".openclaw/workspace/infra/secrets/infra-synology-nas.json"
+_DEFAULT_CREDS = Path.home() / ".openclaw/workspace/infra/secrets/fabric/infra-synology-nas.json"
 _creds_path = Path(os.environ.get("NAS_CREDS_JSON", str(_DEFAULT_CREDS)))
 
 if not _creds_path.exists():
@@ -28,9 +28,9 @@ _creds = json.loads(_creds_path.read_text())["fields"]
 
 NAS_HOST: str = _creds["host"]
 NAS_PORT: int = int(_creds["port"])
-ADMIN_USER: str = _creds["svc_rune_username"]   # executor — administrators group
+ADMIN_USER: str = _creds["svc_rune_username"]  # executor — administrators group
 ADMIN_PASS: str = _creds["svc_rune_password"]
-AUDIT_USER: str = _creds["svc_opus_username"]   # auditor — users group (read-only)
+AUDIT_USER: str = _creds["svc_opus_username"]  # auditor — users group (read-only)
 AUDIT_PASS: str = _creds["svc_opus_password"]
 
 

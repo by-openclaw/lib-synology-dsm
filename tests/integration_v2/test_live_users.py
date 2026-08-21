@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Integration test: v2 CoreUserManager against live NAS.
 
-Reads credentials from workspace/infra/secrets/infra-synology-nas.json
+Reads credentials from workspace/infra/secrets/fabric/infra-synology-nas.json
 (Vault KV v2 format — ADR-0009).
 
 Full chain tested:
@@ -25,12 +25,13 @@ import pytest
 
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
-from synology_dsm_v2.exceptions import DSMAuthError, DSMConnectionError, DSMResourceNotFoundError
 from synology_dsm_v2.core_user import CoreUserManager
 
 # -- Secrets loading --
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "fabric/infra-synology-nas.json"
+)
 # Fallback: use environment variables if JSON not found
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),
@@ -40,7 +41,7 @@ _ENV_FALLBACK = {
 }
 
 TEST_USER = "v2-test-user"
-TEST_PASSWORD = "V2T3st!Pass_2026"
+TEST_PASSWORD = "V2T3st!Pass_2026"  # pragma: allowlist secret
 
 
 def _load_credentials() -> dict[str, str]:

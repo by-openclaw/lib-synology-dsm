@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Integration test: v2 FileStationManager against live NAS.
 
-Reads credentials from workspace/infra/secrets/infra-synology-nas.json.
+Reads credentials from workspace/infra/secrets/fabric/infra-synology-nas.json.
 
 Full chain tested:
   secrets/*.json → DSMClient → FileStationManager.ensure() → live NAS API
@@ -22,7 +22,9 @@ from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
 from synology_dsm_v2.filestation import FileStationManager
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "fabric/infra-synology-nas.json"
+)
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),
     "port": os.environ.get("NAS_PORT", "5001"),

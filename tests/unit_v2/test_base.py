@@ -6,7 +6,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from synology_dsm_v2.base import (
     Action,
     BaseManager,
@@ -14,7 +13,6 @@ from synology_dsm_v2.base import (
     EnsureResult,
     State,
 )
-
 
 # -- Fixtures --
 
@@ -173,8 +171,16 @@ class TestState:
 class TestAction:
     def test_all_values(self) -> None:
         expected = {
-            "created", "updated", "deleted", "uploaded", "downloaded",
-            "noop", "would_create", "would_update", "would_delete", "would_upload",
+            "created",
+            "updated",
+            "deleted",
+            "uploaded",
+            "downloaded",
+            "noop",
+            "would_create",
+            "would_update",
+            "would_delete",
+            "would_upload",
         }
         actual = {a.value for a in Action}
         assert actual == expected

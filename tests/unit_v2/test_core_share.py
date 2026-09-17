@@ -6,10 +6,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.core_share import CoreShareManager
-
 
 # -- Fixtures --
 
@@ -102,8 +100,8 @@ class TestEnsurePresent:
     def test_create_when_missing(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"shares": []},                         # list() inside get() → not found
-            {},                                     # _create()
+            {"shares": []},  # list() inside get() → not found
+            {},  # _create()
             {"shares": [_share_dict("my-share")]},  # list() inside get() for after
         ]
         mgr = CoreShareManager(client)
@@ -119,8 +117,8 @@ class TestEnsurePresent:
         """Verify create passes shareinfo as JSON object (DSM 7.x requirement)."""
         client = _mock_client()
         client.request.side_effect = [
-            {"shares": []},                         # list() inside get()
-            {},                                     # _create()
+            {"shares": []},  # list() inside get()
+            {},  # _create()
             {"shares": [_share_dict("my-share")]},  # list() inside get() for after
         ]
         mgr = CoreShareManager(client)
@@ -143,9 +141,9 @@ class TestEnsurePresent:
     def test_update_when_description_drifted(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"shares": [_share_dict("my-share", desc="old")]},   # get()
-            {},                                                    # _update()
-            {"shares": [_share_dict("my-share", desc="new")]},   # get() for after
+            {"shares": [_share_dict("my-share", desc="old")]},  # get()
+            {},  # _update()
+            {"shares": [_share_dict("my-share", desc="new")]},  # get() for after
         ]
         mgr = CoreShareManager(client)
 
@@ -163,8 +161,8 @@ class TestEnsureAbsent:
     def test_delete_when_exists(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"shares": [_share_dict("my-share")]},   # get()
-            {},                                       # _delete()
+            {"shares": [_share_dict("my-share")]},  # get()
+            {},  # _delete()
         ]
         mgr = CoreShareManager(client)
 

@@ -6,10 +6,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.core_group import CoreGroupManager
-
 
 # -- Fixtures --
 
@@ -103,9 +101,9 @@ class TestEnsurePresent:
     def test_create_when_missing(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"groups": []},                          # list() inside get() → not found
-            {},                                      # _create()
-            {"groups": [_group_dict("svc-auto")]},   # list() inside get() for after
+            {"groups": []},  # list() inside get() → not found
+            {},  # _create()
+            {"groups": [_group_dict("svc-auto")]},  # list() inside get() for after
         ]
         mgr = CoreGroupManager(client)
 
@@ -119,11 +117,11 @@ class TestEnsurePresent:
     def test_create_with_members(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"groups": []},                          # list() inside get() → not found
-            {},                                      # _create()
-            {},                                      # _add_member("alice")
-            {},                                      # _add_member("bob")
-            {"groups": [_group_dict("svc-auto")]},   # list() inside get() for after
+            {"groups": []},  # list() inside get() → not found
+            {},  # _create()
+            {},  # _add_member("alice")
+            {},  # _add_member("bob")
+            {"groups": [_group_dict("svc-auto")]},  # list() inside get() for after
         ]
         mgr = CoreGroupManager(client)
 
@@ -132,15 +130,18 @@ class TestEnsurePresent:
         assert result.action == Action.CREATED
         # Verify _add_member was called via client.request for SYNO.Core.Group.Member
         member_calls = [
-            c for c in client.request.call_args_list
-            if c.kwargs.get("api") == "SYNO.Core.Group.Member" or
-            (len(c.args) > 0 and c.args[0] == "SYNO.Core.Group.Member")
+            c
+            for c in client.request.call_args_list
+            if c.kwargs.get("api") == "SYNO.Core.Group.Member"
+            or (len(c.args) > 0 and c.args[0] == "SYNO.Core.Group.Member")
         ]
         assert len(member_calls) == 2
 
     def test_noop_when_matches(self) -> None:
         client = _mock_client()
-        client.request.return_value = {"groups": [_group_dict("svc-auto", description="Automation")]}
+        client.request.return_value = {
+            "groups": [_group_dict("svc-auto", description="Automation")]
+        }
         mgr = CoreGroupManager(client)
 
         result = mgr.ensure("svc-auto", state=State.PRESENT, description="Automation")
@@ -163,13 +164,13 @@ class TestEnsurePresent:
     def test_update_when_members_drifted(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"groups": [_group_dict("svc-auto")]},                  # get()
+            {"groups": [_group_dict("svc-auto")]},  # get()
             # _list_members (diff check): SYNO.Core.Group.Member list
             {"offset": 0, "users": [{"name": "alice"}]},
             # _list_members (apply): SYNO.Core.Group.Member list
             {"offset": 0, "users": [{"name": "alice"}]},
-            {},                                                      # _add_member("bob")
-            {"groups": [_group_dict("svc-auto")]},                  # get() for after
+            {},  # _add_member("bob")
+            {"groups": [_group_dict("svc-auto")]},  # get() for after
         ]
         mgr = CoreGroupManager(client)
 
@@ -185,8 +186,8 @@ class TestEnsureAbsent:
     def test_delete_when_exists(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"groups": [_group_dict("svc-auto")]},   # get()
-            {},                                       # _delete()
+            {"groups": [_group_dict("svc-auto")]},  # get()
+            {},  # _delete()
         ]
         mgr = CoreGroupManager(client)
 
@@ -244,7 +245,9 @@ class TestEnsureDryRun:
 
     def test_dry_run_noop(self) -> None:
         client = _mock_client()
-        client.request.return_value = {"groups": [_group_dict("svc-auto", description="Automation")]}
+        client.request.return_value = {
+            "groups": [_group_dict("svc-auto", description="Automation")]
+        }
         mgr = CoreGroupManager(client)
 
         result = mgr.ensure("svc-auto", state=State.PRESENT, dry_run=True, description="Automation")
@@ -254,8 +257,8 @@ class TestEnsureDryRun:
     def test_dry_run_would_update_members(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"groups": [_group_dict("svc-auto")]},                # get()
-            {"offset": 0, "users": [{"name": "alice"}]},          # _list_members
+            {"groups": [_group_dict("svc-auto")]},  # get()
+            {"offset": 0, "users": [{"name": "alice"}]},  # _list_members
         ]
         mgr = CoreGroupManager(client)
 
@@ -365,8 +368,8 @@ class TestMembershipFallback:
         """Last resort: SYNO.Core.Group get + parse."""
         client = _mock_client()
         client.request.side_effect = [
-            Exception("error 103"),                                     # primary fails
-            Exception("not supported"),                                 # member_list fails
+            Exception("error 103"),  # primary fails
+            Exception("not supported"),  # member_list fails
             {"groups": [{"name": "grp", "members": [{"name": "dave"}]}]},  # get succeeds
         ]
         mgr = CoreGroupManager(client)

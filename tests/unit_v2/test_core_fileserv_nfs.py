@@ -6,10 +6,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.core_fileserv_nfs import CoreFileServNFSManager
-
 
 # -- Fixtures --
 
@@ -65,7 +63,9 @@ class TestCoreFileServNFSManagerInit:
 class TestCoreFileServNFSManagerList:
     def test_list_returns_rules(self) -> None:
         client = _mock_client()
-        client.request.return_value = {"rule": [_nfs_rule("10.6.224.105"), _nfs_rule("10.6.224.106")]}
+        client.request.return_value = {
+            "rule": [_nfs_rule("10.6.224.105"), _nfs_rule("10.6.224.106")]
+        }
         mgr = CoreFileServNFSManager(client)
 
         result = mgr.list("my-share")
@@ -120,14 +120,13 @@ class TestEnsurePresent:
     def test_create_when_missing(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"rule": []},    # list() inside get() → not found
-            {"rule": []},    # list() inside _create() → get current rules
-            {},              # _save_rules()
+            {"rule": []},  # list() inside get() → not found
+            {"rule": []},  # list() inside _create() → get current rules
+            {},  # _save_rules()
         ]
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.PRESENT,
-                            hostname="10.6.224.105", rw=True)
+        result = mgr.ensure("my-share", state=State.PRESENT, hostname="10.6.224.105", rw=True)
         assert isinstance(result, EnsureResult)
         assert result.changed is True
         assert result.action == Action.CREATED
@@ -140,22 +139,27 @@ class TestEnsurePresent:
         client.request.return_value = {"rule": [_nfs_rule("10.6.224.105")]}
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.PRESENT,
-                            hostname="10.6.224.105", rw=True, root_squash="root", async_io=True)
+        result = mgr.ensure(
+            "my-share",
+            state=State.PRESENT,
+            hostname="10.6.224.105",
+            rw=True,
+            root_squash="root",
+            async_io=True,
+        )
         assert result.changed is False
         assert result.action == Action.NOOP
 
     def test_update_when_privilege_drifted(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"rule": [_nfs_rule("10.6.224.105", privilege="ro")]},   # get()
-            {"rule": [_nfs_rule("10.6.224.105", privilege="ro")]},   # list() in _update()
-            {},                                                       # _save_rules()
+            {"rule": [_nfs_rule("10.6.224.105", privilege="ro")]},  # get()
+            {"rule": [_nfs_rule("10.6.224.105", privilege="ro")]},  # list() in _update()
+            {},  # _save_rules()
         ]
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.PRESENT,
-                            hostname="10.6.224.105", rw=True)
+        result = mgr.ensure("my-share", state=State.PRESENT, hostname="10.6.224.105", rw=True)
         assert result.changed is True
         assert result.action == Action.UPDATED
         assert result.before["privilege"] == "ro"
@@ -164,14 +168,15 @@ class TestEnsurePresent:
     def test_update_when_root_squash_drifted(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"rule": [_nfs_rule("10.6.224.105", root_squash="all")]},   # get()
-            {"rule": [_nfs_rule("10.6.224.105", root_squash="all")]},   # list() in _update()
-            {},                                                          # _save_rules()
+            {"rule": [_nfs_rule("10.6.224.105", root_squash="all")]},  # get()
+            {"rule": [_nfs_rule("10.6.224.105", root_squash="all")]},  # list() in _update()
+            {},  # _save_rules()
         ]
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.PRESENT,
-                            hostname="10.6.224.105", root_squash="root")
+        result = mgr.ensure(
+            "my-share", state=State.PRESENT, hostname="10.6.224.105", root_squash="root"
+        )
         assert result.changed is True
         assert result.action == Action.UPDATED
 
@@ -188,9 +193,9 @@ class TestEnsureAbsent:
     def test_delete_when_exists(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"rule": [_nfs_rule("10.6.224.105")]},   # list() inside get()
-            {"rule": [_nfs_rule("10.6.224.105")]},   # list() inside _delete()
-            {},                                       # _save_rules()
+            {"rule": [_nfs_rule("10.6.224.105")]},  # list() inside get()
+            {"rule": [_nfs_rule("10.6.224.105")]},  # list() inside _delete()
+            {},  # _save_rules()
         ]
         mgr = CoreFileServNFSManager(client)
 
@@ -218,8 +223,7 @@ class TestEnsureDryRun:
         client.request.return_value = {"rule": []}
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.PRESENT, dry_run=True,
-                            hostname="10.6.224.105")
+        result = mgr.ensure("my-share", state=State.PRESENT, dry_run=True, hostname="10.6.224.105")
         assert result.changed is False
         assert result.action == Action.WOULD_CREATE
         assert result.dry_run is True
@@ -230,8 +234,9 @@ class TestEnsureDryRun:
         client.request.return_value = {"rule": [_nfs_rule("10.6.224.105", privilege="ro")]}
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.PRESENT, dry_run=True,
-                            hostname="10.6.224.105", rw=True)
+        result = mgr.ensure(
+            "my-share", state=State.PRESENT, dry_run=True, hostname="10.6.224.105", rw=True
+        )
         assert result.action == Action.WOULD_UPDATE
         assert result.dry_run is True
         assert client.request.call_count == 1
@@ -241,8 +246,7 @@ class TestEnsureDryRun:
         client.request.return_value = {"rule": [_nfs_rule("10.6.224.105")]}
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.ABSENT, dry_run=True,
-                            hostname="10.6.224.105")
+        result = mgr.ensure("my-share", state=State.ABSENT, dry_run=True, hostname="10.6.224.105")
         assert result.action == Action.WOULD_DELETE
         assert result.dry_run is True
         assert client.request.call_count == 1
@@ -252,8 +256,9 @@ class TestEnsureDryRun:
         client.request.return_value = {"rule": [_nfs_rule("10.6.224.105")]}
         mgr = CoreFileServNFSManager(client)
 
-        result = mgr.ensure("my-share", state=State.PRESENT, dry_run=True,
-                            hostname="10.6.224.105", rw=True)
+        result = mgr.ensure(
+            "my-share", state=State.PRESENT, dry_run=True, hostname="10.6.224.105", rw=True
+        )
         assert result.action == Action.NOOP
         assert result.changed is False
 
@@ -346,8 +351,8 @@ class TestRuleBuilding:
         client = _mock_client()
         existing = _nfs_rule("10.6.224.105")
         client.request.side_effect = [
-            {"rule": [existing]},   # list() inside _create()
-            {},                     # _save_rules()
+            {"rule": [existing]},  # list() inside _create()
+            {},  # _save_rules()
         ]
         mgr = CoreFileServNFSManager(client)
 
@@ -355,6 +360,7 @@ class TestRuleBuilding:
         # Verify save was called with 2 rules
         save_call = client.request.call_args_list[1]
         import json
+
         saved_rules = json.loads(save_call.kwargs["rule"])
         assert len(saved_rules) == 2
 
@@ -363,13 +369,14 @@ class TestRuleBuilding:
         client = _mock_client()
         client.request.side_effect = [
             {"rule": [_nfs_rule("10.6.224.105"), _nfs_rule("10.6.224.106")]},  # list()
-            {},                                                                 # _save_rules()
+            {},  # _save_rules()
         ]
         mgr = CoreFileServNFSManager(client)
 
         mgr._delete("my-share", "10.6.224.105")
         save_call = client.request.call_args_list[1]
         import json
+
         saved_rules = json.loads(save_call.kwargs["rule"])
         assert len(saved_rules) == 1
         assert saved_rules[0]["client"] == "10.6.224.106"

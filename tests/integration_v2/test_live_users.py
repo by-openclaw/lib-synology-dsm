@@ -22,15 +22,15 @@ import os
 from pathlib import Path
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
-from synology_dsm_v2.exceptions import DSMAuthError, DSMConnectionError, DSMResourceNotFoundError
 from synology_dsm_v2.core_user import CoreUserManager
 
 # -- Secrets loading --
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+)
 # Fallback: use environment variables if JSON not found
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),
@@ -39,8 +39,8 @@ _ENV_FALLBACK = {
     "password": os.environ.get("API_PASS", ""),
 }
 
-TEST_USER = "v2-test-user"
-TEST_PASSWORD = "V2T3st!Pass_2026"
+TEST_USER = "v2-test-user"  # pragma: allowlist secret
+TEST_PASSWORD = "V2T3st!Pass_2026"  # pragma: allowlist secret
 
 
 def _load_credentials() -> dict[str, str]:
@@ -100,7 +100,7 @@ class TestLiveUserEnsure:
         result = users.ensure(
             TEST_USER,
             state=State.PRESENT,
-            password=TEST_PASSWORD,
+            password=TEST_PASSWORD,  # pragma: allowlist secret
             email="v2test@by-systems.be",
             description="v2 PoC integration test user",
         )

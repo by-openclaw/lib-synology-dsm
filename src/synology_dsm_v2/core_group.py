@@ -212,7 +212,9 @@ class CoreGroupManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP, before=current)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True
+            )
 
         if diff:
             self._update(name, **diff)
@@ -239,7 +241,9 @@ class CoreGroupManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True
+            )
 
         self._delete(name)
         return EnsureResult(changed=True, action=Action.DELETED, before=current)

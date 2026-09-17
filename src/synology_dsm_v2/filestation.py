@@ -27,7 +27,7 @@ from typing import Any
 from synology_dsm_v2.base import Action, BaseManager, ClientProtocol, EnsureResult, State
 from synology_dsm_v2.exceptions import DSMConnectionError
 
-_BOUNDARY = b"----DSMUploadBoundary1234567890"
+_BOUNDARY = b"----DSMUploadBoundary1234567890"  # pragma: allowlist secret — multipart boundary, not a credential
 
 
 class FileStationManager(BaseManager):
@@ -214,9 +214,7 @@ class FileStationManager(BaseManager):
                 f"FileStation upload failed — cannot reach NAS: {exc.reason}"
             ) from exc
         except OSError as exc:
-            raise DSMConnectionError(
-                f"FileStation upload network error: {exc}"
-            ) from exc
+            raise DSMConnectionError(f"FileStation upload network error: {exc}") from exc
 
         if not data.get("success"):
             raise RuntimeError(f"Upload failed: {data.get('error')}")
@@ -232,14 +230,16 @@ class FileStationManager(BaseManager):
 
     def _download(self, remote_path: str, local_path: str) -> EnsureResult:
         """Download a single file from the NAS."""
-        params = urllib.parse.urlencode({
-            "_sid": self._client.sid,
-            "api": "SYNO.FileStation.Download",
-            "version": "2",
-            "method": "download",
-            "path": remote_path,
-            "mode": "download",
-        })
+        params = urllib.parse.urlencode(
+            {
+                "_sid": self._client.sid,
+                "api": "SYNO.FileStation.Download",
+                "version": "2",
+                "method": "download",
+                "path": remote_path,
+                "mode": "download",
+            }
+        )
         url = f"{self._client.base_url}/entry.cgi?{params}"
         req = urllib.request.Request(url, method="GET")
         req.add_header("X-SYNO-TOKEN", self._client.synotoken)
@@ -258,9 +258,7 @@ class FileStationManager(BaseManager):
                 f"FileStation download failed — cannot reach NAS: {exc.reason}"
             ) from exc
         except OSError as exc:
-            raise DSMConnectionError(
-                f"FileStation download network error: {exc}"
-            ) from exc
+            raise DSMConnectionError(f"FileStation download network error: {exc}") from exc
 
         return EnsureResult(
             changed=True,
@@ -300,7 +298,9 @@ class FileStationManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True
+            )
 
         self._delete_path(path)
         return EnsureResult(changed=True, action=Action.DELETED, before=current)

@@ -167,16 +167,14 @@ class CoreFileServNFSManager(BaseManager):
             return EnsureResult(changed=True, action=Action.CREATED, after=desired)
 
         # Check for drift
-        diff = {
-            k: desired[k]
-            for k in self._DIFF_FIELDS
-            if current.get(k) != desired[k]
-        }
+        diff = {k: desired[k] for k in self._DIFF_FIELDS if current.get(k) != desired[k]}
         if not diff:
             return EnsureResult(changed=False, action=Action.NOOP, before=current)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True
+            )
 
         self._update(share_name, hostname, **kwargs)
         return EnsureResult(changed=True, action=Action.UPDATED, before=current, after=desired)
@@ -193,7 +191,9 @@ class CoreFileServNFSManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True
+            )
 
         self._delete(share_name, hostname)
         return EnsureResult(changed=True, action=Action.DELETED, before=current)

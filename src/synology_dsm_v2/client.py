@@ -236,7 +236,7 @@ class DSMClient:
 
     def __repr__(self) -> str:
         auth = "authenticated" if self._sid else "not authenticated"
-        return f"DSMClient(host={self._host!r}, port={self._port}, " f"https={self._https}, {auth})"
+        return f"DSMClient(host={self._host!r}, port={self._port}, https={self._https}, {auth})"
 
     # -- Private --
 

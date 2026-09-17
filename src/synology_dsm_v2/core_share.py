@@ -88,12 +88,14 @@ class CoreShareManager(BaseManager):
         """Create a shared folder using shareinfo JSON object (DSM 7.x required format)."""
         vol_path = kwargs.get("vol_path", "/volume1")
         description = kwargs.get("description", "")
-        shareinfo = json.dumps({
-            "name": name,
-            "vol_path": vol_path,
-            "desc": description,
-            "name_org": "",
-        })
+        shareinfo = json.dumps(
+            {
+                "name": name,
+                "vol_path": vol_path,
+                "desc": description,
+                "name_org": "",
+            }
+        )
         return self._request("create", name=name, shareinfo=shareinfo)
 
     def _update(self, name: str, **kwargs: Any) -> dict[str, Any]:
@@ -131,7 +133,9 @@ class CoreShareManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP, before=current)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True
+            )
 
         self._update(name, **diff)
         after = self.get(name)
@@ -148,7 +152,9 @@ class CoreShareManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True
+            )
 
         self._delete(name)
         return EnsureResult(changed=True, action=Action.DELETED, before=current)

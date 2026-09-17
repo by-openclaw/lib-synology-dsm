@@ -14,12 +14,13 @@ import os
 from pathlib import Path
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
 from synology_dsm_v2.core_group import CoreGroupManager
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+)
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),
     "port": os.environ.get("NAS_PORT", "5001"),
@@ -66,7 +67,8 @@ class TestLiveGroupEnsure:
             groups._delete(TEST_GROUP)
 
         result = groups.ensure(
-            TEST_GROUP, state=State.PRESENT,
+            TEST_GROUP,
+            state=State.PRESENT,
             description="v2 integration test group",
         )
         assert isinstance(result, EnsureResult)
@@ -76,7 +78,8 @@ class TestLiveGroupEnsure:
 
     def test_02_ensure_noop(self, groups: CoreGroupManager) -> None:
         result = groups.ensure(
-            TEST_GROUP, state=State.PRESENT,
+            TEST_GROUP,
+            state=State.PRESENT,
             description="v2 integration test group",
         )
         assert result.changed is False
@@ -89,12 +92,14 @@ class TestLiveGroupEnsure:
         # Note: requires a real user on NAS. Use the API username from credentials.
         import json as _json
         from pathlib import Path as _Path
+
         creds_path = _Path.home() / ".openclaw/workspace/infra/secrets/infra-synology-nas.json"
         _creds = _json.loads(creds_path.read_text())["fields"]
         _user = _creds.get("svc_rune_username") or _creds.get("username")
 
         result = groups.ensure(
-            TEST_GROUP, state=State.PRESENT,
+            TEST_GROUP,
+            state=State.PRESENT,
             members=[_user],
         )
         assert result.changed is True

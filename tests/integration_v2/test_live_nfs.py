@@ -17,13 +17,14 @@ import os
 from pathlib import Path
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
 from synology_dsm_v2.core_fileserv_nfs import CoreFileServNFSManager
 from synology_dsm_v2.core_share import CoreShareManager
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+)
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),
     "port": os.environ.get("NAS_PORT", "5001"),
@@ -81,8 +82,11 @@ class TestLiveNFSEnsure:
             nfs._delete(test_share, TEST_HOSTNAME)
 
         result = nfs.ensure(
-            test_share, state=State.PRESENT,
-            hostname=TEST_HOSTNAME, rw=True, root_squash="root",
+            test_share,
+            state=State.PRESENT,
+            hostname=TEST_HOSTNAME,
+            rw=True,
+            root_squash="root",
         )
         assert isinstance(result, EnsureResult)
         assert result.changed is True
@@ -91,8 +95,12 @@ class TestLiveNFSEnsure:
 
     def test_02_ensure_noop(self, nfs: CoreFileServNFSManager, test_share: str) -> None:
         result = nfs.ensure(
-            test_share, state=State.PRESENT,
-            hostname=TEST_HOSTNAME, rw=True, root_squash="root", async_io=True,
+            test_share,
+            state=State.PRESENT,
+            hostname=TEST_HOSTNAME,
+            rw=True,
+            root_squash="root",
+            async_io=True,
         )
         assert result.changed is False
         assert result.action == Action.NOOP
@@ -100,8 +108,10 @@ class TestLiveNFSEnsure:
 
     def test_03_ensure_update(self, nfs: CoreFileServNFSManager, test_share: str) -> None:
         result = nfs.ensure(
-            test_share, state=State.PRESENT,
-            hostname=TEST_HOSTNAME, rw=False,
+            test_share,
+            state=State.PRESENT,
+            hostname=TEST_HOSTNAME,
+            rw=False,
         )
         assert result.changed is True
         assert result.action == Action.UPDATED
@@ -135,6 +145,8 @@ class TestLiveNFSErrorHandling:
         assert isinstance(result, list)
         print(f"  Listed {len(result)} NFS rules on {test_share}")
 
-    def test_get_nonexistent_returns_none(self, nfs: CoreFileServNFSManager, test_share: str) -> None:
+    def test_get_nonexistent_returns_none(
+        self, nfs: CoreFileServNFSManager, test_share: str
+    ) -> None:
         result = nfs.get(test_share, hostname="192.168.255.255")
         assert result is None

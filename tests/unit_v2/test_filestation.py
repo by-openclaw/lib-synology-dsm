@@ -7,10 +7,8 @@ import json
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
-from synology_dsm_v2.filestation import FileStationManager, _BOUNDARY
-
+from synology_dsm_v2.filestation import _BOUNDARY, FileStationManager
 
 # -- Fixtures --
 
@@ -119,9 +117,9 @@ class TestEnsurePresent:
     def test_create_folder_when_missing(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"files": []},                                  # list() inside get() → not found
-            {"folders": [_file_dict("subfolder")]},         # _mkdir() via client.request
-            {"files": [_file_dict("subfolder")]},           # list() inside get() for after
+            {"files": []},  # list() inside get() → not found
+            {"folders": [_file_dict("subfolder")]},  # _mkdir() via client.request
+            {"files": [_file_dict("subfolder")]},  # list() inside get() for after
         ]
         mgr = FileStationManager(client)
 
@@ -143,9 +141,9 @@ class TestEnsurePresent:
         """Verify _mkdir calls SYNO.FileStation.CreateFolder via direct client call."""
         client = _mock_client()
         client.request.side_effect = [
-            {"files": []},                                  # get()
-            {"folders": [_file_dict("subfolder")]},         # _mkdir()
-            {"files": [_file_dict("subfolder")]},           # get() for after
+            {"files": []},  # get()
+            {"folders": [_file_dict("subfolder")]},  # _mkdir()
+            {"files": [_file_dict("subfolder")]},  # get() for after
         ]
         mgr = FileStationManager(client)
 
@@ -162,8 +160,8 @@ class TestEnsureAbsent:
     def test_delete_when_exists(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"files": [_file_dict("subfolder")]},   # get()
-            {},                                      # _delete_path() via client.request
+            {"files": [_file_dict("subfolder")]},  # get()
+            {},  # _delete_path() via client.request
         ]
         mgr = FileStationManager(client)
 

@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 import pytest
-
 from synology_dsm_v2.exceptions import (
+    ERROR_DESCRIPTIONS,
+    ERROR_MAP,
     DSMAPIError,
     DSMAuthError,
     DSMConnectionError,
@@ -16,8 +17,6 @@ from synology_dsm_v2.exceptions import (
     DSMPermissionError,
     DSMResourceNotFoundError,
     DSMSessionError,
-    ERROR_DESCRIPTIONS,
-    ERROR_MAP,
 )
 
 
@@ -45,29 +44,35 @@ class TestDSMErrorBase:
 class TestExceptionHierarchy:
     """Every exception is a subclass of DSMError."""
 
-    @pytest.mark.parametrize("exc_class", [
-        DSMAuthError,
-        DSMPermissionError,
-        DSMNotFoundError,
-        DSMSessionError,
-        DSMInvalidParameterError,
-        DSMInvalidOperationError,
-        DSMAPIError,
-        DSMResourceNotFoundError,
-        DSMConnectionError,
-    ])
+    @pytest.mark.parametrize(
+        "exc_class",
+        [
+            DSMAuthError,
+            DSMPermissionError,
+            DSMNotFoundError,
+            DSMSessionError,
+            DSMInvalidParameterError,
+            DSMInvalidOperationError,
+            DSMAPIError,
+            DSMResourceNotFoundError,
+            DSMConnectionError,
+        ],
+    )
     def test_subclass_of_dsm_error(self, exc_class: type[DSMError]) -> None:
         assert issubclass(exc_class, DSMError)
 
-    @pytest.mark.parametrize("exc_class", [
-        DSMAuthError,
-        DSMPermissionError,
-        DSMNotFoundError,
-        DSMSessionError,
-        DSMInvalidParameterError,
-        DSMInvalidOperationError,
-        DSMAPIError,
-    ])
+    @pytest.mark.parametrize(
+        "exc_class",
+        [
+            DSMAuthError,
+            DSMPermissionError,
+            DSMNotFoundError,
+            DSMSessionError,
+            DSMInvalidParameterError,
+            DSMInvalidOperationError,
+            DSMAPIError,
+        ],
+    )
     def test_subclass_accepts_code(self, exc_class: type[DSMError]) -> None:
         err = exc_class("test", code=999)
         assert err.code == 999
@@ -87,36 +92,39 @@ class TestExceptionHierarchy:
 class TestErrorCodeMapping:
     """Every known DSM error code maps to the correct exception type."""
 
-    @pytest.mark.parametrize("code,expected_type", [
-        # Auth
-        (400, DSMAuthError),
-        (401, DSMAuthError),
-        (402, DSMPermissionError),
-        (403, DSMAuthError),
-        (407, DSMAuthError),
-        (411, DSMAuthError),
-        # Permission
-        (105, DSMPermissionError),
-        (115, DSMPermissionError),
-        (160, DSMPermissionError),
-        # Session
-        (106, DSMSessionError),
-        (107, DSMSessionError),
-        (119, DSMSessionError),
-        # Not found
-        (102, DSMNotFoundError),
-        (104, DSMNotFoundError),
-        # Invalid parameter
-        (100, DSMInvalidParameterError),
-        (101, DSMInvalidParameterError),
-        (103, DSMInvalidParameterError),
-        (114, DSMInvalidParameterError),
-        (1001, DSMInvalidParameterError),
-        # Invalid operation
-        (117, DSMInvalidOperationError),
-        # IP mismatch
-        (150, DSMAuthError),
-    ])
+    @pytest.mark.parametrize(
+        "code,expected_type",
+        [
+            # Auth
+            (400, DSMAuthError),
+            (401, DSMAuthError),
+            (402, DSMPermissionError),
+            (403, DSMAuthError),
+            (407, DSMAuthError),
+            (411, DSMAuthError),
+            # Permission
+            (105, DSMPermissionError),
+            (115, DSMPermissionError),
+            (160, DSMPermissionError),
+            # Session
+            (106, DSMSessionError),
+            (107, DSMSessionError),
+            (119, DSMSessionError),
+            # Not found
+            (102, DSMNotFoundError),
+            (104, DSMNotFoundError),
+            # Invalid parameter
+            (100, DSMInvalidParameterError),
+            (101, DSMInvalidParameterError),
+            (103, DSMInvalidParameterError),
+            (114, DSMInvalidParameterError),
+            (1001, DSMInvalidParameterError),
+            # Invalid operation
+            (117, DSMInvalidOperationError),
+            # IP mismatch
+            (150, DSMAuthError),
+        ],
+    )
     def test_error_code_maps_correctly(self, code: int, expected_type: type[DSMError]) -> None:
         assert ERROR_MAP[code] is expected_type
 
@@ -127,7 +135,9 @@ class TestErrorCodeMapping:
     def test_every_mapped_code_has_description(self) -> None:
         """Every code in ERROR_MAP should also have a description."""
         for code in ERROR_MAP:
-            assert code in ERROR_DESCRIPTIONS, f"Code {code} in ERROR_MAP but missing from ERROR_DESCRIPTIONS"
+            assert (
+                code in ERROR_DESCRIPTIONS
+            ), f"Code {code} in ERROR_MAP but missing from ERROR_DESCRIPTIONS"
 
 
 class TestErrorDescriptions:

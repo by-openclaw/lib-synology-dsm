@@ -6,11 +6,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from synology_dsm_v2.base import Action, EnsureResult, State
-from synology_dsm_v2.exceptions import DSMResourceNotFoundError
 from synology_dsm_v2.core_user import CoreUserManager
-
 
 # -- Fixtures --
 
@@ -105,9 +102,9 @@ class TestEnsurePresent:
     def test_create_when_missing(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"users": []},                       # list() inside get() → not found
-            {},                                   # _create()
-            {"users": [_user_dict("bob")]},       # list() inside get() for after
+            {"users": []},  # list() inside get() → not found
+            {},  # _create()
+            {"users": [_user_dict("bob")]},  # list() inside get() for after
         ]
         mgr = CoreUserManager(client)
 
@@ -131,9 +128,9 @@ class TestEnsurePresent:
     def test_update_when_drifted(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"users": [_user_dict("bob", email="old@example.com")]},   # get() in ensure
-            {},                                                         # _update()
-            {"users": [_user_dict("bob", email="new@example.com")]},   # get() for after
+            {"users": [_user_dict("bob", email="old@example.com")]},  # get() in ensure
+            {},  # _update()
+            {"users": [_user_dict("bob", email="new@example.com")]},  # get() for after
         ]
         mgr = CoreUserManager(client)
 
@@ -159,8 +156,8 @@ class TestEnsureAbsent:
     def test_delete_when_exists(self) -> None:
         client = _mock_client()
         client.request.side_effect = [
-            {"users": [_user_dict("bob")]},   # get()
-            {},                                # _delete()
+            {"users": [_user_dict("bob")]},  # get()
+            {},  # _delete()
         ]
         mgr = CoreUserManager(client)
 

@@ -24,10 +24,13 @@ repos:
       - id: check-yaml
       - id: check-toml
       - id: check-json
+        # devcontainer.json is JSONC by specification: the format allows the // comments
+        # this file uses, and a strict JSON parser can never read it.
+        exclude: ^\.devcontainer/devcontainer\.json$
 
   # Python linting + formatting (same as CI)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.15.8
     hooks:
       - id: ruff
         args: ["--fix"]

@@ -25,12 +25,13 @@ import pytest
 
 from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
-from synology_dsm_v2.exceptions import DSMAuthError, DSMConnectionError, DSMResourceNotFoundError
 from synology_dsm_v2.core_user import CoreUserManager
 
 # -- Secrets loading --
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+)
 # Fallback: use environment variables if JSON not found
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),

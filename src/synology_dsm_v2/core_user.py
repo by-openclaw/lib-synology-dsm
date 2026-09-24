@@ -12,7 +12,6 @@ import json
 from typing import Any
 
 from synology_dsm_v2.base import Action, BaseManager, ClientProtocol, EnsureResult, State
-from synology_dsm_v2.exceptions import DSMResourceNotFoundError
 
 
 class CoreUserManager(BaseManager):
@@ -47,7 +46,9 @@ class CoreUserManager(BaseManager):
     def list(self) -> list[dict[str, Any]]:
         """List all local users."""
         data = self._request(
-            "list", offset=0, limit=-1,
+            "list",
+            offset=0,
+            limit=-1,
             additional='["email","description","expired"]',
         )
         return data.get("users", [])
@@ -88,7 +89,9 @@ class CoreUserManager(BaseManager):
     def _create(self, name: str, password: str, **kwargs: Any) -> dict[str, Any]:
         """Create a local user. Called by ensure(state=PRESENT) when user is missing."""
         return self._request(
-            "create", name=name, password=password,
+            "create",
+            name=name,
+            password=password,
             email=kwargs.get("email", ""),
             description=kwargs.get("description", ""),
         )
@@ -126,7 +129,9 @@ class CoreUserManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP, before=current)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_UPDATE, before=current, dry_run=True
+            )
 
         update_fields = {k: v for k, v in diff.items() if k != "password"}
         if "password" in kwargs and kwargs["password"]:
@@ -147,7 +152,9 @@ class CoreUserManager(BaseManager):
             return EnsureResult(changed=False, action=Action.NOOP)
 
         if dry_run:
-            return EnsureResult(changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True)
+            return EnsureResult(
+                changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True
+            )
 
         self._delete(name)
         return EnsureResult(changed=True, action=Action.DELETED, before=current)

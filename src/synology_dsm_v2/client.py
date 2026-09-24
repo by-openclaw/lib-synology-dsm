@@ -15,13 +15,13 @@ import urllib.request
 from typing import Any
 
 from synology_dsm_v2.exceptions import (
+    ERROR_DESCRIPTIONS,
+    ERROR_MAP,
     DSMAPIError,
     DSMAuthError,
     DSMConnectionError,
     DSMError,
     DSMSessionError,
-    ERROR_DESCRIPTIONS,
-    ERROR_MAP,
 )
 
 
@@ -236,10 +236,7 @@ class DSMClient:
 
     def __repr__(self) -> str:
         auth = "authenticated" if self._sid else "not authenticated"
-        return (
-            f"DSMClient(host={self._host!r}, port={self._port}, "
-            f"https={self._https}, {auth})"
-        )
+        return f"DSMClient(host={self._host!r}, port={self._port}, https={self._https}, {auth})"
 
     # -- Private --
 
@@ -262,9 +259,7 @@ class DSMClient:
                 req.add_header(k, v)
 
         try:
-            with urllib.request.urlopen(
-                req, context=self._ssl_ctx, timeout=self._timeout
-            ) as resp:
+            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=self._timeout) as resp:
                 body = resp.read().decode("utf-8")
                 return json.loads(body)
         except urllib.error.URLError as exc:
@@ -272,9 +267,7 @@ class DSMClient:
                 f"Connection failed: {self._host}:{self._port} — {exc.reason}"
             ) from exc
         except OSError as exc:
-            raise DSMConnectionError(
-                f"Network error: {self._host}:{self._port} — {exc}"
-            ) from exc
+            raise DSMConnectionError(f"Network error: {self._host}:{self._port} — {exc}") from exc
 
     def _resolve_error(
         self,

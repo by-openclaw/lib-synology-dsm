@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """One-shot: update svc-rune description + email on NAS."""
-import sys
+
 import json
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

@@ -259,7 +259,11 @@ class DSMClient:
                 req.add_header(k, v)
 
         try:
-            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=self._timeout) as resp:
+            # nosec B310 — scheme is fixed by base_url ('https' or 'http', never file:/ or a
+            # custom scheme) and the host comes from trusted configuration, not user input.
+            with urllib.request.urlopen(  # nosec B310
+                req, context=self._ssl_ctx, timeout=self._timeout
+            ) as resp:
                 body = resp.read().decode("utf-8")
                 return json.loads(body)
         except urllib.error.URLError as exc:

@@ -28,9 +28,9 @@ _creds = json.loads(_creds_path.read_text())["fields"]
 
 NAS_HOST: str = _creds["host"]
 NAS_PORT: int = int(_creds["port"])
-ADMIN_USER: str = _creds["svc_rune_username"]   # executor — administrators group
+ADMIN_USER: str = _creds["svc_rune_username"]  # executor — administrators group
 ADMIN_PASS: str = _creds["svc_rune_password"]
-AUDIT_USER: str = _creds["svc_opus_username"]   # auditor — users group (read-only)
+AUDIT_USER: str = _creds["svc_opus_username"]  # auditor — users group (read-only)
 AUDIT_PASS: str = _creds["svc_opus_password"]
 
 

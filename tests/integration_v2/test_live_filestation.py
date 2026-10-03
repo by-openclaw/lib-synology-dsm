@@ -22,7 +22,9 @@ from synology_dsm_v2.base import Action, EnsureResult, State
 from synology_dsm_v2.client import DSMClient
 from synology_dsm_v2.filestation import FileStationManager
 
-SECRETS_PATH = Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+SECRETS_PATH = (
+    Path.home() / ".openclaw" / "workspace" / "infra" / "secrets" / "infra-synology-nas.json"
+)
 _ENV_FALLBACK = {
     "host": os.environ.get("NAS_HOST", ""),
     "port": os.environ.get("NAS_PORT", "5001"),

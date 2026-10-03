@@ -10,6 +10,11 @@ jobs:
   add-to-project:
     name: Add to by-openclaw project board
     runs-on: ubuntu-latest
+    # A pull request opened by Dependabot runs with a token that cannot read repository
+    # secrets, so RUNE_GITHUB_TOKEN arrives empty and the action fails with
+    # "Input required and not supplied: github-token" — on every dependency bump, forever.
+    # Nothing is lost by skipping: a dependency bump does not belong on the planning board.
+    if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/add-to-project@v1.0.2
         with:

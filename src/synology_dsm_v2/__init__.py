@@ -7,7 +7,6 @@ from synology_dsm_v2.core_fileserv_nfs import CoreFileServNFSManager
 from synology_dsm_v2.core_group import CoreGroupManager
 from synology_dsm_v2.core_share import CoreShareManager
 from synology_dsm_v2.core_user import CoreUserManager
-from synology_dsm_v2.filestation import FileStationManager
 from synology_dsm_v2.exceptions import (
     DSMAPIError,
     DSMAuthError,
@@ -20,6 +19,7 @@ from synology_dsm_v2.exceptions import (
     DSMResourceNotFoundError,
     DSMSessionError,
 )
+from synology_dsm_v2.filestation import FileStationManager
 
 __all__ = [
     # Base

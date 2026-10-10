@@ -42,6 +42,7 @@ lib-synology-dsm/
 ```python
 from abc import ABC, abstractmethod
 
+
 class BaseManager(ABC):
     """Contract: every manager has ensure(), __repr__, and a client."""
 
@@ -55,16 +56,13 @@ class BaseManager(ABC):
         state: State = State.PRESENT,
         dry_run: bool = False,
         **kwargs,
-    ) -> EnsureResult:
-        ...
+    ) -> EnsureResult: ...
 
     @abstractmethod
-    def list(self) -> list[dict]:
-        ...
+    def list(self) -> list[dict]: ...
 
     @abstractmethod
-    def get(self, name: str) -> dict | None:
-        ...
+    def get(self, name: str) -> dict | None: ...
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(base_url={self._client.base_url!r})"
@@ -79,8 +77,12 @@ class BaseManager(ABC):
 ```python
 def test_cannot_instantiate_without_ensure():
     class BadManager(BaseManager):
-        def list(self): return []
-        def get(self, name): return None
+        def list(self):
+            return []
+
+        def get(self, name):
+            return None
+
         # missing ensure() → should crash
 
     with pytest.raises(TypeError):
@@ -91,6 +93,7 @@ def test_cannot_instantiate_without_ensure():
 
 ```python
 from enum import StrEnum
+
 
 class State(StrEnum):
     PRESENT = "present"
@@ -188,7 +191,9 @@ class DSMClient:
         self._timeout = value
 
     def __repr__(self) -> str:
-        return f"DSMClient(host={self._host!r}, port={self._port}, sid={'***' if self._sid else None})"
+        return (
+            f"DSMClient(host={self._host!r}, port={self._port}, sid={'***' if self._sid else None})"
+        )
 
     def __enter__(self) -> "DSMClient":
         return self
@@ -258,19 +263,22 @@ _ERROR_MAP: dict[int, type[DSMError]] = {
 
 ```python
 # Every known code maps correctly
-@pytest.mark.parametrize("code,expected", [
-    (400, DSMAuthError),
-    (402, DSMAuthError),
-    (403, DSMPermissionError),
-    (119, DSMSessionError),
-    (999, DSMAPIError),  # unknown → generic fallback
-])
-def test_error_code_mapping(code, expected):
-    ...
+@pytest.mark.parametrize(
+    "code,expected",
+    [
+        (400, DSMAuthError),
+        (402, DSMAuthError),
+        (403, DSMPermissionError),
+        (119, DSMSessionError),
+        (999, DSMAPIError),  # unknown → generic fallback
+    ],
+)
+def test_error_code_mapping(code, expected): ...
+
 
 # Network failures → DSMConnectionError (never raw urllib)
-def test_network_error_wrapped():
-    ...
+def test_network_error_wrapped(): ...
+
 
 # __repr__ is useful
 def test_exception_repr():
@@ -336,7 +344,9 @@ class UserManager(BaseManager):
             if current is None:
                 return EnsureResult(changed=False, action=Action.NOOP)
             if dry_run:
-                return EnsureResult(changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True)
+                return EnsureResult(
+                    changed=False, action=Action.WOULD_DELETE, before=current, dry_run=True
+                )
             self.delete(name)
             return EnsureResult(changed=True, action=Action.DELETED, before=current)
 ```
@@ -383,17 +393,18 @@ The `BaseManager` contract doesn't care about transport:
 ```python
 class ClientProtocol(Protocol):
     """Minimum interface any transport client must implement."""
+
     @property
     def base_url(self) -> str: ...
     def request(self, api: str, method: str, version: int = 1, **params) -> dict: ...
+
 
 class BaseManager(ABC):
     def __init__(self, client: ClientProtocol) -> None:
         self._client = client
 
     @abstractmethod
-    def ensure(self, name: str, state: State, dry_run: bool = False, **kwargs) -> EnsureResult:
-        ...
+    def ensure(self, name: str, state: State, dry_run: bool = False, **kwargs) -> EnsureResult: ...
 ```
 
 **Note:** `ClientProtocol` keeps typing strict for DSM now (DSMClient implements it). When a Go CLI wrapper or SNMP client is added, it implements the same protocol — type checking still works. `Any` would disable all type checking on `self._client`.

@@ -42,17 +42,20 @@ Relevant parameters:
 Current `login()` does **not** include `otp_code` in the request body:
 
 ```python
-data = self._post(..., {
-    "api": "SYNO.API.Auth",
-    "version": "6",
-    "method": "login",
-    "account": account,
-    "passwd": password,
-    "session": session,
-    "enable_syno_token": "yes",
-    "format": "sid",
-    # ← otp_code NOT present
-})
+data = self._post(
+    ...,
+    {
+        "api": "SYNO.API.Auth",
+        "version": "6",
+        "method": "login",
+        "account": account,
+        "passwd": password,
+        "session": session,
+        "enable_syno_token": "yes",
+        "format": "sid",
+        # ← otp_code NOT present
+    },
+)
 ```
 
 If 2FA is enabled and `otp_code` is omitted → DSM returns error code `403` (OTP required).

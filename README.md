@@ -324,8 +324,9 @@ with DSMClient(creds.host, port=creds.port, verify_ssl=False) as client:
     bw = BandwidthManager(client)
 
     # Idempotent — set FileStation limit for a user (1000 KB/s up, 5000 KB/s down)
-    result = bw.ensure_user("alice", "FileStation", policy="enabled",
-                            upload_limit_1=1000, download_limit_1=5000)
+    result = bw.ensure_user(
+        "alice", "FileStation", policy="enabled", upload_limit_1=1000, download_limit_1=5000
+    )
     print(result)  # {"changed": True, "action": "updated"}
     # Second run: {"changed": False, "action": "none"}
 
@@ -344,17 +345,20 @@ with DSMClient(creds.host, port=creds.port, verify_ssl=False) as client:
     tc = TrafficControlManager(client)
 
     # Idempotent — ensure a traffic rule for NFS+SSH on eth0
-    result = tc.ensure_rule("eth0", {
-        "enabled": True,
-        "port_type": "SYS",
-        "port_num": "nfs,ssh",
-        "port_direction": "src",
-        "protocol": "all",
-        "minrate": 1000,
-        "maxrate": 3000,
-        "source": "all",
-        "ip_direction": "dest",
-    })
+    result = tc.ensure_rule(
+        "eth0",
+        {
+            "enabled": True,
+            "port_type": "SYS",
+            "port_num": "nfs,ssh",
+            "port_direction": "src",
+            "protocol": "all",
+            "minrate": 1000,
+            "maxrate": 3000,
+            "source": "all",
+            "ip_direction": "dest",
+        },
+    )
     print(result)  # {"changed": True, "action": "added"}
 
     # Clear all rules

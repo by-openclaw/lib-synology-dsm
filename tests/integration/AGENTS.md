@@ -34,16 +34,20 @@ Override: `export NAS_CREDS_JSON=/path/to/infra-synology-nas.json`
 import pytest
 from synology_dsm.exceptions import DSMPermissionError
 
+
 @pytest.mark.integration
 def test_audit_can_list_users(audit_client):
     from synology_dsm.users import UserManager
+
     u = UserManager(audit_client)
     users = u.list()
     assert isinstance(users, list)
 
+
 @pytest.mark.integration
 def test_audit_cannot_create_user(audit_client):
     from synology_dsm.users import UserManager
+
     u = UserManager(audit_client)
     with pytest.raises(DSMPermissionError):
         u.ensure("test-audit-block", state="present", password="Tmp123!")

@@ -65,8 +65,9 @@ All managers implement `ensure(state="present"/"absent")` which maps directly to
 
 ```python
 # Idempotent — safe to run multiple times
-result = users.ensure("svc-monitoring", state="present",
-                      password="...", description="Monitoring service account")
+result = users.ensure(
+    "svc-monitoring", state="present", password="...", description="Monitoring service account"
+)
 # Returns: {"changed": True, "action": "created"} or {"changed": False, "action": "noop"}
 
 result = shares.ensure("old-share", state="absent")

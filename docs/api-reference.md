@@ -36,6 +36,7 @@ with DSMClient("your-nas-host", port=5001) as client:
 
 ```python
 from synology_dsm.users import UserManager
+
 mgr = UserManager(client)
 ```
 
@@ -58,6 +59,7 @@ mgr = UserManager(client)
 
 ```python
 from synology_dsm.groups import GroupManager
+
 mgr = GroupManager(client)
 ```
 
@@ -81,6 +83,7 @@ Group membership management via `SYNO.Core.Group` is not available on this DSM v
 
 ```python
 from synology_dsm.shares import ShareManager
+
 mgr = ShareManager(client)
 ```
 
@@ -120,28 +123,36 @@ compound = [
         "method": "save",
         "version": 1,
         "share_name": "myshare",
-        "rule": [{
-            "client": "10.0.0.100",
-            "privilege": "rw",
-            "root_squash": "root",
-            "async": True,
-            "insecure": False,
-            "crossmnt": False,
-            "security_flavor": {
-                "kerberos": False,
-                "kerberos_integrity": False,
-                "kerberos_privacy": False,
-                "sys": True
+        "rule": [
+            {
+                "client": "10.0.0.100",
+                "privilege": "rw",
+                "root_squash": "root",
+                "async": True,
+                "insecure": False,
+                "crossmnt": False,
+                "security_flavor": {
+                    "kerberos": False,
+                    "kerberos_integrity": False,
+                    "kerberos_privacy": False,
+                    "sys": True,
+                },
             }
-        }]
+        ],
     },
     {
         "api": "SYNO.Core.Share",
         "method": "set",
         "version": 1,
         "name": "myshare",
-        "shareinfo": {"name": "myshare", "vol_path": "/volume1", "desc": "", "encryption": False, "enc_passwd": ""}
-    }
+        "shareinfo": {
+            "name": "myshare",
+            "vol_path": "/volume1",
+            "desc": "",
+            "encryption": False,
+            "enc_passwd": "",
+        },
+    },
 ]
 ```
 

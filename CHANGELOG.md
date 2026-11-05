@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.12.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.11.0...v0.12.0) (2026-11-05)
+
+
+### Features
+
+* **ansible:** by_systems.synology_dsm collection — share and NFS rule modules over ensure() ([021c476](https://github.com/by-openclaw/lib-synology-dsm/commit/021c47664b0806531a7b46e61a052cda2d5eb431))
+* **ansible:** by_systems.synology_dsm collection — share and NFS rule modules over ensure() ([149160f](https://github.com/by-openclaw/lib-synology-dsm/commit/149160fc7a6a63a6ddfd0ec0701b206002872e08))
+
+
+### Bug Fixes
+
+* **v2:** StrEnum backport for Python 3.10; CI runs the v2 tests ([25387a0](https://github.com/by-openclaw/lib-synology-dsm/commit/25387a004b0fa2e1399dfab90a212ea71fe10ca5))
+
 ## [0.11.0](https://github.com/by-openclaw/lib-synology-dsm/compare/v0.10.1...v0.11.0) (2026-10-03)
 
 

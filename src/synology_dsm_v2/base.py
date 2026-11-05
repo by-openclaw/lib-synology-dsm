@@ -12,10 +12,24 @@ Defines:
 
 from __future__ import annotations
 
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import Any, Protocol, runtime_checkable
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:  # Python 3.10 (requires-python >= 3.10): the same behaviour, str() and format() give the value
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        """Backport of enum.StrEnum (3.11): members are str, str() and format() return the value."""
+
+        def __str__(self) -> str:
+            return str(self.value)
+
+        def __format__(self, spec: str) -> str:
+            return str(self.value).__format__(spec)
 
 
 @runtime_checkable

@@ -27,19 +27,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+          pip install "ansible-core>=2.16"   # the Ansible collection's module tests (tests/unit/test_ansible_collection.py)
 
       - name: Lint with ruff
-        run: ruff check src/synology_dsm/ tests/unit/ tests/integration/
+        run: ruff check src/synology_dsm/ src/synology_dsm_v2/ tests/unit/ tests/unit_v2/ tests/integration/ ansible/
 
       - name: Check formatting
-        run: ruff format --check src/synology_dsm/ tests/unit/ tests/integration/
+        run: ruff format --check src/synology_dsm/ src/synology_dsm_v2/ tests/unit/ tests/unit_v2/ tests/integration/ ansible/
 
       - name: Type check
-        run: mypy src/synology_dsm/ --ignore-missing-imports
+        run: |
+          mypy src/synology_dsm/ --ignore-missing-imports
+          mypy ansible/ansible_collections/by_systems/synology_dsm/plugins/ --ignore-missing-imports
 
       - name: Run unit tests with coverage
         run: |
-          pytest tests/unit/ \
+          pytest tests/unit/ tests/unit_v2/ \
             --cov=src/synology_dsm \
             --cov-report=term-missing \
             --cov-report=html:htmlcov \
@@ -87,7 +90,7 @@ jobs:
       - name: Bandit — Python SAST
         # -r src/  : scan source only, not tests (fixtures use patterns Bandit flags)
         # -ll -ii  : medium+ severity AND medium+ confidence (reduces noise)
-        run: bandit -r src/ -ll -ii
+        run: bandit -r src/ ansible/ -ll -ii
 
       - name: pip-audit — dependency CVE scan
         # --skip-editable: skip the lib itself (it has no declared deps)

@@ -14,10 +14,10 @@ the collection calls the lib's `ensure()` pattern and reports `changed`/`ok` bac
 
 | Module | Wraps | State |
 |---|---|---|
-| `synology_dsm_share` | `ShareManager.ensure()` | 🗒️ Planned |
+| `synology_dsm_share` | v2 `CoreShareManager.ensure()` | ✅ 0.1.0 (`ansible/ansible_collections/by_systems/synology_dsm`) |
 | `synology_dsm_user` | `UserManager.ensure()` | 🗒️ Planned |
 | `synology_dsm_group` | `GroupManager.ensure()` | 🗒️ Planned |
-| `synology_dsm_nfs` | `ShareManager.set_nfs_permission()` | 🗒️ Planned |
+| `synology_dsm_nfs` | v2 `CoreFileServNFSManager.ensure()` | ✅ 0.1.0 |
 | `synology_dsm_filestation` | `FileStationManager.upload()/download()` | 🗒️ Planned |
 
 ## Example usage (target)

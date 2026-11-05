@@ -1,0 +1,14 @@
+---
+namespace: by_systems
+name: synology_dsm
+version: 0.1.0
+readme: README.md
+authors:
+  - BY-SYSTEMS
+description: Synology DSM shared folders and NFS permissions for Ansible, through lib-synology-dsm ensure()
+license:
+  - MIT
+repository: https://github.com/by-openclaw/lib-synology-dsm
+dependencies: {}
+build_ignore:
+  - "*.pyc"

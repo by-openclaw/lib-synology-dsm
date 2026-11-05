@@ -30,10 +30,10 @@ jobs:
           pip install "ansible-core>=2.16"   # the Ansible collection's module tests (tests/unit/test_ansible_collection.py)
 
       - name: Lint with ruff
-        run: ruff check src/synology_dsm/ tests/unit/ tests/integration/ ansible/
+        run: ruff check src/synology_dsm/ src/synology_dsm_v2/ tests/unit/ tests/unit_v2/ tests/integration/ ansible/
 
       - name: Check formatting
-        run: ruff format --check src/synology_dsm/ tests/unit/ tests/integration/ ansible/
+        run: ruff format --check src/synology_dsm/ src/synology_dsm_v2/ tests/unit/ tests/unit_v2/ tests/integration/ ansible/
 
       - name: Type check
         run: |
@@ -42,7 +42,7 @@ jobs:
 
       - name: Run unit tests with coverage
         run: |
-          pytest tests/unit/ \
+          pytest tests/unit/ tests/unit_v2/ \
             --cov=src/synology_dsm \
             --cov-report=term-missing \
             --cov-report=html:htmlcov \
